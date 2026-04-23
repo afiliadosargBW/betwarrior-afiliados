@@ -4,267 +4,319 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Betwarrior Afiliados</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0f1117;--bg2:#161820;--bg3:#1e2030;--bg4:#252840;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--text:#e8eaf0;--text2:#9499b0;--text3:#5a5f78;--accent:#4f7fff;--accent2:#6b8fff;--green:#3dd68c;--green2:#1a3d2b;--amber:#f5a623;--amber2:#3d2e0a;--red:#ff5c5c;--red2:#3d1515;--purple:#a78bfa;--purple2:#2d1f4a;--teal:#2dd4bf;--teal2:#0f2d2a;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace}
+:root{
+  --bg:#f6f8fc;--sidebar:#f6f8fc;--white:#fff;--border:#e2e8f0;--border2:#c6cad0;
+  --text:#202124;--text2:#444746;--text3:#80868b;--text4:#c5c8cb;
+  --accent:#1a73e8;--accent-bg:#e8f0fe;--accent-hover:#1557b0;
+  --green:#137333;--green-bg:#e6f4ea;--amber:#b45309;--amber-bg:#fef3c7;
+  --red:#c5221f;--red-bg:#fce8e6;--purple:#7c3aed;--purple-bg:#ede9fe;
+  --teal:#0d7377;--teal-bg:#e0f5f5;
+  --unread-bg:#fff;--read-bg:#f2f6fc;--hover-bg:#f0f4f9;
+  --font:'Google Sans','Roboto',sans-serif;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.6;min-height:100vh}
-.app{display:grid;grid-template-columns:260px 1fr;grid-template-rows:56px 1fr;height:100vh;overflow:hidden}
-.topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px}
-.sidebar{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
-.main{overflow-y:auto;background:var(--bg)}
-.logo{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.3px}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.4;min-height:100vh}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:256px 1fr;grid-template-rows:64px 1fr;height:100vh;overflow:hidden}
+.topbar{grid-column:1/-1;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.sidebar{background:var(--sidebar);overflow-y:auto;padding:8px 0}
+.main{overflow-y:auto;background:var(--white)}
+
+/* TOPBAR */
+.logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:500;color:var(--text);min-width:200px}
+.logo-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700}
 .logo span{color:var(--accent)}
-.account-pill{font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-family:var(--mono)}
-.status-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0}
-.status-dot.on{background:var(--green);box-shadow:0 0 6px var(--green)}
-.topbar-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
-.btn{font-family:var(--font);font-size:12px;font-weight:500;padding:6px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
-.btn:hover{background:var(--bg4);color:var(--text)}
-.btn-accent{background:var(--accent);color:white;border-color:var(--accent)}
-.btn-accent:hover{background:var(--accent2);color:white}
-.btn-green{background:var(--green2);color:var(--green);border-color:rgba(61,214,140,0.3)}
-.btn-green:hover{background:rgba(61,214,140,0.15)}
-.btn-teal{background:var(--teal2);color:var(--teal);border-color:rgba(45,212,191,0.3)}
-.sidebar-section{padding:16px 14px 8px}
-.sidebar-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;padding:0 6px}
-.nav-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:8px;cursor:pointer;transition:all .15s;color:var(--text2);font-size:13px}
-.nav-item:hover{background:var(--bg3);color:var(--text)}
-.nav-item.active{background:var(--bg4);color:var(--text)}
-.nav-item .ni-left{display:flex;align-items:center;gap:8px}
-.nav-count{font-size:10px;font-weight:600;background:var(--bg4);color:var(--text3);padding:1px 6px;border-radius:10px;min-width:20px;text-align:center}
-.nav-count.hot{background:var(--red2);color:var(--red)}
-.nav-count.vip{background:var(--amber2);color:var(--amber)}
-.summary-card{margin:14px;background:linear-gradient(135deg,#1a2040 0%,#0f1530 100%);border:1px solid rgba(79,127,255,0.2);border-radius:12px;padding:14px}
-.summary-date{font-size:10px;color:var(--text3);margin-bottom:8px;font-family:var(--mono)}
-.summary-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px}
-.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.sum-item{background:rgba(255,255,255,0.04);border-radius:8px;padding:8px 10px}
-.sum-val{font-size:20px;font-weight:600;color:var(--accent);line-height:1}
-.sum-label{font-size:10px;color:var(--text3);margin-top:2px}
-.sum-item.green .sum-val{color:var(--green)}
-.sum-item.amber .sum-val{color:var(--amber)}
-.sum-item.red .sum-val{color:var(--red)}
-.alerts-area{padding:0 14px 8px;display:flex;flex-direction:column;gap:6px}
-.alert-pill{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;font-size:11px;cursor:pointer;transition:all .15s}
-.alert-pill:hover{filter:brightness(1.1)}
-.alert-vip{background:var(--amber2);border:1px solid rgba(245,166,35,0.2);color:var(--amber)}
-.alert-baja{background:var(--red2);border:1px solid rgba(255,92,92,0.2);color:var(--red)}
-.alert-followup{background:var(--purple2);border:1px solid rgba(167,139,250,0.2);color:var(--purple)}
-.tmpl-section{padding:14px;border-top:1px solid var(--border);margin-top:auto}
-.tmpl-title{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
-.tmpl-tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
-.tmpl-tab{font-size:10px;padding:3px 8px;border-radius:6px;cursor:pointer;border:1px solid var(--border);color:var(--text3);background:transparent;transition:all .15s}
-.tmpl-tab.active{background:var(--bg4);color:var(--text);border-color:var(--border2)}
-.tmpl-textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:11px;font-family:var(--font);padding:8px;resize:none;height:70px;line-height:1.5}
-.tmpl-textarea:focus{outline:none;border-color:var(--accent)}
-.main-inner{padding:20px;max-width:900px}
-.email-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-.email-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;border-radius:3px 0 0 3px}
-.email-card.unread::before{background:var(--accent)}
-.email-card.urgent::before{background:var(--red)}
-.email-card.vip::before{background:var(--amber)}
-.email-card.autosent::before{background:var(--green)}
-.email-card.followup::before{background:var(--purple)}
-.email-card:hover{border-color:var(--border2);background:var(--bg3);transform:translateX(2px)}
-.email-card.selected{border-color:rgba(79,127,255,0.4);background:var(--bg3)}
-.ec-top{display:flex;align-items:flex-start;gap:12px}
-.av{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;font-family:var(--mono)}
-.av-unknown{background:var(--bg4);color:var(--text3)}
-.av-candidato{background:rgba(79,127,255,0.15);color:var(--accent)}
-.av-inscripto{background:rgba(45,212,191,0.15);color:var(--teal)}
-.av-en_proceso{background:rgba(167,139,250,0.15);color:var(--purple)}
-.av-pendiente{background:rgba(245,166,35,0.15);color:var(--amber)}
-.av-activa{background:rgba(61,214,140,0.15);color:var(--green)}
-.ec-meta{flex:1;min-width:0}
-.ec-from{font-size:13px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.ec-subj{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-.ec-prev{font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ec-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
-.ec-time{font-size:10px;color:var(--text3);font-family:var(--mono)}
-.badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;white-space:nowrap}
-.b-unknown{background:var(--bg4);color:var(--text3)}
-.b-candidato{background:rgba(79,127,255,0.15);color:var(--accent2)}
-.b-inscripto{background:rgba(45,212,191,0.15);color:var(--teal)}
-.b-en_proceso{background:var(--purple2);color:var(--purple)}
-.b-pendiente{background:var(--amber2);color:var(--amber)}
-.b-activa{background:var(--green2);color:var(--green)}
-.b-vip{background:var(--amber2);color:var(--amber);border:1px solid rgba(245,166,35,0.3)}
-.conf-dots{display:flex;gap:3px;margin-top:2px}
-.cd{width:5px;height:5px;border-radius:50%;background:var(--bg4)}
-.cd.on{background:var(--green)}
-.cd.on-med{background:var(--amber)}
-.cd.on-low{background:var(--red)}
-.detail-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:8px}
-.dp-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
-.dp-from{font-size:15px;font-weight:600;color:var(--text)}
-.dp-email{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
-.dp-fwd{font-size:11px;color:var(--accent);margin-top:3px}
-.dp-subj{font-size:13px;font-weight:500;color:var(--text);margin-bottom:10px}
-.dp-body{font-size:12px;color:var(--text2);line-height:1.8;padding:12px 14px;background:var(--bg3);border-radius:10px;margin-bottom:14px;white-space:pre-wrap;font-family:var(--mono);border:1px solid var(--border)}
-.match-card{border-radius:10px;padding:12px 14px;margin-bottom:12px;border:1px solid var(--border)}
-.match-card.high{border-color:rgba(61,214,140,0.3);background:rgba(61,214,140,0.05)}
-.match-card.medium{border-color:rgba(245,166,35,0.3);background:rgba(245,166,35,0.05)}
-.match-card.low{border-color:rgba(255,92,92,0.2);background:rgba(255,92,92,0.03)}
-.match-card.none{border-color:rgba(79,127,255,0.2);background:rgba(79,127,255,0.03)}
-.match-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
-.match-agency{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
-.signals{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
-.sig{font-size:10px;padding:2px 7px;border-radius:6px}
-.sig-hit{background:rgba(61,214,140,0.1);color:var(--green);border:1px solid rgba(61,214,140,0.2)}
-.sig-miss{background:var(--bg4);color:var(--text3)}
-.perf-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
-.perf-item .pl{font-size:10px;color:var(--text3)}
-.perf-item .pv{font-size:14px;font-weight:600;color:var(--text)}
-.perf-item .pv.pos{color:var(--green)}
-.perf-item .pv.neg{color:var(--red)}
-.candidates{display:flex;flex-direction:column;gap:5px;margin-top:8px}
-.cand-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:all .15s}
-.cand-row:hover{border-color:var(--accent);background:rgba(79,127,255,0.05)}
-.cand-name{font-size:12px;font-weight:500;color:var(--text)}
-.cand-sub{font-size:10px;color:var(--text3)}
-.abox{border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start}
-.abox-vip,.abox-pendiente{background:var(--amber2);border:1px solid rgba(245,166,35,0.2)}
-.abox-baja{background:var(--red2);border:1px solid rgba(255,92,92,0.2)}
-.abox-proceso,.abox-followup{background:var(--purple2);border:1px solid rgba(167,139,250,0.2)}
-.abox p{font-size:12px;line-height:1.5}
-.abox-vip p,.abox-pendiente p{color:var(--amber)}
-.abox-baja p{color:var(--red)}
-.abox-proceso p,.abox-followup p{color:var(--purple)}
-.auto-box{background:var(--teal2);border:1px solid rgba(45,212,191,0.2);border-radius:10px;padding:12px 14px;margin-bottom:12px}
-.auto-title{font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
-.auto-body{font-size:12px;color:rgba(45,212,191,0.8);line-height:1.7;white-space:pre-wrap}
-.sec-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.ai-result{font-size:12px;color:var(--text2);line-height:1.6}
-.ai-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
-.ai-tag{font-size:10px;padding:2px 8px;border-radius:6px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
-.ai-note{font-size:11px;color:var(--text3);font-style:italic;margin-top:6px;padding:6px 10px;background:var(--bg3);border-radius:6px;border-left:2px solid var(--border2)}
-.reply-section{margin-top:14px;border-top:1px solid var(--border);padding-top:14px}
-textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:12px;font-family:var(--font);padding:10px 12px;resize:vertical;min-height:80px;line-height:1.6;transition:border-color .15s}
-textarea:focus{outline:none;border-color:var(--accent)}
-.reply-actions{display:flex;gap:7px;margin-top:8px;justify-content:flex-end;flex-wrap:wrap}
-.history-item{padding:8px 10px;border-radius:8px;border:1px solid var(--border);margin-bottom:5px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:24px;width:500px;max-width:95vw;max-height:85vh;overflow-y:auto}
-.modal-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px}
-.modal-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.search-wrap{flex:1;max-width:600px}
+.search-bar{display:flex;align-items:center;background:#eaf1fb;border-radius:24px;padding:8px 16px;gap:10px;transition:all .2s}
+.search-bar:focus-within{background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+.search-bar input{flex:1;border:none;background:transparent;font-size:16px;color:var(--text);font-family:var(--font);outline:none}
+.search-bar input::placeholder{color:var(--text3)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.icon-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:background .15s;font-size:18px}
+.icon-btn:hover{background:var(--hover-bg)}
+.sync-btn{background:var(--accent);color:white;border:none;border-radius:20px;padding:8px 16px;font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+.sync-btn:hover{background:var(--accent-hover)}
+.account-chip{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:12px;color:var(--text2);background:var(--white)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#34a853}
+
+/* SIDEBAR */
+.compose-btn{margin:8px 16px 16px;background:var(--white);border:1px solid var(--border);border-radius:16px;padding:16px 24px;font-size:14px;font-weight:500;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.compose-btn:hover{box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+.nav-item{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 6px 26px;border-radius:0 20px 20px 0;cursor:pointer;transition:background .15s;margin-right:16px;color:var(--text2);font-size:14px}
+.nav-item:hover{background:var(--hover-bg)}
+.nav-item.active{background:var(--accent-bg);color:var(--accent);font-weight:600}
+.nav-item .ni-left{display:flex;align-items:center;gap:12px}
+.nav-count{font-size:12px;font-weight:600;color:inherit}
+.nav-count.hot{color:var(--red)}
+.nav-count.vip{color:var(--amber)}
+.sidebar-divider{height:1px;background:var(--border);margin:8px 16px}
+.sidebar-section-title{padding:8px 26px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+
+/* SUMMARY STRIP */
+.summary-strip{display:flex;gap:0;padding:0;background:var(--white);border-bottom:1px solid var(--border)}
+.sum-item{flex:1;padding:12px 16px;border-right:1px solid var(--border);text-align:center}
+.sum-item:last-child{border-right:none}
+.sum-val{font-size:20px;font-weight:600;color:var(--text)}
+.sum-val.blue{color:var(--accent)}
+.sum-val.green{color:var(--green)}
+.sum-val.amber{color:var(--amber)}
+.sum-val.red{color:var(--red)}
+.sum-label{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* ALERTS */
+.alerts-bar{padding:6px 16px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--white)}
+.alert-chip{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
+.alert-chip:hover{filter:brightness(.95)}
+.alert-chip.baja{background:var(--red-bg);color:var(--red)}
+.alert-chip.vip{background:var(--amber-bg);color:var(--amber)}
+.alert-chip.followup{background:var(--purple-bg);color:var(--purple)}
+
+/* EMAIL LIST - GMAIL STYLE */
+.email-list-header{display:flex;align-items:center;padding:0 16px;height:40px;border-bottom:1px solid var(--border);gap:8px;background:var(--white)}
+.mail-count-info{font-size:12px;color:var(--text3);margin-left:auto}
+.email-row{display:flex;align-items:center;padding:0 16px;height:52px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;gap:0;position:relative}
+.email-row.unread{background:var(--unread-bg)}
+.email-row.read{background:var(--read-bg)}
+.email-row:hover{background:#f0f4f9;box-shadow:0 2px 4px rgba(0,0,0,0.1);z-index:1}
+.email-row.selected-row{background:var(--accent-bg)}
+.er-star{width:28px;display:flex;align-items:center;justify-content:center;color:var(--text4);cursor:pointer;flex-shrink:0;font-size:16px}
+.er-star.starred{color:#f4b400}
+.er-star:hover{color:#f4b400}
+.er-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;margin-right:12px;color:white}
+.er-sender{width:180px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.email-row.unread .er-sender{font-weight:700;color:var(--text)}
+.email-row.read .er-sender{font-weight:400;color:var(--text2)}
+.er-fwd-tag{font-size:10px;color:var(--text3);font-weight:400;margin-left:4px}
+.er-content{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:flex;gap:6px;align-items:center;min-width:0}
+.er-subject{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.email-row.unread .er-subject{font-weight:600;color:var(--text)}
+.email-row.read .er-subject{font-weight:400;color:var(--text2)}
+.er-preview{font-size:13px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.er-right{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:8px}
+.er-time{font-size:12px;color:var(--text3);white-space:nowrap}
+.email-row.unread .er-time{font-weight:600;color:var(--text2)}
+.badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;white-space:nowrap}
+.b-unknown{background:#f1f3f4;color:var(--text3)}
+.b-candidato{background:var(--accent-bg);color:var(--accent)}
+.b-inscripto{background:var(--teal-bg);color:var(--teal)}
+.b-en_proceso{background:var(--purple-bg);color:var(--purple)}
+.b-pendiente{background:var(--amber-bg);color:var(--amber)}
+.b-activa{background:var(--green-bg);color:var(--green)}
+.b-vip{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(180,83,9,.2)}
+.unread-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0}
+
+/* DETAIL VIEW - GMAIL STYLE */
+.detail-view{padding:16px 24px;max-width:860px}
+.detail-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.detail-back{display:flex;align-items:center;gap:8px;color:var(--text2);cursor:pointer;font-size:13px;padding:6px 12px;border-radius:20px;transition:background .15s;border:1px solid var(--border);background:var(--white)}
+.detail-back:hover{background:var(--hover-bg)}
+.detail-subject{font-size:22px;font-weight:400;color:var(--text);margin-bottom:16px;line-height:1.3}
+.mail-bubble{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:12px}
+.mb-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.mb-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:white;flex-shrink:0}
+.mb-from{font-size:14px;font-weight:600;color:var(--text)}
+.mb-email{font-size:12px;color:var(--text3)}
+.mb-fwd{font-size:11px;color:var(--accent);background:var(--accent-bg);padding:2px 8px;border-radius:10px;margin-top:2px;display:inline-block}
+.mb-time{font-size:12px;color:var(--text3);margin-left:auto}
+.mb-body{font-size:14px;color:var(--text);line-height:1.8;white-space:pre-wrap;padding:4px 0}
+
+/* ANALYSIS PANEL */
+.analysis-panel{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:12px}
+.ap-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.match-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border-radius:8px;margin-bottom:10px;border-left:3px solid var(--border2)}
+.match-row.high{border-left-color:var(--green)}
+.match-row.medium{border-left-color:var(--amber)}
+.match-row.low{border-left-color:var(--red)}
+.match-row.none{border-left-color:var(--accent)}
+.match-info{flex:1}
+.match-agency-name{font-size:14px;font-weight:600;color:var(--text)}
+.match-meta{font-size:12px;color:var(--text3);margin-top:2px}
+.signals{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.sig{font-size:11px;padding:2px 7px;border-radius:8px}
+.sig-hit{background:var(--green-bg);color:var(--green)}
+.sig-miss{background:#f1f3f4;color:var(--text3)}
+.perf-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.perf-chip{font-size:12px;padding:3px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--border);color:var(--text2)}
+.perf-chip.pos{background:var(--green-bg);color:var(--green);border-color:transparent}
+.perf-chip.neg{background:var(--red-bg);color:var(--red);border-color:transparent}
+.candidates-list{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.cand-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:all .15s;background:var(--white)}
+.cand-row:hover{border-color:var(--accent);background:var(--accent-bg)}
+
+/* ALERT BOXES */
+.abox{border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;font-size:13px}
+.abox-baja{background:var(--red-bg);color:var(--red)}
+.abox-vip{background:var(--amber-bg);color:var(--amber)}
+.abox-proceso{background:var(--purple-bg);color:var(--purple)}
+.abox-pendiente{background:var(--amber-bg);color:var(--amber)}
+.abox-followup{background:var(--purple-bg);color:var(--purple)}
+
+/* AUTO REPLY */
+.auto-reply-box{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.arb-title{font-size:12px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.arb-body{font-size:13px;color:#1b5e20;line-height:1.7;white-space:pre-wrap}
+.arb-actions{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
+
+/* REPLY BOX */
+.reply-box{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
+.rb-header{font-size:13px;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var(--text);outline:none;resize:none;min-height:80px;line-height:1.6}
+.rb-actions{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.send-btn{background:var(--accent);color:white;border:none;border-radius:20px;padding:8px 20px;font-size:14px;font-family:var(--font);font-weight:500;cursor:pointer;transition:background .15s}
+.send-btn:hover{background:var(--accent-hover)}
+.ai-btn{background:var(--white);color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:8px 16px;font-size:13px;font-family:var(--font);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.ai-btn:hover{background:var(--accent-bg)}
+
+/* AI RESULT */
+.ai-result-box{background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+.air-summary{font-size:13px;color:var(--text);margin-bottom:6px}
+.air-tags{display:flex;gap:6px;flex-wrap:wrap}
+.air-tag{font-size:11px;padding:2px 8px;border-radius:8px;background:var(--white);border:1px solid var(--border);color:var(--text2)}
+.air-note{font-size:12px;color:var(--text3);font-style:italic;margin-top:6px;padding:6px 10px;background:var(--white);border-radius:6px;border-left:3px solid var(--border2)}
+
+/* HISTORY */
+.history-item{padding:8px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);margin-bottom:5px;cursor:pointer;transition:background .15s}
+.history-item:hover{background:var(--hover-bg)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--white);border-radius:16px;padding:28px;width:500px;max-width:95vw;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2)}
+.modal-title{font-size:20px;font-weight:500;color:var(--text);margin-bottom:4px}
+.modal-sub{font-size:13px;color:var(--text3);margin-bottom:20px}
 .form-group{margin-bottom:16px}
-.form-label{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:5px;display:block}
-.form-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:var(--font);padding:8px 12px;transition:border-color .15s}
-.form-input:focus{outline:none;border-color:var(--accent)}
-.form-hint{font-size:10px;color:var(--text3);margin-top:4px;line-height:1.5}
+.form-label{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:5px;display:block}
+.form-input{width:100%;background:var(--white);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:14px;font-family:var(--font);padding:10px 12px;transition:border-color .15s;outline:none}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(26,115,232,.15)}
+.form-hint{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.modal-btn{padding:8px 20px;border-radius:20px;font-size:14px;font-family:var(--font);font-weight:500;cursor:pointer;transition:all .15s}
+.modal-btn-cancel{background:var(--white);color:var(--text2);border:1px solid var(--border2)}
+.modal-btn-cancel:hover{background:var(--hover-bg)}
+.modal-btn-save{background:var(--accent);color:white;border:none}
+.modal-btn-save:hover{background:var(--accent-hover)}
 .divider{height:1px;background:var(--border);margin:16px 0}
-.internal-senders{display:flex;flex-direction:column;gap:5px;margin-top:6px}
-.sender-row{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg3);border-radius:6px;font-size:12px;color:var(--text2);font-family:var(--mono)}
-.sender-del{cursor:pointer;color:var(--text3);font-size:14px}
+.internal-senders{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.sender-row{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg);border-radius:6px;font-size:13px;color:var(--text2)}
+.sender-del{cursor:pointer;color:var(--text3);font-size:16px;line-height:1}
 .sender-del:hover{color:var(--red)}
 .add-sender-row{display:flex;gap:6px;margin-top:6px}
-.spin{width:12px;height:12px;border:2px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:sp .8s linear infinite;display:inline-block;vertical-align:middle}
-@keyframes sp{to{transform:rotate(360deg)}}
-.empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
-.search-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.search-input{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:var(--font);padding:8px 14px;transition:border-color .15s}
-.search-input:focus{outline:none;border-color:var(--accent)}
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
-.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:var(--bg);gap:20px}
-.login-box{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:32px;width:420px;text-align:center}
-.login-title{font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px}
-.login-sub{font-size:13px;color:var(--text3);margin-bottom:24px;line-height:1.6}
-.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;background:white;color:#333;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;font-family:var(--font)}
-.btn-google:hover{background:#f5f5f5}
-.login-or{font-size:11px;color:var(--text3);margin:16px 0;display:flex;align-items:center;gap:8px}
+
+/* TEMPLATES */
+.tmpl-tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.tmpl-tab{font-size:12px;padding:4px 12px;border-radius:16px;cursor:pointer;border:1px solid var(--border);color:var(--text3);background:var(--white);transition:all .15s}
+.tmpl-tab.active{background:var(--accent-bg);color:var(--accent);border-color:transparent;font-weight:500}
+.tmpl-textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:var(--font);padding:10px;resize:vertical;height:120px;line-height:1.6;outline:none}
+.tmpl-textarea:focus{border-color:var(--accent)}
+
+/* LOGIN */
+.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#f8f9fa;gap:20px}
+.login-card{background:var(--white);border-radius:16px;padding:40px;width:440px;max-width:95vw;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.1)}
+.login-logo{font-size:24px;font-weight:500;color:var(--text);margin-bottom:8px}
+.login-logo span{color:var(--accent)}
+.login-sub{font-size:14px;color:var(--text3);margin-bottom:28px;line-height:1.6}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;background:var(--white);color:var(--text);border:1px solid var(--border2);border-radius:24px;font-size:15px;font-weight:500;cursor:pointer;transition:all .2s;font-family:var(--font);box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.google-btn:hover{background:#f8f9fa;box-shadow:0 2px 6px rgba(0,0,0,0.15)}
+.login-or{font-size:12px;color:var(--text3);margin:20px 0;display:flex;align-items:center;gap:10px}
 .login-or::before,.login-or::after{content:'';flex:1;height:1px;background:var(--border)}
-.token-section{text-align:left}
-.refresh-info{font-size:11px;color:var(--text3);background:var(--bg3);border-radius:8px;padding:10px;margin-top:12px;line-height:1.6}
+.login-fields{text-align:left}
+.connect-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:24px;font-size:15px;font-weight:500;cursor:pointer;font-family:var(--font);margin-top:12px;transition:background .15s}
+.connect-btn:hover{background:var(--accent-hover)}
+.refresh-info{font-size:12px;color:var(--text3);background:#f8f9fa;border-radius:8px;padding:10px 12px;margin-top:12px;line-height:1.6;text-align:left}
+
+/* SPINNER */
+.spin{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:40px;color:var(--text3);font-size:14px}
+
+/* AVATAR COLORS */
+.av-color-0{background:#1a73e8}.av-color-1{background:#e91e63}.av-color-2{background:#9c27b0}.av-color-3{background:#673ab7}
+.av-color-4{background:#3f51b5}.av-color-5{background:#0097a7}.av-color-6{background:#00796b}.av-color-7{background:#f57c00}
+.av-color-8{background:#e64a19}.av-color-9{background:#5d4037}
+
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#dadce0;border-radius:3px}
 </style>
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
+<!-- LOGIN -->
 <div class="login-screen" id="login-screen">
-  <div class="login-box">
-    <div class="login-title">Betwarrior <span style="color:var(--accent)">Afiliados</span></div>
-    <div class="login-sub">Panel de gestión de emails de afiliados.<br>Iniciá sesión con tu cuenta de Google para comenzar.</div>
-    <button class="btn-google" onclick="startOAuth()">
-      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.3z"/></svg>
+  <div class="login-card">
+    <div class="login-logo">Betwarrior <span>Afiliados</span></div>
+    <div class="login-sub">Panel de gestión de emails de afiliados.<br>Iniciá sesión con tu cuenta de Google.</div>
+    <button class="google-btn" onclick="startOAuth()">
+      <svg width="20" height="20" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.3z"/></svg>
       Iniciar sesión con Google
     </button>
-    <div class="login-or">o usá un token manual</div>
-    <div class="token-section">
-      <div class="form-group">
-        <label class="form-label">Client ID (de Google Cloud Console)</label>
-        <input class="form-input" id="inp-clientid" placeholder="869458962253-...apps.googleusercontent.com">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Client Secret</label>
-        <input class="form-input" id="inp-clientsecret" type="password" placeholder="GOCSPX-...">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Access Token (OAuth Playground)</label>
-        <input class="form-input" id="inp-token" type="password" placeholder="ya29.a0...">
-      </div>
-      <button class="btn btn-accent" style="width:100%;padding:10px;font-size:13px" onclick="loginWithToken()">Conectar con token</button>
-      <div class="refresh-info">💡 Con el Client ID y Secret tu token se renovará automáticamente cada hora sin intervención manual.</div>
+    <div class="login-or">o ingresá manualmente</div>
+    <div class="login-fields">
+      <div class="form-group"><label class="form-label">Client ID</label><input class="form-input" id="inp-cid" placeholder="869458962253-...apps.googleusercontent.com"></div>
+      <div class="form-group"><label class="form-label">Client Secret</label><input class="form-input" id="inp-cs" type="password" placeholder="GOCSPX-..."></div>
+      <div class="form-group"><label class="form-label">Access Token</label><input class="form-input" id="inp-tok" type="password" placeholder="ya29.a0..."></div>
+      <button class="connect-btn" onclick="loginToken()">Conectar</button>
+      <div class="refresh-info">💡 Con Client ID y Secret, el token se renueva automáticamente.</div>
     </div>
   </div>
 </div>
 
-<!-- MAIN APP -->
+<!-- APP -->
 <div class="app" id="app" style="display:none">
+  <!-- TOPBAR -->
   <div class="topbar">
-    <div class="logo">Betwarrior <span>Afiliados</span></div>
-    <div class="status-dot on" id="status-dot"></div>
-    <div class="account-pill" id="account-pill">afiliadosarg@betwarrior.com</div>
-    <div class="topbar-actions">
-      <span id="last-sync" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></span>
-      <button class="btn" onclick="showSettings()">⚙ Configurar</button>
-      <button class="btn btn-accent" onclick="syncAll()">↻ Sincronizar</button>
-      <button class="btn" onclick="logout()" style="color:var(--text3)">Salir</button>
-    </div>
-  </div>
-  <div class="sidebar">
-    <div class="summary-card">
-      <div class="summary-date" id="sum-date"></div>
-      <div class="summary-title">Resumen del día</div>
-      <div class="summary-grid">
-        <div class="sum-item"><div class="sum-val" id="s-total">0</div><div class="sum-label">correos totales</div></div>
-        <div class="sum-item green"><div class="sum-val" id="s-identified">0</div><div class="sum-label">identificadas</div></div>
-        <div class="sum-item amber"><div class="sum-val" id="s-auto">0</div><div class="sum-label">auto-respondidas</div></div>
-        <div class="sum-item red"><div class="sum-val" id="s-attention">0</div><div class="sum-label">tu atención</div></div>
-      </div>
-    </div>
-    <div class="alerts-area" id="alerts-area"></div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Bandeja</div>
-      <div class="nav-item active" onclick="filterEmails('all',this)"><div class="ni-left">📋 Todos</div><span class="nav-count" id="nc-all">0</span></div>
-      <div class="nav-item" onclick="filterEmails('attention',this)"><div class="ni-left">⚠ Tu atención</div><span class="nav-count hot" id="nc-att">0</span></div>
-      <div class="nav-item" onclick="filterEmails('auto',this)"><div class="ni-left">✓ Auto-respondidos</div><span class="nav-count" id="nc-auto">0</span></div>
-      <div class="nav-item" onclick="filterEmails('unidentified',this)"><div class="ni-left">? Sin identificar</div><span class="nav-count" id="nc-uid">0</span></div>
-      <div class="nav-item" onclick="filterEmails('vip',this)"><div class="ni-left">★ VIP</div><span class="nav-count vip" id="nc-vip">0</span></div>
-      <div class="nav-item" onclick="filterEmails('followup',this)"><div class="ni-left">🕐 Seguimiento</div><span class="nav-count" id="nc-fu">0</span></div>
-    </div>
-    <div class="tmpl-section">
-      <div class="tmpl-title">Plantillas de respuesta</div>
-      <div class="tmpl-tabs" id="tmpl-tabs"></div>
-      <textarea class="tmpl-textarea" id="tmpl-editor"></textarea>
-      <div style="display:flex;gap:5px;margin-top:5px">
-        <button class="btn" style="font-size:11px;padding:4px 10px" onclick="saveTmpl()">Guardar</button>
-        <button class="btn" style="font-size:11px;padding:4px 10px" onclick="resetTmpl()">Restaurar</button>
-      </div>
-    </div>
-  </div>
-  <div class="main">
-    <div class="main-inner">
+    <div class="logo"><div class="logo-icon">BW</div>Betwarrior <span>Afiliados</span></div>
+    <div class="search-wrap">
       <div class="search-bar">
-        <input class="search-input" id="search-input" placeholder="Buscar por nombre, agencia, número..." oninput="applySearch(this.value)">
-        <span id="mail-count" style="font-size:11px;color:var(--text3);white-space:nowrap"></span>
+        <span style="color:var(--text3);font-size:18px">🔍</span>
+        <input id="search-input" placeholder="Buscar en correos..." oninput="applySearch(this.value)">
       </div>
-      <div id="email-list"></div>
-      <div id="detail-area"></div>
     </div>
+    <div class="topbar-right">
+      <span id="last-sync" style="font-size:11px;color:var(--text3)"></span>
+      <div class="account-chip"><div class="status-dot"></div><span id="account-pill">afiliadosarg@betwarrior.com</span></div>
+      <button class="icon-btn" onclick="showSettings()" title="Configurar">⚙️</button>
+      <button class="sync-btn" onclick="syncAll()">↻ Sincronizar</button>
+      <button class="icon-btn" onclick="logout()" title="Salir">🚪</button>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <button class="compose-btn" onclick="showTemplates()">✏️ Plantillas de respuesta</button>
+    <div class="nav-item active" onclick="filterEmails('all',this)"><div class="ni-left">📥 Todos</div><span class="nav-count" id="nc-all">0</span></div>
+    <div class="nav-item" onclick="filterEmails('attention',this)"><div class="ni-left">⚠️ Tu atención</div><span class="nav-count hot" id="nc-att">0</span></div>
+    <div class="nav-item" onclick="filterEmails('auto',this)"><div class="ni-left">✅ Auto-respondidos</div><span class="nav-count" id="nc-auto">0</span></div>
+    <div class="nav-item" onclick="filterEmails('unidentified',this)"><div class="ni-left">❓ Sin identificar</div><span class="nav-count" id="nc-uid">0</span></div>
+    <div class="nav-item" onclick="filterEmails('vip',this)"><div class="ni-left">⭐ VIP</div><span class="nav-count vip" id="nc-vip">0</span></div>
+    <div class="nav-item" onclick="filterEmails('followup',this)"><div class="ni-left">🕐 Seguimiento</div><span class="nav-count" id="nc-fu">0</span></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-title">Por estado</div>
+    <div class="nav-item" onclick="filterEmails('activa',this)"><div class="ni-left"><span style="color:var(--green)">●</span> Activas</div><span class="nav-count" id="nc-act">0</span></div>
+    <div class="nav-item" onclick="filterEmails('candidato',this)"><div class="ni-left"><span style="color:var(--accent)">●</span> Candidatas</div><span class="nav-count" id="nc-cand">0</span></div>
+    <div class="nav-item" onclick="filterEmails('inscripto',this)"><div class="ni-left"><span style="color:var(--teal)">●</span> Inscriptas</div><span class="nav-count" id="nc-insc">0</span></div>
+    <div class="nav-item" onclick="filterEmails('en_proceso',this)"><div class="ni-left"><span style="color:var(--purple)">●</span> En proceso</div><span class="nav-count" id="nc-proc">0</span></div>
+    <div class="nav-item" onclick="filterEmails('pendiente',this)"><div class="ni-left"><span style="color:var(--amber)">●</span> Pendientes</div><span class="nav-count" id="nc-pend">0</span></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main-content">
+    <!-- Summary + alerts -->
+    <div class="summary-strip">
+      <div class="sum-item"><div class="sum-val blue" id="s-total">0</div><div class="sum-label">total</div></div>
+      <div class="sum-item"><div class="sum-val green" id="s-id">0</div><div class="sum-label">identificados</div></div>
+      <div class="sum-item"><div class="sum-val amber" id="s-auto">0</div><div class="sum-label">auto-respondidos</div></div>
+      <div class="sum-item"><div class="sum-val red" id="s-att">0</div><div class="sum-label">tu atención</div></div>
+      <div class="sum-item"><div class="sum-val" id="s-date" style="font-size:12px;color:var(--text3)"></div><div class="sum-label">hoy</div></div>
+    </div>
+    <div class="alerts-bar" id="alerts-bar"></div>
+    <div class="email-list-header">
+      <span style="font-size:13px;color:var(--text2);font-weight:500" id="list-title">Bandeja de entrada</span>
+      <span class="mail-count-info" id="mail-count"></span>
+    </div>
+    <div id="email-list"></div>
   </div>
 </div>
 
@@ -273,176 +325,143 @@ textarea:focus{outline:none;border-color:var(--accent)}
   <div class="modal">
     <div class="modal-title">Configuración</div>
     <div class="modal-sub">Ajustá las preferencias del panel.</div>
-    <div class="form-group">
-      <label class="form-label">ID del Dash Maestro (Google Sheets)</label>
-      <input class="form-input" id="set-sheetid" value="1YmeOp8Jg5ffXBeTNoZkhjUZsc7_VBZK9R1JKYVJ9H0Y">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Tu mail principal (alertas VIP y baja)</label>
-      <input class="form-input" id="set-myemail" placeholder="tu@gmail.com">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Máximo de correos a cargar</label>
-      <input class="form-input" id="set-maxmails" type="number" value="200" min="25" max="500">
-      <div class="form-hint">Más correos = más tiempo de carga. Recomendado: 200</div>
-    </div>
+    <div class="form-group"><label class="form-label">ID del Dash Maestro</label><input class="form-input" id="set-sheet" value="1YmeOp8Jg5ffXBeTNoZkhjUZsc7_VBZK9R1JKYVJ9H0Y"></div>
+    <div class="form-group"><label class="form-label">Tu mail principal (alertas VIP y baja)</label><input class="form-input" id="set-email" placeholder="tu@gmail.com"></div>
+    <div class="form-group"><label class="form-label">Máximo de correos a cargar</label><input class="form-input" id="set-max" type="number" value="200" min="25" max="500"><div class="form-hint">Recomendado: 200. Más correos = más tiempo de carga.</div></div>
     <div class="divider"></div>
     <div class="form-group">
       <label class="form-label">Remitentes internos confiables</label>
       <div class="internal-senders" id="set-senders"></div>
-      <div class="add-sender-row">
-        <input class="form-input" id="set-newsender" placeholder="nombre@betwarrior.com" style="font-size:12px;padding:6px 10px">
-        <button class="btn" onclick="addSender()">+ Agregar</button>
-      </div>
+      <div class="add-sender-row"><input class="form-input" id="set-newsender" placeholder="nombre@betwarrior.com" style="font-size:13px;padding:7px 10px"><button class="modal-btn modal-btn-cancel" onclick="addSender()" style="padding:7px 14px;font-size:13px">+ Agregar</button></div>
     </div>
+    <div class="modal-actions"><button class="modal-btn modal-btn-cancel" onclick="closeSettings()">Cancelar</button><button class="modal-btn modal-btn-save" onclick="saveSettings()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- TEMPLATES MODAL -->
+<div class="modal-overlay" id="tmpl-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-title">Plantillas de respuesta</div>
+    <div class="modal-sub">Personalizá los textos automáticos para cada situación.</div>
+    <div class="tmpl-tabs" id="tmpl-tabs"></div>
+    <textarea class="tmpl-textarea" id="tmpl-editor"></textarea>
     <div class="modal-actions">
-      <button class="btn" onclick="closeSettings()">Cancelar</button>
-      <button class="btn btn-accent" onclick="saveSettings()">Guardar</button>
+      <button class="modal-btn modal-btn-cancel" onclick="resetTmpl()">Restaurar original</button>
+      <button class="modal-btn modal-btn-cancel" onclick="closeTmpl()">Cerrar</button>
+      <button class="modal-btn modal-btn-save" onclick="saveTmpl()">Guardar</button>
     </div>
   </div>
 </div>
 
 <script>
-const DEFAULT_SHEET_ID='1YmeOp8Jg5ffXBeTNoZkhjUZsc7_VBZK9R1JKYVJ9H0Y';
+const DEFAULT_SHEET='1YmeOp8Jg5ffXBeTNoZkhjUZsc7_VBZK9R1JKYVJ9H0Y';
 const FOLLOWUP_DAYS=3;
-const VIP_PERCENTILE=0.9;
-const REDIRECT_URI=window.location.origin+window.location.pathname;
+const VIP_PCT=0.9;
+const REDIRECT=window.location.origin+window.location.pathname;
 const SCOPES='https://mail.google.com/ https://www.googleapis.com/auth/spreadsheets.readonly';
 const CABA_PROVS=['caba','ciudad de buenos aires','ciudad autónoma de buenos aires'];
-const PROVINCE_SUFFIX={mendoza:'MZA',salta:'SLA',chubut:'CHU',neuquen:'NQN','neuquén':'NQN','la rioja':'LRJ',pba:'PBA','buenos aires':'PBA',caba:'CABA'};
-const DEFAULT_TEMPLATES={
-  'Nueva agencia':'Estimado/a {nombre},\n\nMuchas gracias por comunicarse con nosotros. Hemos recibido su consulta y nos complace informarle que sus datos han sido registrados en nuestro sistema.\n\nEn breve un integrante de nuestro equipo se comunicará con usted para brindarle toda la información sobre el Programa de Afiliados Betwarrior.\n\nSaludos cordiales,\nEquipo de Afiliados Betwarrior Argentina',
-  'Candidata':'Estimado/a {nombre},\n\nGracias por su interés en el Programa de Afiliados Betwarrior. Su agencia ha sido identificada y registrada como candidata al programa.\n\nPronto nos comunicaremos con usted para explicarle los beneficios y el proceso de incorporación.\n\nSaludos cordiales,\nEquipo de Afiliados Betwarrior Argentina',
-  'Inscripta':'Estimado/a {nombre},\n\nConfirmamos la recepción de su solicitud de adhesión. Sus datos han sido registrados correctamente.\n\nNuestro equipo procesará su solicitud y se comunicará a la brevedad para los próximos pasos.\n\nSaludos cordiales,\nEquipo de Afiliados Betwarrior Argentina',
-  'Confirmación estado':'Estimado/a {nombre},\n\nSu solicitud de afiliación se encuentra actualmente en proceso de activación. Nuestro equipo está trabajando para completar la configuración de su cuenta.\n\nLe enviaremos sus credenciales a la brevedad.\n\nSaludos cordiales,\nEquipo de Afiliados Betwarrior Argentina',
+
+const AVATAR_COLORS=['av-color-0','av-color-1','av-color-2','av-color-3','av-color-4','av-color-5','av-color-6','av-color-7','av-color-8','av-color-9'];
+
+const DEFAULT_TMPLS={
+  'Nueva agencia':'Hola,\n\nGracias por comunicarte con nosotros. Recibimos tu consulta y registramos tus datos en nuestro sistema de afiliados.\n\nEn breve alguien del equipo se va a comunicar con vos para darte toda la info sobre el Programa de Afiliados Betwarrior.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
+  'Candidata':'Hola {agencia},\n\nGracias por comunicarte. Tu agencia ya está en nuestro sistema como candidata al Programa de Afiliados Betwarrior.\n\nPronto nos comunicamos con vos para contarte todos los beneficios y el proceso de incorporación.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
+  'Inscripta':'Hola {agencia},\n\nConfirmamos que recibimos tu solicitud de adhesión al Programa de Afiliados Betwarrior. Tus datos quedaron registrados correctamente.\n\nNuestro equipo va a procesar tu solicitud y se comunica con vos a la brevedad con los próximos pasos.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
+  'En proceso':'Hola {agencia},\n\nTu solicitud de afiliación está en proceso de activación. Estamos configurando tu cuenta y en breve te enviamos tus credenciales de acceso.\n\nCualquier duda no dudes en escribirnos.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
 };
 
-let cfg={token:'',refreshToken:'',clientId:'',clientSecret:'',sheetId:DEFAULT_SHEET_ID,myEmail:'',maxMails:200,internalSenders:['piarodriguez@betwarrior.com'],templates:{...DEFAULT_TEMPLATES}};
-let dashData=[],allEmails=[],processed={},currentFilter='all',selectedId=null,currentTmpl='Nueva agencia',vipThreshold=0,tokenExpiry=0;
+let cfg={token:'',refresh_token:'',clientId:'',clientSecret:'',sheetId:DEFAULT_SHEET,myEmail:'',maxMails:200,internalSenders:['piarodriguez@betwarrior.com'],templates:{...DEFAULT_TMPLS}};
+let dashData=[],allEmails=[],processed={},currentFilter='all',selectedId=null,currentTmpl='Nueva agencia',vipThreshold=0,tokenExpiry=0,starredIds=new Set();
 
 // ============ INIT ============
 window.onload=()=>{
   loadCfg();
-  document.getElementById('sum-date').textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
-  initTmplUI();
-  // Handle OAuth callback
+  document.getElementById('s-date').textContent=new Date().toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
   const params=new URLSearchParams(window.location.search);
-  if(params.get('code')){handleOAuthCallback(params.get('code'));}
+  if(params.get('code'))handleCallback(params.get('code'));
   else if(cfg.token){showApp();syncAll();}
 };
 
-function loadCfg(){
-  try{const s=localStorage.getItem('bw_cfg_v5');if(s){const p=JSON.parse(s);cfg={...cfg,...p};}}catch(e){}
-  document.getElementById('inp-clientid').value=cfg.clientId||'';
-  document.getElementById('inp-clientsecret').value=cfg.clientSecret||'';
-}
-function saveCfg(){try{localStorage.setItem('bw_cfg_v5',JSON.stringify(cfg));}catch(e){}}
-
+function loadCfg(){try{const s=localStorage.getItem('bw_v6');if(s){const p=JSON.parse(s);cfg={...cfg,...p};if(p.starred)starredIds=new Set(p.starred);}}catch(e){}}
+function saveCfg(){try{localStorage.setItem('bw_v6',JSON.stringify({...cfg,starred:[...starredIds]}));}catch(e){}}
 function showApp(){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='grid';}
-function showLogin(){document.getElementById('app').style.display='none';document.getElementById('login-screen').style.display='flex';}
-function logout(){cfg.token='';cfg.refreshToken='';saveCfg();showLogin();}
+function logout(){cfg.token='';cfg.refresh_token='';saveCfg();location.reload();}
 
-// ============ OAUTH ============
+// ============ AUTH ============
 function startOAuth(){
-  const clientId=document.getElementById('inp-clientid').value.trim();
-  if(!clientId){alert('Ingresá tu Client ID primero');return;}
-  cfg.clientId=clientId;
-  const clientSecret=document.getElementById('inp-clientsecret').value.trim();
-  if(clientSecret)cfg.clientSecret=clientSecret;
+  const cid=document.getElementById('inp-cid').value.trim();
+  if(!cid){alert('Ingresá tu Client ID primero');return;}
+  cfg.clientId=cid;
+  const cs=document.getElementById('inp-cs').value.trim();
+  if(cs)cfg.clientSecret=cs;
   saveCfg();
-  const url=`https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(SCOPES)}&access_type=offline&prompt=consent`;
-  window.location.href=url;
+  window.location.href=`https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(cid)}&redirect_uri=${encodeURIComponent(REDIRECT)}&response_type=code&scope=${encodeURIComponent(SCOPES)}&access_type=offline&prompt=consent`;
 }
 
-async function handleOAuthCallback(code){
-  if(!cfg.clientId||!cfg.clientSecret){alert('Necesitás el Client ID y Secret para completar el login');showLogin();return;}
+async function handleCallback(code){
+  if(!cfg.clientId||!cfg.clientSecret){alert('Necesitás Client ID y Secret');return;}
   try{
-    const r=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({code,client_id:cfg.clientId,client_secret:cfg.clientSecret,redirect_uri:REDIRECT_URI,grant_type:'authorization_code'})});
-    const data=await r.json();
-    if(data.access_token){
-      cfg.token=data.access_token;
-      if(data.refresh_token)cfg.refresh_token=data.refresh_token;
-      tokenExpiry=Date.now()+(data.expires_in-60)*1000;
-      saveCfg();
-      window.history.replaceState({},document.title,window.location.pathname);
-      showApp();syncAll();
-    }else{alert('Error al obtener token: '+JSON.stringify(data));showLogin();}
-  }catch(e){alert('Error de conexión: '+e.message);showLogin();}
+    const r=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({code,client_id:cfg.clientId,client_secret:cfg.clientSecret,redirect_uri:REDIRECT,grant_type:'authorization_code'})});
+    const d=await r.json();
+    if(d.access_token){cfg.token=d.access_token;if(d.refresh_token)cfg.refresh_token=d.refresh_token;tokenExpiry=Date.now()+(d.expires_in-60)*1000;saveCfg();window.history.replaceState({},document.title,window.location.pathname);showApp();syncAll();}
+    else{alert('Error: '+JSON.stringify(d));}
+  }catch(e){alert('Error: '+e.message);}
 }
 
-async function refreshAccessToken(){
+async function refreshToken(){
   if(!cfg.refresh_token||!cfg.clientId||!cfg.clientSecret)return false;
   try{
     const r=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({refresh_token:cfg.refresh_token,client_id:cfg.clientId,client_secret:cfg.clientSecret,grant_type:'refresh_token'})});
-    const data=await r.json();
-    if(data.access_token){cfg.token=data.access_token;tokenExpiry=Date.now()+(data.expires_in-60)*1000;saveCfg();return true;}
+    const d=await r.json();
+    if(d.access_token){cfg.token=d.access_token;tokenExpiry=Date.now()+(d.expires_in-60)*1000;saveCfg();return true;}
   }catch(e){}
   return false;
 }
 
-async function ensureToken(){
-  if(tokenExpiry&&Date.now()>tokenExpiry){await refreshAccessToken();}
-  return cfg.token;
-}
+async function getToken(){if(tokenExpiry&&Date.now()>tokenExpiry)await refreshToken();return cfg.token;}
 
-function loginWithToken(){
-  const clientId=document.getElementById('inp-clientid').value.trim();
-  const clientSecret=document.getElementById('inp-clientsecret').value.trim();
-  const token=document.getElementById('inp-token').value.trim();
-  if(!token){alert('Ingresá el access token');return;}
-  cfg.token=token;
-  if(clientId)cfg.clientId=clientId;
-  if(clientSecret)cfg.clientSecret=clientSecret;
+function loginToken(){
+  const t=document.getElementById('inp-tok').value.trim();
+  if(!t){alert('Ingresá el token');return;}
+  const cid=document.getElementById('inp-cid').value.trim();
+  const cs=document.getElementById('inp-cs').value.trim();
+  cfg.token=t;if(cid)cfg.clientId=cid;if(cs)cfg.clientSecret=cs;
   saveCfg();showApp();syncAll();
 }
 
 // ============ SETTINGS ============
-function showSettings(){
-  document.getElementById('set-sheetid').value=cfg.sheetId||DEFAULT_SHEET_ID;
-  document.getElementById('set-myemail').value=cfg.myEmail||'';
-  document.getElementById('set-maxmails').value=cfg.maxMails||200;
-  renderSetSenders();
-  document.getElementById('settings-modal').style.display='flex';
-}
+function showSettings(){document.getElementById('set-sheet').value=cfg.sheetId;document.getElementById('set-email').value=cfg.myEmail||'';document.getElementById('set-max').value=cfg.maxMails||200;renderSenders();document.getElementById('settings-modal').style.display='flex';}
 function closeSettings(){document.getElementById('settings-modal').style.display='none';}
-function saveSettings(){
-  cfg.sheetId=document.getElementById('set-sheetid').value.trim()||DEFAULT_SHEET_ID;
-  cfg.myEmail=document.getElementById('set-myemail').value.trim();
-  cfg.maxMails=parseInt(document.getElementById('set-maxmails').value)||200;
-  saveCfg();closeSettings();
-}
-function addSender(){const v=document.getElementById('set-newsender').value.trim();if(!v||cfg.internalSenders.includes(v))return;cfg.internalSenders.push(v);renderSetSenders();saveCfg();document.getElementById('set-newsender').value='';}
-function removeSender(s){cfg.internalSenders=cfg.internalSenders.filter(x=>x!==s);renderSetSenders();saveCfg();}
-function renderSetSenders(){document.getElementById('set-senders').innerHTML=cfg.internalSenders.map(s=>`<div class="sender-row"><span>${s}</span><span class="sender-del" onclick="removeSender('${s}')">×</span></div>`).join('');}
+function saveSettings(){cfg.sheetId=document.getElementById('set-sheet').value.trim()||DEFAULT_SHEET;cfg.myEmail=document.getElementById('set-email').value.trim();cfg.maxMails=parseInt(document.getElementById('set-max').value)||200;saveCfg();closeSettings();}
+function addSender(){const v=document.getElementById('set-newsender').value.trim();if(!v||cfg.internalSenders.includes(v))return;cfg.internalSenders.push(v);renderSenders();saveCfg();document.getElementById('set-newsender').value='';}
+function removeSender(s){cfg.internalSenders=cfg.internalSenders.filter(x=>x!==s);renderSenders();saveCfg();}
+function renderSenders(){document.getElementById('set-senders').innerHTML=cfg.internalSenders.map(s=>`<div class="sender-row"><span>${s}</span><span class="sender-del" onclick="removeSender('${s}')">×</span></div>`).join('');}
 
 // ============ TEMPLATES ============
-function initTmplUI(){
-  document.getElementById('tmpl-tabs').innerHTML=Object.keys(cfg.templates).map(k=>`<div class="tmpl-tab${k===currentTmpl?' active':''}" onclick="selectTmpl('${k}')">${k}</div>`).join('');
-  document.getElementById('tmpl-editor').value=cfg.templates[currentTmpl]||'';
-}
-function selectTmpl(k){currentTmpl=k;initTmplUI();}
-function saveTmpl(){cfg.templates[currentTmpl]=document.getElementById('tmpl-editor').value;saveCfg();const b=event.target;b.textContent='✓';setTimeout(()=>b.textContent='Guardar',1500);}
-function resetTmpl(){cfg.templates[currentTmpl]=DEFAULT_TEMPLATES[currentTmpl]||'';document.getElementById('tmpl-editor').value=cfg.templates[currentTmpl];}
+function showTemplates(){renderTmplTabs();document.getElementById('tmpl-modal').style.display='flex';}
+function closeTmpl(){document.getElementById('tmpl-modal').style.display='none';}
+function renderTmplTabs(){document.getElementById('tmpl-tabs').innerHTML=Object.keys(cfg.templates).map(k=>`<div class="tmpl-tab${k===currentTmpl?' active':''}" onclick="selectTmpl('${k}')">${k}</div>`).join('');document.getElementById('tmpl-editor').value=cfg.templates[currentTmpl]||'';}
+function selectTmpl(k){currentTmpl=k;renderTmplTabs();}
+function saveTmpl(){cfg.templates[currentTmpl]=document.getElementById('tmpl-editor').value;saveCfg();const b=event.target;b.textContent='✓ Guardado';setTimeout(()=>{b.textContent='Guardar';},1500);}
+function resetTmpl(){cfg.templates[currentTmpl]=DEFAULT_TMPLS[currentTmpl]||'';document.getElementById('tmpl-editor').value=cfg.templates[currentTmpl];}
 
 // ============ SYNC ============
 async function syncAll(){
-  const token=await ensureToken();
-  if(!token){showLogin();return;}
+  const t=await getToken();if(!t){logout();return;}
   document.getElementById('last-sync').textContent='Sincronizando...';
   await Promise.all([loadDash(),loadGmail()]);
-  document.getElementById('last-sync').textContent='Sincronizado: '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  // Auto-refresh every 5 minutes
+  document.getElementById('last-sync').textContent='Actualizado: '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
   setTimeout(syncAll,5*60*1000);
 }
 
 // ============ DASH ============
 async function loadDash(){
-  const token=await ensureToken();
+  const t=await getToken();
   try{
-    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/A:AH`,{headers:{Authorization:'Bearer '+token}});
-    const data=await r.json();
-    if(data.values)parseDash(data.values);
-  }catch(e){console.log('Sheets error:',e);}
+    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/A:AH`,{headers:{Authorization:'Bearer '+t}});
+    const d=await r.json();
+    if(d.values)parseDash(d.values);
+  }catch(e){console.log('Sheets:',e);}
 }
 
 function parseDash(rows){
@@ -454,56 +473,54 @@ function parseDash(rows){
   const idx=n=>h.findIndex(c=>c.trim().toLowerCase()===n.toLowerCase());
   const iAg=idx('Agencias'),iTipo=idx('Tipo de agencia'),iSit=idx('Situación');
   const iNom=idx('Nombre y Apellido'),iMail=idx('Mail'),iCuil=idx('CUIL');
-  const iProv=idx('Provincia'),iNgr=idx('NGR'),iClicks=idx('Clicks');
-  const iSu=idx('Sign up'),iFt=idx('FTDs');
+  const iProv=idx('Provincia'),iNgr=idx('NGR'),iCl=idx('Clicks'),iSu=idx('Sign up'),iFt=idx('FTDs');
   for(let i=hi+1;i<rows.length;i++){
-    const row=rows[i];
-    if(!row[iAg]||!row[iSit])continue;
-    const ngr=parseFloat((row[iNgr]||'0').replace(/[$,.]/g,'').replace(',','.'))||0;
+    const row=rows[i];if(!row[iAg]||!row[iSit])continue;
+    const ngr=parseFloat((row[iNgr]||'0').replace(/[$\s]/g,'').replace(',','.'))||0;
     const prov=(row[iProv]||'').toLowerCase().trim();
     const isCABA=CABA_PROVS.includes(prov);
-    const ctaCte=isCABA?normalizeNum(row[iAg]):null;
-    dashData.push({agencia:row[iAg]||'',tipo:row[iTipo]||'Agente',estado:row[iSit]||'',titular:row[iNom]||'',mail:(row[iMail]||'').toLowerCase().trim(),cuil:row[iCuil]||'',provincia:row[iProv]||'',ngr,clicks:parseInt(row[iClicks])||0,signups:parseInt(row[iSu])||0,ftds:parseInt(row[iFt])||0,ctaCte,isCABA});
+    const agNum=row[iAg].replace(/[^0-9]/g,'');
+    const ctaCte=isCABA?agNum:null;
+    dashData.push({agencia:row[iAg]||'',agNum,tipo:row[iTipo]||'Agente',estado:row[iSit]||'',titular:row[iNom]||'',mail:(row[iMail]||'').toLowerCase().trim(),cuil:row[iCuil]||'',provincia:row[iProv]||'',ngr,clicks:parseInt(row[iCl])||0,signups:parseInt(row[iSu])||0,ftds:parseInt(row[iFt])||0,ctaCte,isCABA});
   }
-  computeVip();
+  const ngrs=dashData.filter(a=>a.ngr>0).map(a=>a.ngr).sort((a,b)=>a-b);
+  vipThreshold=ngrs.length?ngrs[Math.floor(ngrs.length*VIP_PCT)]||50:50;
 }
 
-function computeVip(){const ngrs=dashData.filter(a=>a.ngr>0).map(a=>a.ngr).sort((a,b)=>a-b);if(!ngrs.length){vipThreshold=50;return;}vipThreshold=ngrs[Math.floor(ngrs.length*VIP_PERCENTILE)]||50;}
 function isVip(ag){return ag&&ag.ngr>=vipThreshold&&vipThreshold>0;}
+function agLabel(ag){return ag?ag.agencia:''}
 
 // ============ GMAIL ============
 async function loadGmail(){
-  const token=await ensureToken();
-  const maxMails=cfg.maxMails||200;
-  let messages=[],pageToken=null;
+  const t=await getToken();
+  const max=cfg.maxMails||200;
+  let msgs=[],pt=null;
   try{
     do{
-      const url=`https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100${pageToken?'&pageToken='+pageToken:''}`;
-      const r=await fetch(url,{headers:{Authorization:'Bearer '+token}});
-      const data=await r.json();
-      if(data.messages)messages=messages.concat(data.messages);
-      pageToken=data.nextPageToken||null;
-    }while(pageToken&&messages.length<maxMails);
-    messages=messages.slice(0,maxMails);
-    document.getElementById('mail-count').textContent=`Cargando ${messages.length} correos...`;
-    // Load in batches of 10
-    const batches=[];
-    for(let i=0;i<messages.length;i+=10)batches.push(messages.slice(i,i+10));
+      const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100${pt?'&pageToken='+pt:''}`,{headers:{Authorization:'Bearer '+t}});
+      const d=await r.json();
+      if(d.messages)msgs=msgs.concat(d.messages);
+      pt=d.nextPageToken||null;
+    }while(pt&&msgs.length<max);
+    msgs=msgs.slice(0,max);
+    document.getElementById('mail-count').textContent=`Cargando ${msgs.length} correos...`;
     const emails=[];
-    for(const batch of batches){
-      const results=await Promise.all(batch.map(m=>fetchMsg(m.id)));
-      emails.push(...results.filter(Boolean));
+    for(let i=0;i<msgs.length;i+=10){
+      const batch=msgs.slice(i,i+10);
+      const res=await Promise.all(batch.map(m=>fetchMsg(m.id)));
+      emails.push(...res.filter(Boolean));
+      document.getElementById('mail-count').textContent=`Cargando... ${emails.length}/${msgs.length}`;
     }
     allEmails=emails;
-    document.getElementById('mail-count').textContent=`${allEmails.length} correos cargados`;
+    document.getElementById('mail-count').textContent=`${allEmails.length} correos`;
     processAll();
-  }catch(e){console.error('Gmail error:',e);}
+  }catch(e){console.error('Gmail:',e);}
 }
 
 async function fetchMsg(id){
-  const token=await ensureToken();
+  const t=await getToken();
   try{
-    const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`,{headers:{Authorization:'Bearer '+token}});
+    const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`,{headers:{Authorization:'Bearer '+t}});
     const d=await r.json();
     const h=d.payload?.headers||[];
     const fromRaw=h.find(x=>x.name==='From')?.value||'';
@@ -513,63 +530,38 @@ async function fetchMsg(id){
     const fromEmail=(em?em[1]:fromRaw).toLowerCase().trim();
     const fromName=fixEnc(fromRaw.replace(/<.+>/,'').replace(/"/g,'').trim()||fromEmail);
     const rawBody=fixEnc(extractBody(d.payload));
-    const isInternal=cfg.internalSenders.some(s=>fromEmail.includes(s.toLowerCase()));
+    const isInt=cfg.internalSenders.some(s=>fromEmail.includes(s.toLowerCase()));
     let fwdFrom='',fwdEmail='',body=rawBody;
-    if(isInternal){const fi=extractFwd(rawBody);if(fi.name){fwdFrom=fi.name;fwdEmail=fi.email;body=fi.body;}}
-    return{id,fromEmail,fromName,isForwarded:isInternal&&!!fwdFrom,fwdFrom,fwdEmail,subject,body,rawBody,time:fmtDate(date),rawDate:date,unread:d.labelIds?.includes('UNREAD')};
+    if(isInt){const fi=extractFwd(rawBody);if(fi.name){fwdFrom=fi.name;fwdEmail=fi.email;body=fi.body;}}
+    return{id,fromEmail,fromName,isForwarded:isInt&&!!fwdFrom,fwdFrom,fwdEmail,subject,body,rawBody,time:fmtDate(date),rawDate:date,unread:d.labelIds?.includes('UNREAD')};
   }catch(e){return null;}
 }
 
-function fixEnc(s){
-  if(!s)return'';
-  return s.replace(/Ã±/g,'ñ').replace(/Ã¡/g,'á').replace(/Ã©/g,'é').replace(/Ã­/g,'í').replace(/Ã³/g,'ó').replace(/Ãº/g,'ú').replace(/Ã¼/g,'ü').replace(/â€™/g,"'").replace(/â€œ/g,'"').replace(/â€/g,'"').replace(/=C3=B1/g,'ñ').replace(/=C3=A1/g,'á').replace(/=C3=A9/g,'é').replace(/=C3=AD/g,'í').replace(/=C3=B3/g,'ó').replace(/=C3=BA/g,'ú').replace(/=\r?\n/g,'');
-}
+function fixEnc(s){if(!s)return'';return s.replace(/Ã±/g,'ñ').replace(/Ã¡/g,'á').replace(/Ã©/g,'é').replace(/Ã­/g,'í').replace(/Ã³/g,'ó').replace(/Ãº/g,'ú').replace(/Ã¼/g,'ü').replace(/â€™/g,"'").replace(/â€œ/g,'"').replace(/â€/g,'"').replace(/=C3=B1/g,'ñ').replace(/=C3=A1/g,'á').replace(/=C3=A9/g,'é').replace(/=C3=AD/g,'í').replace(/=C3=B3/g,'ó').replace(/=C3=BA/g,'ú').replace(/=\r?\n/g,'');}
 
-function extractBody(p){
-  if(!p)return'';
-  if(p.mimeType==='text/plain'&&p.body?.data)return dec64(p.body.data);
-  if(p.parts){for(const x of p.parts){if(x.mimeType==='text/plain'&&x.body?.data)return dec64(x.body.data);}for(const x of p.parts){const t=extractBody(x);if(t)return t;}}
-  if(p.body?.data)return dec64(p.body.data);
-  return'';
-}
-
+function extractBody(p){if(!p)return'';if(p.mimeType==='text/plain'&&p.body?.data)return dec64(p.body.data);if(p.parts){for(const x of p.parts){if(x.mimeType==='text/plain'&&x.body?.data)return dec64(x.body.data);}for(const x of p.parts){const t=extractBody(x);if(t)return t;}}if(p.body?.data)return dec64(p.body.data);return'';}
 function dec64(d){try{return decodeURIComponent(escape(atob(d.replace(/-/g,'+').replace(/_/g,'/'))));}catch(e){try{return atob(d.replace(/-/g,'+').replace(/_/g,'/'));}catch(e2){return'';}}}
-
-function extractFwd(body){
-  const m=body.match(/[-]{3,}\s*Forwarded message\s*[-]{3,}[\s\S]*?(?:De|From):\s*([^\n<]+?)(?:\s*<([^>]+)>)?\s*\n/i)||body.match(/(?:De|From):\s*([^\n<]+?)(?:\s*<([^>]+)>)?\s*\n/i);
-  if(!m)return{name:'',email:'',body};
-  const name=fixEnc(m[1].trim());const email=(m[2]||'').trim().toLowerCase();
-  const start=body.indexOf('\n',body.indexOf(m[0])+m[0].length)+1;
-  const clean=body.slice(start).replace(/^(Date:|Subject:|To:|Para:|Fecha:|Asunto:|Cc:)[^\n]*\n/gim,'').trim();
-  return{name,email,body:clean||body};
-}
-
+function extractFwd(body){const m=body.match(/[-]{3,}\s*Forwarded message\s*[-]{3,}[\s\S]*?(?:De|From):\s*([^\n<]+?)(?:\s*<([^>]+)>)?\s*\n/i)||body.match(/(?:De|From):\s*([^\n<]+?)(?:\s*<([^>]+)>)?\s*\n/i);if(!m)return{name:'',email:'',body};const name=fixEnc(m[1].trim());const email=(m[2]||'').trim().toLowerCase();const start=body.indexOf('\n',body.indexOf(m[0])+m[0].length)+1;const clean=body.slice(start).replace(/^(Date:|Subject:|To:|Para:|Fecha:|Asunto:|Cc:)[^\n]*\n/gim,'').trim();return{name,email,body:clean||body};}
 function fmtDate(s){try{const d=new Date(s),n=new Date(),diff=n-d;if(diff<86400000)return d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});if(diff<604800000)return d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric'});return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});}catch{return'';}}
 function getDays(ds){try{return(Date.now()-new Date(ds).getTime())/(1000*86400);}catch{return 0;}}
 
 // ============ MATCHING ============
 function normT(s){return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
-function normalizeNum(s){return(s||'').replace(/[^0-9]/g,'');}
+function normNum(s){return(s||'').replace(/[^0-9]/g,'');}
 
 function matchEmail(email){
   const body=normT(email.body);
   const fromEmail=(email.isForwarded&&email.fwdEmail?email.fwdEmail:email.fromEmail).toLowerCase();
   const fromName=normT(email.isForwarded&&email.fwdFrom?email.fwdFrom:email.fromName);
-  const bodyNums=normalizeNum(body);
+  const bodyNums=normNum(body);
   const emailsInBody=(email.body.match(/[\w.\-+]+@[\w.\-]+\.\w{2,}/g)||[]).map(e=>e.toLowerCase());
   let scores=[];
   for(const ag of dashData){
     let score=0,signals=[];
-    // Email
-    if(ag.mail&&(fromEmail===ag.mail||emailsInBody.includes(ag.mail))){score+=45;signals.push({l:'email',h:true});}
-    else signals.push({l:'email',h:false});
-    // Nombre
-    if(ag.titular){const parts=normT(ag.titular).split(/[\s,]+/).filter(p=>p.length>2);const hits=parts.filter(p=>body.includes(p)||fromName.includes(p));if(hits.length>=2){score+=35;signals.push({l:'nombre completo',h:true});}else if(hits.length===1){score+=15;signals.push({l:'nombre parcial',h:true});}else signals.push({l:'nombre',h:false});}
-    // CUIL
-    if(ag.cuil){const cn=normalizeNum(ag.cuil);if(cn.length>=8&&bodyNums.includes(cn)){score+=40;signals.push({l:'CUIL/DNI',h:true});}else signals.push({l:'CUIL/DNI',h:false});}
-    // Número agencia (no CABA)
-    if(!ag.isCABA){const num=normalizeNum(ag.agencia);if(num&&new RegExp('\\b'+num+'\\b').test(body)){score+=25;signals.push({l:'nº agencia',h:true});}else signals.push({l:'nº agencia',h:false});}
-    // Cuenta corriente CABA
+    if(ag.mail&&(fromEmail===ag.mail||emailsInBody.includes(ag.mail))){score+=45;signals.push({l:'email',h:true});}else signals.push({l:'email',h:false});
+    if(ag.titular){const parts=normT(ag.titular).split(/[\s,]+/).filter(p=>p.length>2);const hits=parts.filter(p=>body.includes(p)||fromName.includes(p));if(hits.length>=2){score+=35;signals.push({l:'nombre',h:true});}else if(hits.length===1){score+=15;signals.push({l:'nombre parcial',h:true});}else signals.push({l:'nombre',h:false});}
+    if(ag.cuil){const cn=normNum(ag.cuil);if(cn.length>=8&&bodyNums.includes(cn)){score+=40;signals.push({l:'CUIL',h:true});}else signals.push({l:'CUIL',h:false});}
+    if(!ag.isCABA&&ag.agNum){if(new RegExp('\\b'+ag.agNum+'\\b').test(body)){score+=25;signals.push({l:'nº agencia',h:true});}else signals.push({l:'nº agencia',h:false});}
     if(ag.isCABA&&ag.ctaCte){const ctn=ag.ctaCte;if(ctn.length>=4&&bodyNums.includes(ctn)){score+=45;signals.push({l:'cta. cte.',h:true});}else if(ctn.length>=4&&bodyNums.includes(ctn.slice(-4))){score+=15;signals.push({l:'cta. parcial',h:true});}else signals.push({l:'cta. cte.',h:false});}
     if(score>0)scores.push({ag,score,signals});
   }
@@ -580,56 +572,65 @@ function matchEmail(email){
   return{matched:conf!=='low'||top.score>=25,confidence:conf,agency:top.ag,score:top.score,signals:top.signals,candidates:scores.slice(0,3)};
 }
 
-function classifyEmail(email,match){
-  const bodyLow=(email.body||'').toLowerCase();
-  const isUrgent=/urgent|urgente|error|problema|falla|no funciona|no puedo|no veo|no entiendo|caído|caido|no carga/i.test(email.subject+' '+bodyLow);
-  const isBaja=/baja|no quiero continuar|no me interesa|cancelar|darme de baja|no seguir/i.test(email.subject+' '+bodyLow);
-  const ag=match.matched?match.agency:null;
+function classify(email,m){
+  const bl=(email.body||'').toLowerCase();
+  const isUrgent=/urgent|urgente|error|problema|falla|no funciona|no puedo|no veo|caído|caido|no carga/i.test(email.subject+' '+bl);
+  const isBaja=/baja|no quiero continuar|no me interesa|cancelar|darme de baja/i.test(email.subject+' '+bl);
+  const ag=m.matched?m.agency:null;
   const estado=ag?ag.estado:'desconocido';
+  const estadoKey=estado.toLowerCase().replace(/ /g,'_');
   const vip=isVip(ag);
-  const needsAttention=ag&&(estado==='Activa'||estado==='En Proceso'||estado==='Pendiente');
-  const autoReply=!needsAttention;
+  const needsAtt=ag&&(estado==='Activa'||estado==='En Proceso'||estado==='Pendiente');
   const daysOld=getDays(email.rawDate);
-  return{estado,needsAttention,autoReply,urgent:isUrgent&&needsAttention,baja:isBaja,vip,needsFollowup:needsAttention&&daysOld>=FOLLOWUP_DAYS,daysOld};
+  return{estado,estadoKey,needsAttention:needsAtt,autoReply:!needsAtt,urgent:isUrgent&&needsAtt,baja:isBaja,vip,needsFollowup:needsAtt&&daysOld>=FOLLOWUP_DAYS,daysOld};
 }
 
 function processAll(){
   processed={};
-  allEmails.forEach(e=>{const m=matchEmail(e);processed[e.id]={match:m,cls:classifyEmail(e,m)};});
+  allEmails.forEach(e=>{const m=matchEmail(e);processed[e.id]={match:m,cls:classify(e,m)};});
   updateMetrics();renderAlerts();renderList();
 }
 
 function updateMetrics(){
-  const vals=Object.values(processed);
+  const v=Object.values(processed);
+  const byState=s=>v.filter(x=>x.cls.estadoKey===s).length;
   document.getElementById('s-total').textContent=allEmails.length;
-  document.getElementById('s-identified').textContent=vals.filter(v=>v.match.matched).length;
-  document.getElementById('s-auto').textContent=vals.filter(v=>v.cls.autoReply).length;
-  document.getElementById('s-attention').textContent=vals.filter(v=>v.cls.needsAttention).length;
+  document.getElementById('s-id').textContent=v.filter(x=>x.match.matched).length;
+  document.getElementById('s-auto').textContent=v.filter(x=>x.cls.autoReply).length;
+  document.getElementById('s-att').textContent=v.filter(x=>x.cls.needsAttention).length;
   document.getElementById('nc-all').textContent=allEmails.length;
-  document.getElementById('nc-att').textContent=vals.filter(v=>v.cls.needsAttention).length;
-  document.getElementById('nc-auto').textContent=vals.filter(v=>v.cls.autoReply).length;
-  document.getElementById('nc-uid').textContent=vals.filter(v=>!v.match.matched).length;
-  document.getElementById('nc-vip').textContent=vals.filter(v=>v.cls.vip).length;
-  document.getElementById('nc-fu').textContent=vals.filter(v=>v.cls.needsFollowup).length;
+  document.getElementById('nc-att').textContent=v.filter(x=>x.cls.needsAttention).length;
+  document.getElementById('nc-auto').textContent=v.filter(x=>x.cls.autoReply).length;
+  document.getElementById('nc-uid').textContent=v.filter(x=>!x.match.matched).length;
+  document.getElementById('nc-vip').textContent=v.filter(x=>x.cls.vip).length;
+  document.getElementById('nc-fu').textContent=v.filter(x=>x.cls.needsFollowup).length;
+  document.getElementById('nc-act').textContent=byState('activa');
+  document.getElementById('nc-cand').textContent=byState('candidato');
+  document.getElementById('nc-insc').textContent=byState('inscripto');
+  document.getElementById('nc-proc').textContent=byState('en_proceso');
+  document.getElementById('nc-pend').textContent=byState('pendiente');
 }
 
 function renderAlerts(){
-  const area=document.getElementById('alerts-area');
-  const alerts=[];
+  const bar=document.getElementById('alerts-bar');
+  const chips=[];
   const bajas=allEmails.filter(e=>processed[e.id]?.cls.baja);
   const vips=allEmails.filter(e=>processed[e.id]?.cls.vip);
   const fus=allEmails.filter(e=>processed[e.id]?.cls.needsFollowup);
-  if(bajas.length)alerts.push(`<div class="alert-pill alert-baja" onclick="filterEmails('baja',null)">⚠ ${bajas.length} posible${bajas.length>1?'s':''} solicitud${bajas.length>1?'es':''} de baja</div>`);
-  if(vips.length)alerts.push(`<div class="alert-pill alert-vip" onclick="filterEmails('vip',null)">★ ${vips.length} agencia${vips.length>1?'s':''} VIP escribi${vips.length>1?'eron':'ó'}</div>`);
-  if(fus.length)alerts.push(`<div class="alert-pill alert-followup" onclick="filterEmails('followup',null)">🕐 ${fus.length} sin respuesta +${FOLLOWUP_DAYS}d</div>`);
-  area.innerHTML=alerts.join('');
+  if(bajas.length)chips.push(`<div class="alert-chip baja" onclick="filterEmails('baja',null)">⚠️ ${bajas.length} posible${bajas.length>1?'s':''} baja</div>`);
+  if(vips.length)chips.push(`<div class="alert-chip vip" onclick="filterEmails('vip',null)">⭐ ${vips.length} VIP</div>`);
+  if(fus.length)chips.push(`<div class="alert-chip followup" onclick="filterEmails('followup',null)">🕐 ${fus.length} sin respuesta +${FOLLOWUP_DAYS}d</div>`);
+  bar.innerHTML=chips.join('');
+  bar.style.display=chips.length?'flex':'none';
 }
 
-function filterEmails(filter,el){
-  currentFilter=filter;
+function filterEmails(f,el){
+  currentFilter=f;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(el)el.classList.add('active');
-  renderList();
+  const titles={'all':'Bandeja de entrada','attention':'Tu atención','auto':'Auto-respondidos','unidentified':'Sin identificar','vip':'VIP','followup':'Seguimiento','baja':'Posibles bajas','activa':'Activas','candidato':'Candidatas','inscripto':'Inscriptas','en_proceso':'En proceso','pendiente':'Pendientes'};
+  document.getElementById('list-title').textContent=titles[f]||'Correos';
+  closeDetail();renderList();
 }
 
 function applySearch(q){renderList(q);}
@@ -637,7 +638,7 @@ function applySearch(q){renderList(q);}
 function getFiltered(q=''){
   return allEmails.filter(e=>{
     const r=processed[e.id];if(!r)return false;
-    const pass=currentFilter==='all'||(currentFilter==='attention'&&r.cls.needsAttention)||(currentFilter==='auto'&&r.cls.autoReply)||(currentFilter==='unidentified'&&!r.match.matched)||(currentFilter==='vip'&&r.cls.vip)||(currentFilter==='followup'&&r.cls.needsFollowup)||(currentFilter==='baja'&&r.cls.baja);
+    const pass=currentFilter==='all'||(currentFilter==='attention'&&r.cls.needsAttention)||(currentFilter==='auto'&&r.cls.autoReply)||(currentFilter==='unidentified'&&!r.match.matched)||(currentFilter==='vip'&&r.cls.vip)||(currentFilter==='followup'&&r.cls.needsFollowup)||(currentFilter==='baja'&&r.cls.baja)||r.cls.estadoKey===currentFilter;
     if(!pass)return false;
     if(!q)return true;
     const qn=normT(q);
@@ -645,6 +646,7 @@ function getFiltered(q=''){
   });
 }
 
+function avatarColor(name){let h=0;for(let i=0;i<(name||'').length;i++)h=(h*31+name.charCodeAt(i))%10;return AVATAR_COLORS[h];}
 function getInitials(n){return(n||'').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';}
 
 function renderList(q=''){
@@ -653,113 +655,151 @@ function renderList(q=''){
   if(!emails.length){list.innerHTML='<div class="empty">No hay correos en esta categoría</div>';return;}
   list.innerHTML=emails.map(e=>{
     const r=processed[e.id]||{};const m=r.match||{};const c=r.cls||{};
-    const estado=(c.estado||'desconocido').toLowerCase().replace(/ /g,'_');
-    const avC='av-'+(m.matched?estado:'unknown');
-    const bC='b-'+(m.matched?estado:'unknown');
-    const bLabel=c.baja?'⚠ Posible baja':c.vip?'★ VIP':m.matched?(c.estado||'—'):'Sin identificar';
-    const cardC=[c.urgent?'urgent':'',c.vip&&!c.urgent?'vip':'',c.autoReply&&!c.urgent&&!c.vip?'autosent':'',c.needsFollowup?'followup':'',e.unread?'unread':'',selectedId===e.id?'selected':''].filter(Boolean).join(' ');
-    const dots=m.matched?`<div class="conf-dots">${[0,1,2].map(i=>`<div class="cd ${m.confidence==='high'?'on':m.confidence==='medium'&&i<2?'on-med':m.confidence==='low'&&i<1?'on-low':''}"></div>`).join('')}</div>`:'';
     const dn=e.isForwarded&&e.fwdFrom?e.fwdFrom:e.fromName;
-    const fwdTag=e.isForwarded?`<span style="font-size:10px;color:var(--text3)">(vía ${e.fromName})</span>`:'';
-    return`<div class="email-card ${cardC}" onclick="selectEmail('${e.id}')">
-      <div class="ec-top">
-        <div class="av ${avC}">${getInitials(dn)}</div>
-        <div class="ec-meta">
-          <div class="ec-from">${dn} ${fwdTag}</div>
-          <div class="ec-subj">${e.subject}</div>
-          <div class="ec-prev">${(e.body||'').replace(/\n/g,' ').slice(0,70)}...</div>
-        </div>
-        <div class="ec-right">
-          <span class="ec-time">${e.time}</span>
-          <span class="badge ${c.baja?'b-pendiente':c.vip?'b-vip':bC}">${bLabel}</span>
-          ${dots}
-        </div>
+    const rowClass=['email-row',e.unread?'unread':'read',selectedId===e.id?'selected-row':''].filter(Boolean).join(' ');
+    const bClass='b-'+(m.matched?c.estadoKey:'unknown');
+    const bLabel=c.baja?'⚠ Baja':c.vip?'⭐ VIP':m.matched?(c.estado||'—'):'Sin identificar';
+    const starred=starredIds.has(e.id);
+    const fwdTag=e.isForwarded?`<span class="er-fwd-tag">↩ vía ${e.fromName}</span>`:'';
+    const unreadDot=e.unread?'<div class="unread-dot"></div>':'';
+    return`<div class="${rowClass}" onclick="selectEmail('${e.id}')">
+      ${unreadDot?`<div style="width:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${unreadDot}</div>`:'<div style="width:12px"></div>'}
+      <div class="er-star ${starred?'starred':''}" onclick="toggleStar(event,'${e.id}')">${starred?'★':'☆'}</div>
+      <div class="er-avatar ${avatarColor(dn)}">${getInitials(dn)}</div>
+      <div class="er-sender">${dn}${fwdTag}</div>
+      <div class="er-content">
+        <span class="er-subject">${e.subject}</span>
+        <span class="er-preview">— ${(e.body||'').replace(/\n/g,' ').slice(0,80)}</span>
+      </div>
+      <div class="er-right">
+        <span class="badge ${c.baja?'b-pendiente':c.vip?'b-vip':bClass}">${bLabel}</span>
+        <span class="er-time">${e.time}</span>
       </div>
     </div>`;
   }).join('');
 }
 
+function toggleStar(ev,id){ev.stopPropagation();if(starredIds.has(id))starredIds.delete(id);else starredIds.add(id);saveCfg();renderList(document.getElementById('search-input').value);}
+
+function closeDetail(){
+  selectedId=null;
+  const mc=document.getElementById('main-content');
+  mc.innerHTML=`<div class="summary-strip"><div class="sum-item"><div class="sum-val blue" id="s-total">0</div><div class="sum-label">total</div></div><div class="sum-item"><div class="sum-val green" id="s-id">0</div><div class="sum-label">identificados</div></div><div class="sum-item"><div class="sum-val amber" id="s-auto">0</div><div class="sum-label">auto-respondidos</div></div><div class="sum-item"><div class="sum-val red" id="s-att">0</div><div class="sum-label">tu atención</div></div><div class="sum-item"><div class="sum-val" id="s-date" style="font-size:12px;color:var(--text3)"></div><div class="sum-label">hoy</div></div></div><div class="alerts-bar" id="alerts-bar"></div><div class="email-list-header"><span style="font-size:13px;color:var(--text2);font-weight:500" id="list-title">Bandeja de entrada</span><span class="mail-count-info" id="mail-count"></span></div><div id="email-list"></div>`;
+  document.getElementById('s-date').textContent=new Date().toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+  document.getElementById('mail-count').textContent=`${allEmails.length} correos`;
+  updateMetrics();renderAlerts();renderList();
+}
+
 function selectEmail(id){
-  selectedId=id;renderList(document.getElementById('search-input').value);
+  selectedId=id;
   const e=allEmails.find(x=>x.id===id);if(!e)return;
+  // Mark as read visually
+  e.unread=false;
   const r=processed[id]||{};const m=r.match||{};const c=r.cls||{};
   const ag=m.agency;
   const dn=e.isForwarded&&e.fwdFrom?e.fwdFrom:e.fromName;
   const de=e.isForwarded&&e.fwdEmail?e.fwdEmail:e.fromEmail;
+  const mc=document.getElementById('main-content');
 
+  // Match section
   let matchHTML='';
   if(m.matched&&ag){
     const cc=m.confidence==='high'?'var(--green)':m.confidence==='medium'?'var(--amber)':'var(--red)';
-    const cl=m.confidence==='high'?'Alta — identificación segura':m.confidence==='medium'?'Media — muy probable':'Baja — revisar';
+    const cl=m.confidence==='high'?'Alta':m.confidence==='medium'?'Media':'Baja';
     const sigH=(m.signals||[]).map(s=>`<span class="sig ${s.h?'sig-hit':'sig-miss'}">${s.h?'✓':'-'} ${s.l}</span>`).join('');
-    const perfH=ag.ngr>0||ag.clicks>0?`<div class="perf-row"><div class="perf-item"><div class="pl">Clicks</div><div class="pv">${ag.clicks}</div></div><div class="perf-item"><div class="pl">Sign ups</div><div class="pv">${ag.signups}</div></div><div class="perf-item"><div class="pl">FTDs</div><div class="pv">${ag.ftds}</div></div><div class="perf-item"><div class="pl">NGR</div><div class="pv ${ag.ngr>0?'pos':ag.ngr<0?'neg':''}">${ag.ngr?'$'+ag.ngr.toLocaleString('es-AR'):'$0'}</div></div></div>`:'';
-    matchHTML=`<div class="match-card ${m.confidence}">
-      <div class="match-title">Agencia identificada — confianza ${cl}</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-        <div class="match-agency">${ag.agencia} · ${ag.provincia}</div>
-        ${isVip(ag)?'<span class="badge b-vip">★ VIP</span>':''}
-        <span class="badge b-${ag.estado.toLowerCase().replace(/ /g,'_')}">${ag.estado}</span>
-        <span style="font-size:10px;color:var(--text3)">${ag.tipo}</span>
+    const perf=ag.ngr>0||ag.clicks>0?`<div class="perf-chips"><span class="perf-chip">${ag.clicks} clicks</span><span class="perf-chip">${ag.signups} sign ups</span><span class="perf-chip">${ag.ftds} FTDs</span><span class="perf-chip ${ag.ngr>0?'pos':ag.ngr<0?'neg':''}">${ag.ngr?'$'+ag.ngr.toLocaleString('es-AR'):'$0'} NGR</span></div>`:'';
+    matchHTML=`<div class="match-row ${m.confidence}">
+      <div class="match-info">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div class="match-agency-name">${ag.agencia} · ${ag.provincia}</div>
+          ${isVip(ag)?'<span class="badge b-vip">⭐ VIP</span>':''}
+          <span class="badge b-${ag.estado.toLowerCase().replace(/ /g,'_')}">${ag.estado}</span>
+          <span style="font-size:11px;color:var(--text3)">${ag.tipo}</span>
+          <span style="font-size:11px;color:${cc};font-weight:500">Confianza: ${cl}</span>
+        </div>
+        ${ag.titular?`<div class="match-meta">Titular: ${ag.titular}</div>`:''}
+        <div class="signals">${sigH}</div>
+        ${perf}
       </div>
-      ${ag.titular?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px">Titular: ${ag.titular}</div>`:''}
-      <div class="signals">${sigH}</div>
-      ${perfH}
     </div>`;
   }else if(!m.matched&&m.candidates?.length){
-    matchHTML=`<div class="match-card low">
-      <div class="match-title">No identificada — posibles coincidencias</div>
-      <div class="candidates">${m.candidates.slice(0,3).map(c=>`<div class="cand-row" onclick="confirmMatch('${id}','${c.ag.agencia}')"><div><div class="cand-name">${c.ag.agencia} · ${c.ag.provincia}</div><div class="cand-sub">${c.ag.titular||'sin titular'} · ${c.ag.estado}</div></div><span style="font-size:11px;font-weight:600;font-family:var(--mono);color:${c.score>=40?'var(--green)':c.score>=25?'var(--amber)':'var(--text3)'}">${c.score}pts</span></div>`).join('')}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:8px">Hacé click en la agencia correcta para confirmar.</div>
-    </div>`;
+    matchHTML=`<div class="match-row low"><div class="match-info"><div class="match-agency-name" style="margin-bottom:8px">No identificada — posibles coincidencias:</div><div class="candidates-list">${m.candidates.slice(0,3).map(c=>`<div class="cand-row" onclick="confirmMatch('${id}','${c.ag.agencia}')"><div><div style="font-size:13px;font-weight:500">${c.ag.agencia} · ${c.ag.provincia}</div><div style="font-size:12px;color:var(--text3)">${c.ag.titular||'sin titular'} · ${c.ag.estado}</div></div><span style="font-size:12px;font-weight:600;color:${c.score>=40?'var(--green)':c.score>=25?'var(--amber)':'var(--text3)'}">${c.score}pts →</span></div>`).join('')}</div><div style="font-size:12px;color:var(--text3);margin-top:8px">Hacé click para confirmar.</div></div></div>`;
   }else{
-    matchHTML=`<div class="match-card none"><div class="match-title" style="margin-bottom:4px">Nueva agencia — no figura en el dash</div><div style="font-size:12px;color:var(--text3)">Se enviará respuesta automática de bienvenida.</div></div>`;
+    matchHTML=`<div class="match-row none"><div class="match-info"><div class="match-agency-name">Nueva agencia — no figura en el dash</div><div class="match-meta">Se enviará respuesta automática de bienvenida.</div></div></div>`;
   }
 
+  // Alerts
   let alertsHTML='';
-  if(c.baja)alertsHTML+=`<div class="abox abox-baja"><div style="width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:3px"></div><p>⚠ Posible solicitud de baja detectada. Requiere tu atención urgente.</p></div>`;
-  if(c.vip&&c.needsAttention)alertsHTML+=`<div class="abox abox-vip"><div style="width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:3px"></div><p>★ Agencia VIP (top 10% NGR). Atención prioritaria.</p></div>`;
-  if(c.needsFollowup)alertsHTML+=`<div class="abox abox-followup"><div style="width:7px;height:7px;border-radius:50%;background:var(--purple);flex-shrink:0;margin-top:3px"></div><p>Sin respuesta hace ${Math.floor(c.daysOld)} días. Requiere seguimiento.</p></div>`;
-  if(c.estado==='En Proceso')alertsHTML+=`<div class="abox abox-proceso"><div style="width:7px;height:7px;border-radius:50%;background:var(--purple);flex-shrink:0;margin-top:3px"></div><p>Agencia en proceso de activación — vos estás gestionando la cuenta.</p></div>`;
-  if(c.estado==='Pendiente')alertsHTML+=`<div class="abox abox-pendiente"><div style="width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:3px"></div><p>Estado pendiente — verificá qué documentos o datos faltan.</p></div>`;
+  if(c.baja)alertsHTML+=`<div class="abox abox-baja">⚠️ Posible solicitud de baja detectada. Revisá y respondé con urgencia.</div>`;
+  if(c.vip&&c.needsAttention)alertsHTML+=`<div class="abox abox-vip">⭐ Agencia VIP (top 10% NGR). Atención prioritaria.</div>`;
+  if(c.needsFollowup)alertsHTML+=`<div class="abox abox-followup">🕐 Sin respuesta hace ${Math.floor(c.daysOld)} días.</div>`;
+  if(c.estado==='En Proceso')alertsHTML+=`<div class="abox abox-proceso">🔄 En proceso de activación — vos estás gestionando la cuenta.</div>`;
+  if(c.estado==='Pendiente')alertsHTML+=`<div class="abox abox-pendiente">⏳ Pendiente — verificá qué documentos o datos faltan.</div>`;
 
+  // Auto reply
   let autoHTML='';
   if(c.autoReply){
-    const tk=ag?ag.estado==='Candidato'?'Candidata':ag.estado==='Inscripto'?'Inscripta':'Confirmación estado':'Nueva agencia';
-    const txt=(cfg.templates[tk]||cfg.templates['Nueva agencia']||'').replace('{nombre}',dn);
-    autoHTML=`<div class="auto-box"><div class="auto-title">✦ Respuesta automática preparada</div><div class="auto-body" id="auto-body-${id}">${txt}</div><div style="display:flex;gap:6px;margin-top:10px;justify-content:flex-end"><button class="btn" onclick="editAuto('${id}')">Editar</button><button class="btn btn-teal" onclick="sendAuto('${id}','${de}')">Enviar desde afiliadosarg@betwarrior.com</button></div></div>`;
+    const tk=ag?ag.estado==='Candidato'?'Candidata':ag.estado==='Inscripto'?'Inscripta':ag.estado==='En Proceso'?'En proceso':'Nueva agencia':'Nueva agencia';
+    const agLabel2=ag?ag.agencia:'';
+    const txt=(cfg.templates[tk]||cfg.templates['Nueva agencia']||'').replace(/\{agencia\}/g,agLabel2).replace(/\{nombre\}/g,dn);
+    autoHTML=`<div class="auto-reply-box"><div class="arb-title">✅ Respuesta automática preparada</div><div class="arb-body" id="auto-body-${id}">${txt}</div><div class="arb-actions"><button class="ai-btn" onclick="editAuto('${id}')">✏️ Editar</button><button class="send-btn" style="background:var(--green)" onclick="sendAuto('${id}','${de}')">Enviar desde afiliadosarg@betwarrior.com</button></div></div>`;
   }
 
+  // Reply box
   let replyHTML='';
   if(c.needsAttention){
-    replyHTML=`<div class="reply-section"><div class="sec-title"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block"></span>Tu respuesta personal</div><textarea id="reply-${id}" placeholder="Escribí tu respuesta..."></textarea><div class="reply-actions"><button class="btn" onclick="suggestReply('${id}')">✦ Sugerir con IA</button><button class="btn btn-accent" onclick="sendReply('${id}','${de}')">Enviar desde afiliadosarg@betwarrior.com</button></div></div>`;
+    replyHTML=`<div class="reply-box"><div class="rb-header">💬 Tu respuesta personal a <strong>${de}</strong></div><textarea id="reply-${id}" placeholder="Escribí tu respuesta acá..."></textarea><div class="rb-actions"><button class="send-btn" onclick="sendReply('${id}','${de}')">Enviar desde afiliadosarg@betwarrior.com</button><button class="ai-btn" onclick="suggestReply('${id}')">✨ Sugerir con IA</button></div></div>`;
   }
 
+  // History
   const related=allEmails.filter(x=>x.id!==id&&processed[x.id]?.match?.agency?.agencia===ag?.agencia);
-  const histHTML=related.length?`<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px"><div class="sec-title"><span style="width:6px;height:6px;border-radius:50%;background:var(--purple);display:inline-block"></span>Historial (${related.length} mail${related.length>1?'s':''})</div>${related.map(x=>`<div class="history-item"><div style="display:flex;justify-content:space-between"><span style="font-size:11px;font-weight:500;color:var(--text2)">${x.isForwarded?x.fwdFrom:x.fromName}</span><span style="font-size:10px;color:var(--text3)">${x.time}</span></div><div style="font-size:11px;color:var(--text3)">${x.subject}</div></div>`).join('')}</div>`:'';
+  const histHTML=related.length?`<div class="analysis-panel"><div class="ap-title">📋 Historial de ${ag?.agencia} (${related.length} correo${related.length>1?'s':''})</div>${related.map(x=>`<div class="history-item" onclick="selectEmail('${x.id}')"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">${x.isForwarded?x.fwdFrom:x.fromName}</span><span style="font-size:12px;color:var(--text3)">${x.time}</span></div><div style="font-size:13px;color:var(--text2)">${x.subject}</div></div>`).join('')}</div>`:'';
 
-  document.getElementById('detail-area').innerHTML=`<div class="detail-panel">
-    <div class="dp-header">
-      <div><div class="dp-from">${dn}</div><div class="dp-email">${de}</div>${e.isForwarded?`<div class="dp-fwd">↩ Reenviado por ${e.fromName}</div>`:''}</div>
-      <div style="text-align:right"><span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${e.time}</span>${c.daysOld>=1?`<div style="font-size:10px;color:var(--text3)">hace ${Math.floor(c.daysOld)}d</div>`:''}</div>
+  mc.innerHTML=`<div class="detail-view">
+    <div class="detail-header">
+      <button class="detail-back" onclick="closeDetail()">← Volver</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:12px;color:var(--text3)">${c.daysOld>=1?`hace ${Math.floor(c.daysOld)} días`:e.time}</span>
+      </div>
     </div>
-    <div class="dp-subj">${e.subject}</div>
-    <div class="dp-body">${(e.body||'').trim()}</div>
-    ${matchHTML}${alertsHTML}${autoHTML}
-    <div style="margin-top:12px"><div class="sec-title"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>Análisis IA <span class="spin" id="spin-${id}"></span></div><div id="ai-${id}" style="font-size:12px;color:var(--text3)">Analizando...</div></div>
-    ${replyHTML}${histHTML}
+    <div class="detail-subject">${e.subject}</div>
+    <div class="mail-bubble">
+      <div class="mb-header">
+        <div class="mb-avatar ${avatarColor(dn)}">${getInitials(dn)}</div>
+        <div>
+          <div class="mb-from">${dn}</div>
+          <div class="mb-email">${de}</div>
+          ${e.isForwarded?`<div class="mb-fwd">↩ Reenviado por ${e.fromName}</div>`:''}
+        </div>
+        <div class="mb-time">${e.time}</div>
+      </div>
+      <div class="mb-body">${(e.body||'').trim()}</div>
+    </div>
+    <div class="analysis-panel">
+      <div class="ap-title">🔍 Identificación de agencia</div>
+      ${matchHTML}
+      ${alertsHTML}
+    </div>
+    ${autoHTML}
+    ${replyHTML}
+    <div class="analysis-panel">
+      <div class="ap-title">🤖 Análisis IA <span class="spin" id="spin-${id}"></span></div>
+      <div id="ai-${id}"><div style="font-size:13px;color:var(--text3)">Analizando...</div></div>
+    </div>
+    ${histHTML}
   </div>`;
+
   analyzeAI(e,m,c,id);
 }
 
 async function analyzeAI(email,m,c,id){
   const ag=m.agency;
-  const prompt=`Sos asistente interno de afiliados de Betwarrior Argentina. Estados: Candidato (ente regulador la habilitó, puede no saber del programa), Inscripto (quiere sumarse), En Proceso (cuenta en creación), Pendiente (esperando algo de la agencia), Activa (funcionando).
-Mail:
-De: ${email.isForwarded?email.fwdFrom+' (via '+email.fromName+')':email.fromName}
+  const prompt=`Sos asistente interno de afiliados de Betwarrior Argentina. Estados: Candidato (habilitada por ente regulador, puede no saber del programa), Inscripto (quiere sumarse), En Proceso (cuenta en creación), Pendiente (esperando documentos), Activa (funcionando).
+Mail de: ${email.isForwarded?email.fwdFrom+' (vía '+email.fromName+')':email.fromName}
 Asunto: ${email.subject}
 Cuerpo: ${(email.body||'').slice(0,500)}
-${ag?`Agencia: ${ag.agencia}, Estado: ${ag.estado}, Provincia: ${ag.provincia}, NGR: $${ag.ngr||0}`:'No identificada'}
-JSON SOLO:{"resumen":"1 oración","intencion":"solicitud_afiliacion|consulta_estado|soporte_tecnico|material_promo|datos_bancarios|comisiones|confusion_programa|posible_baja|otro","prioridad":"alta|media|baja","nota_interna":"máx 15 palabras"}`;
+${ag?`Agencia: ${ag.agencia}, Estado: ${ag.estado}, Provincia: ${ag.provincia}, NGR: $${ag.ngr||0}`:'No identificada en el dash'}
+Respondé SOLO en JSON: {"resumen":"1 oración en español argentino","intencion":"solicitud_afiliacion|consulta_estado|soporte_tecnico|material_promo|datos_bancarios|comisiones|confusion_programa|posible_baja|otro","prioridad":"alta|media|baja","nota_interna":"observación máx 15 palabras, tono directo"}`;
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:prompt}]})});
     const data=await res.json();
@@ -767,26 +807,26 @@ JSON SOLO:{"resumen":"1 oración","intencion":"solicitud_afiliacion|consulta_est
     const sp=document.getElementById('spin-'+id);if(sp)sp.style.display='none';
     const pc=p.prioridad==='alta'?'var(--red)':p.prioridad==='media'?'var(--amber)':'var(--green)';
     const el=document.getElementById('ai-'+id);
-    if(el)el.innerHTML=`<div style="color:var(--text2);margin-bottom:6px">${p.resumen||''}</div><div class="ai-tags"><span class="ai-tag">${(p.intencion||'').replace(/_/g,' ')}</span><span class="ai-tag" style="color:${pc}">${p.prioridad}</span></div>${p.nota_interna?`<div class="ai-note">${p.nota_interna}</div>`:''}`;
-  }catch(e){const sp=document.getElementById('spin-'+id);if(sp)sp.style.display='none';const el=document.getElementById('ai-'+id);if(el)el.textContent='Error al analizar.';}
+    if(el)el.innerHTML=`<div class="ai-result-box"><div class="air-summary">${p.resumen||''}</div><div class="air-tags"><span class="air-tag">${(p.intencion||'').replace(/_/g,' ')}</span><span class="air-tag" style="color:${pc};border-color:${pc}">${p.prioridad} prioridad</span></div>${p.nota_interna?`<div class="air-note">📝 ${p.nota_interna}</div>`:''}</div>`;
+  }catch(e){const sp=document.getElementById('spin-'+id);if(sp)sp.style.display='none';const el=document.getElementById('ai-'+id);if(el)el.innerHTML='<div style="font-size:13px;color:var(--text3)">Error al analizar.</div>';}
 }
 
 async function suggestReply(id){
   const e=allEmails.find(x=>x.id===id);const r=processed[id]||{};
   const ta=document.getElementById('reply-'+id);if(!ta)return;
-  ta.value='Generando...';
+  ta.value='Generando sugerencia...';
   const ag=r.match?.agency;
-  const prompt=`Respuesta personal, profesional y cálida para agencia activa de Betwarrior Argentina.${ag?` Agencia: ${ag.agencia}, Estado: ${ag.estado}, NGR: $${ag.ngr||0}.`:''} De: ${e.isForwarded?e.fwdFrom:e.fromName}. Asunto: ${e.subject}. Mensaje: ${(e.body||'').slice(0,400)}. Firmá como Equipo de Afiliados Betwarrior Argentina. Solo texto del mail.`;
+  const prompt=`Escribí una respuesta personal, profesional pero en tono argentino informal (tuteo, sin "estimado") para esta agencia activa de Betwarrior.${ag?` Agencia: ${ag.agencia}, Estado: ${ag.estado}, NGR: $${ag.ngr||0}.`:''} De: ${e.isForwarded?e.fwdFrom:e.fromName}. Asunto: ${e.subject}. Mensaje: ${(e.body||'').slice(0,400)}. Firmá como Equipo de Afiliados Betwarrior Argentina. Solo el texto del mail.`;
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})});
     const data=await res.json();ta.value=data.content?.[0]?.text||'';
   }catch{ta.value='Error al generar.';}
 }
 
-function editAuto(id){const el=document.getElementById('auto-body-'+id);if(el)el.innerHTML=`<textarea style="width:100%;min-height:100px;background:rgba(0,0,0,0.2);border:1px solid rgba(45,212,191,0.3);border-radius:6px;color:rgba(45,212,191,0.9);font-size:12px;font-family:var(--font);padding:8px;resize:vertical">${el.textContent}</textarea>`;}
-function sendAuto(id,to){alert(`Demo: respuesta automática enviada a ${to} desde afiliadosarg@betwarrior.com`);}
-function sendReply(id,to){const ta=document.getElementById('reply-'+id);if(!ta?.value.trim()){alert('Escribí una respuesta primero');return;}alert(`Demo: respuesta enviada a ${to} desde afiliadosarg@betwarrior.com`);}
-function confirmMatch(emailId,agName){const ag=dashData.find(a=>a.agencia===agName);if(!ag)return;const e=allEmails.find(x=>x.id===emailId);if(!e)return;processed[emailId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'confirmado manualmente',h:true}]};processed[emailId].cls=classifyEmail(e,processed[emailId].match);updateMetrics();renderAlerts();renderList();selectEmail(emailId);}
+function editAuto(id){const el=document.getElementById('auto-body-'+id);if(!el)return;const t=el.textContent;el.innerHTML=`<textarea style="width:100%;min-height:100px;border:1px solid #a5d6a7;border-radius:6px;font-size:13px;font-family:var(--font);padding:8px;background:#f1f8e9;resize:vertical;outline:none">${t}</textarea>`;}
+function sendAuto(id,to){alert(`Respuesta automática enviada a ${to} desde afiliadosarg@betwarrior.com`);}
+function sendReply(id,to){const ta=document.getElementById('reply-'+id);if(!ta?.value.trim()){alert('Escribí una respuesta primero');return;}alert(`Respuesta enviada a ${to} desde afiliadosarg@betwarrior.com`);}
+function confirmMatch(emailId,agName){const ag=dashData.find(a=>a.agencia===agName);if(!ag)return;const e=allEmails.find(x=>x.id===emailId);if(!e)return;processed[emailId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'confirmado manualmente',h:true}]};processed[emailId].cls=classify(e,processed[emailId].match);updateMetrics();renderAlerts();selectEmail(emailId);}
 </script>
 </body>
 </html>
