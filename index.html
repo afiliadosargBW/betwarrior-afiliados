@@ -77,7 +77,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 /* EMAIL LIST - GMAIL STYLE */
 .email-list-header{display:flex;align-items:center;padding:0 16px;height:40px;border-bottom:1px solid var(--border);gap:8px;background:var(--white)}
 .mail-count-info{font-size:12px;color:var(--text3);margin-left:auto}
-.email-row{display:flex;align-items:center;padding:0 16px;height:52px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;gap:0;position:relative}
+.email-row{display:flex;align-items:center;padding:0 16px;height:52px;min-height:52px;max-height:52px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;gap:0;position:relative;overflow:hidden;flex-wrap:nowrap}
 .email-row.unread{background:var(--unread-bg)}
 .email-row.read{background:var(--read-bg)}
 .email-row:hover{background:#f0f4f9;box-shadow:0 2px 4px rgba(0,0,0,0.1);z-index:1}
