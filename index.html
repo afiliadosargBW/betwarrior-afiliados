@@ -458,7 +458,7 @@ async function syncAll(){
 async function loadDash(){
   const t=await getToken();
   try{
-    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/A:AH`,{headers:{Authorization:'Bearer '+t}});
+    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/A:AN`,{headers:{Authorization:'Bearer '+t}});
     const d=await r.json();
     if(d.values)parseDash(d.values);
   }catch(e){console.log('Sheets:',e);}
