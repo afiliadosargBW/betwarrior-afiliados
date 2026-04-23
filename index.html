@@ -12,20 +12,16 @@
   --accent:#1a73e8;--accent-bg:#e8f0fe;--accent-hover:#1557b0;
   --green:#137333;--green-bg:#e6f4ea;--amber:#b45309;--amber-bg:#fef3c7;
   --red:#c5221f;--red-bg:#fce8e6;--purple:#7c3aed;--purple-bg:#ede9fe;
-  --teal:#0d7377;--teal-bg:#e0f5f5;
+  --teal:#0d7377;--teal-bg:#e0f5f5;--orange:#c2410c;--orange-bg:#fff7ed;
   --unread-bg:#fff;--read-bg:#f2f6fc;--hover-bg:#f0f4f9;
   --font:'Google Sans','Roboto',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.4;min-height:100vh}
-
-/* LAYOUT */
 .app{display:grid;grid-template-columns:256px 1fr;grid-template-rows:64px 1fr;height:100vh;overflow:hidden}
 .topbar{grid-column:1/-1;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
 .sidebar{background:var(--sidebar);overflow-y:auto;padding:8px 0}
 .main{overflow-y:auto;background:var(--white)}
-
-/* TOPBAR */
 .logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:500;color:var(--text);min-width:200px}
 .logo-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700}
 .logo span{color:var(--accent)}
@@ -41,9 +37,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .sync-btn:hover{background:var(--accent-hover)}
 .account-chip{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:12px;color:var(--text2);background:var(--white)}
 .status-dot{width:7px;height:7px;border-radius:50%;background:#34a853}
-
 /* SIDEBAR */
-.compose-btn{margin:8px 16px 16px;background:var(--white);border:1px solid var(--border);border-radius:16px;padding:16px 24px;font-size:14px;font-weight:500;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.compose-btn{margin:8px 16px 8px;background:var(--white);border:1px solid var(--border);border-radius:16px;padding:12px 20px;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
 .compose-btn:hover{box-shadow:0 2px 8px rgba(0,0,0,0.15)}
 .nav-item{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 6px 26px;border-radius:0 20px 20px 0;cursor:pointer;transition:background .15s;margin-right:16px;color:var(--text2);font-size:14px}
 .nav-item:hover{background:var(--hover-bg)}
@@ -54,61 +49,55 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .nav-count.vip{color:var(--amber)}
 .sidebar-divider{height:1px;background:var(--border);margin:8px 16px}
 .sidebar-section-title{padding:8px 26px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
-
-/* SUMMARY STRIP */
+/* DAYS FILTER */
+.days-filter{display:flex;gap:4px;padding:6px 16px 8px;flex-wrap:wrap}
+.day-btn{font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:var(--white);color:var(--text3);cursor:pointer;transition:all .15s;font-family:var(--font)}
+.day-btn.active{background:var(--accent-bg);color:var(--accent);border-color:transparent;font-weight:500}
+.day-btn:hover{border-color:var(--accent);color:var(--accent)}
+/* SUMMARY */
 .summary-strip{display:flex;gap:0;padding:0;background:var(--white);border-bottom:1px solid var(--border)}
-.sum-item{flex:1;padding:12px 16px;border-right:1px solid var(--border);text-align:center}
-.sum-item:last-child{border-right:none}
+.sum-item{flex:1;padding:12px 16px;border-right:1px solid var(--border);text-align:center;cursor:pointer;transition:background .15s}
+.sum-item:last-child{border-right:none;cursor:default}
+.sum-item:hover:not(:last-child){background:var(--hover-bg)}
 .sum-val{font-size:20px;font-weight:600;color:var(--text)}
 .sum-val.blue{color:var(--accent)}
 .sum-val.green{color:var(--green)}
 .sum-val.amber{color:var(--amber)}
 .sum-val.red{color:var(--red)}
 .sum-label{font-size:11px;color:var(--text3);margin-top:2px}
-
 /* ALERTS */
-.alerts-bar{padding:6px 16px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--white)}
+.alerts-bar{padding:6px 16px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--white);align-items:center}
 .alert-chip{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
 .alert-chip:hover{filter:brightness(.95)}
 .alert-chip.baja{background:var(--red-bg);color:var(--red)}
 .alert-chip.vip{background:var(--amber-bg);color:var(--amber)}
 .alert-chip.followup{background:var(--purple-bg);color:var(--purple)}
-
-/* EMAIL LIST - GMAIL STYLE */
-.email-list-header{display:flex;align-items:center;padding:0 16px;height:40px;border-bottom:1px solid var(--border);gap:8px;background:var(--white)}
-.mail-count-info{font-size:12px;color:var(--text3);margin-left:auto}
-.email-row{display:flex;align-items:center;padding:0 16px;height:52px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;gap:0;position:relative}
-.email-row.unread{background:var(--unread-bg)}
-.email-row.read{background:var(--read-bg)}
-.email-row:hover{background:#f0f4f9;box-shadow:0 2px 4px rgba(0,0,0,0.1);z-index:1}
-.email-row.selected-row{background:var(--accent-bg)}
-.er-star{width:28px;display:flex;align-items:center;justify-content:center;color:var(--text4);cursor:pointer;flex-shrink:0;font-size:16px}
-.er-star.starred{color:#f4b400}
-.er-star:hover{color:#f4b400}
-.er-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;margin-right:12px;color:white}
-.er-sender{width:180px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
-.email-row.unread .er-sender{font-weight:700;color:var(--text)}
-.email-row.read .er-sender{font-weight:400;color:var(--text2)}
-.er-fwd-tag{font-size:10px;color:var(--text3);font-weight:400;margin-left:4px}
-.er-content{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:flex;gap:6px;align-items:center;min-width:0}
-.er-subject{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.email-row.unread .er-subject{font-weight:600;color:var(--text)}
-.email-row.read .er-subject{font-weight:400;color:var(--text2)}
-.er-preview{font-size:13px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-.er-right{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:8px}
-.er-time{font-size:12px;color:var(--text3);white-space:nowrap}
-.email-row.unread .er-time{font-weight:600;color:var(--text2)}
+.resumen-btn{margin-left:auto;display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:500;cursor:pointer;background:var(--accent-bg);color:var(--accent);border:1px solid transparent;transition:all .15s;font-family:var(--font)}
+.resumen-btn:hover{background:var(--accent);color:white}
+/* EMAIL LIST */
+.email-list-header{display:flex;align-items:center;padding:0 16px;height:44px;border-bottom:1px solid var(--border);gap:8px;background:var(--white)}
+.bulk-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.bulk-btn{font-size:12px;padding:4px 12px;border-radius:12px;border:none;cursor:pointer;font-family:var(--font);font-weight:500;transition:all .15s}
+.bulk-btn-send{background:var(--green);color:white}
+.bulk-btn-send:hover{background:#0d6627}
+.bulk-btn-export{background:var(--accent-bg);color:var(--accent)}
+.bulk-btn-export:hover{background:var(--accent);color:white}
+.bulk-btn-cancel{background:#f1f3f4;color:var(--text2)}
+.bulk-btn-cancel:hover{background:var(--border)}
+.conf-filter{font-size:12px;padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:var(--white);color:var(--text2);cursor:pointer;font-family:var(--font)}
+.mail-count-info{font-size:12px;color:var(--text3)}
 .badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;white-space:nowrap}
 .b-unknown{background:#f1f3f4;color:var(--text3)}
 .b-candidato{background:var(--accent-bg);color:var(--accent)}
 .b-inscripto{background:var(--teal-bg);color:var(--teal)}
+.b-proceso{background:var(--purple-bg);color:var(--purple)}
 .b-en_proceso{background:var(--purple-bg);color:var(--purple)}
 .b-pendiente{background:var(--amber-bg);color:var(--amber)}
 .b-activa{background:var(--green-bg);color:var(--green)}
+.b-suspendida{background:var(--red-bg);color:var(--red)}
 .b-vip{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(180,83,9,.2)}
-.unread-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0}
-
-/* DETAIL VIEW - GMAIL STYLE */
+.b-duplicado{background:#f1f3f4;color:var(--text3);border:1px solid var(--border2)}
+/* DETAIL VIEW */
 .detail-view{padding:16px 24px;max-width:860px}
 .detail-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
 .detail-back{display:flex;align-items:center;gap:8px;color:var(--text2);cursor:pointer;font-size:13px;padding:6px 12px;border-radius:20px;transition:background .15s;border:1px solid var(--border);background:var(--white)}
@@ -122,8 +111,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .mb-fwd{font-size:11px;color:var(--accent);background:var(--accent-bg);padding:2px 8px;border-radius:10px;margin-top:2px;display:inline-block}
 .mb-time{font-size:12px;color:var(--text3);margin-left:auto}
 .mb-body{font-size:14px;color:var(--text);line-height:1.8;white-space:pre-wrap;padding:4px 0}
-
-/* ANALYSIS PANEL */
 .analysis-panel{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:12px}
 .ap-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .match-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border-radius:8px;margin-bottom:10px;border-left:3px solid var(--border2)}
@@ -145,22 +132,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .candidates-list{display:flex;flex-direction:column;gap:5px;margin-top:6px}
 .cand-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:all .15s;background:var(--white)}
 .cand-row:hover{border-color:var(--accent);background:var(--accent-bg)}
-
-/* ALERT BOXES */
 .abox{border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;font-size:13px}
 .abox-baja{background:var(--red-bg);color:var(--red)}
 .abox-vip{background:var(--amber-bg);color:var(--amber)}
 .abox-proceso{background:var(--purple-bg);color:var(--purple)}
 .abox-pendiente{background:var(--amber-bg);color:var(--amber)}
 .abox-followup{background:var(--purple-bg);color:var(--purple)}
-
-/* AUTO REPLY */
+.abox-suspendida{background:var(--red-bg);color:var(--red)}
 .auto-reply-box{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:12px;padding:14px 16px;margin-bottom:12px}
 .arb-title{font-size:12px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .arb-body{font-size:13px;color:#1b5e20;line-height:1.7;white-space:pre-wrap}
 .arb-actions{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
-
-/* REPLY BOX */
 .reply-box{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
 .rb-header{font-size:13px;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var(--text);outline:none;resize:none;min-height:80px;line-height:1.6}
@@ -169,18 +151,16 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
 .send-btn:hover{background:var(--accent-hover)}
 .ai-btn{background:var(--white);color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:8px 16px;font-size:13px;font-family:var(--font);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
 .ai-btn:hover{background:var(--accent-bg)}
-
-/* AI RESULT */
-.ai-result-box{background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:10px}
-.air-summary{font-size:13px;color:var(--text);margin-bottom:6px}
-.air-tags{display:flex;gap:6px;flex-wrap:wrap}
-.air-tag{font-size:11px;padding:2px 8px;border-radius:8px;background:var(--white);border:1px solid var(--border);color:var(--text2)}
-.air-note{font-size:12px;color:var(--text3);font-style:italic;margin-top:6px;padding:6px 10px;background:var(--white);border-radius:6px;border-left:3px solid var(--border2)}
-
-/* HISTORY */
 .history-item{padding:8px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);margin-bottom:5px;cursor:pointer;transition:background .15s}
 .history-item:hover{background:var(--hover-bg)}
-
+/* STATS PANEL */
+.stats-panel{padding:16px 20px;background:var(--white)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat-card{background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border)}
+.stat-card-val{font-size:22px;font-weight:600;color:var(--text)}
+.stat-card-label{font-size:11px;color:var(--text3);margin-top:2px}
+.top-list{display:flex;flex-direction:column;gap:6px}
+.top-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border)}
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:center;justify-content:center}
 .modal{background:var(--white);border-radius:16px;padding:28px;width:500px;max-width:95vw;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2)}
@@ -203,14 +183,11 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
 .sender-del{cursor:pointer;color:var(--text3);font-size:16px;line-height:1}
 .sender-del:hover{color:var(--red)}
 .add-sender-row{display:flex;gap:6px;margin-top:6px}
-
-/* TEMPLATES */
 .tmpl-tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
 .tmpl-tab{font-size:12px;padding:4px 12px;border-radius:16px;cursor:pointer;border:1px solid var(--border);color:var(--text3);background:var(--white);transition:all .15s}
 .tmpl-tab.active{background:var(--accent-bg);color:var(--accent);border-color:transparent;font-weight:500}
 .tmpl-textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:var(--font);padding:10px;resize:vertical;height:120px;line-height:1.6;outline:none}
 .tmpl-textarea:focus{border-color:var(--accent)}
-
 /* LOGIN */
 .login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#f8f9fa;gap:20px}
 .login-card{background:var(--white);border-radius:16px;padding:40px;width:440px;max-width:95vw;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.1)}
@@ -225,17 +202,21 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
 .connect-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:24px;font-size:15px;font-weight:500;cursor:pointer;font-family:var(--font);margin-top:12px;transition:background .15s}
 .connect-btn:hover{background:var(--accent-hover)}
 .refresh-info{font-size:12px;color:var(--text3);background:#f8f9fa;border-radius:8px;padding:10px 12px;margin-top:12px;line-height:1.6;text-align:left}
-
-/* SPINNER */
 .spin{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;display:inline-block;vertical-align:middle}
 @keyframes sp{to{transform:rotate(360deg)}}
 .empty{text-align:center;padding:40px;color:var(--text3);font-size:14px}
-
-/* AVATAR COLORS */
 .av-color-0{background:#1a73e8}.av-color-1{background:#e91e63}.av-color-2{background:#9c27b0}.av-color-3{background:#673ab7}
 .av-color-4{background:#3f51b5}.av-color-5{background:#0097a7}.av-color-6{background:#00796b}.av-color-7{background:#f57c00}
 .av-color-8{background:#e64a19}.av-color-9{background:#5d4037}
-
+.prov-toggle{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 6px 26px;border-radius:0 20px 20px 0;cursor:pointer;margin-right:16px;color:var(--text2);font-size:14px;transition:background .15s}
+.prov-toggle:hover{background:var(--hover-bg)}
+.prov-toggle.has-active{color:var(--accent);font-weight:600}
+.prov-list{display:flex;flex-direction:column;gap:1px;overflow:hidden;transition:max-height .25s ease;max-height:0}
+.prov-list.open{max-height:400px}
+.prov-item{display:flex;align-items:center;justify-content:space-between;padding:5px 16px 5px 38px;border-radius:0 20px 20px 0;cursor:pointer;margin-right:16px;font-size:13px;color:var(--text2);transition:background .15s}
+.prov-item:hover{background:var(--hover-bg)}
+.prov-item.active{background:var(--accent-bg);color:var(--accent);font-weight:500}
+.prov-count{font-size:11px;font-weight:600;color:inherit}
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#dadce0;border-radius:3px}
@@ -243,7 +224,6 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
 </head>
 <body>
 
-<!-- LOGIN -->
 <div class="login-screen" id="login-screen">
   <div class="login-card">
     <div class="login-logo">Betwarrior <span>Afiliados</span></div>
@@ -263,58 +243,71 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
   </div>
 </div>
 
-<!-- APP -->
 <div class="app" id="app" style="display:none">
-  <!-- TOPBAR -->
   <div class="topbar">
     <div class="logo"><div class="logo-icon">BW</div>Betwarrior <span>Afiliados</span></div>
     <div class="search-wrap">
       <div class="search-bar">
         <span style="color:var(--text3);font-size:18px">🔍</span>
-        <input id="search-input" placeholder="Buscar en correos..." oninput="applySearch(this.value)">
+        <input id="search-input" placeholder="Buscar por nombre, agencia, nº cuenta, CUIL..." oninput="applySearch(this.value)">
       </div>
     </div>
     <div class="topbar-right">
       <span id="last-sync" style="font-size:11px;color:var(--text3)"></span>
       <div class="account-chip"><div class="status-dot"></div><span id="account-pill">afiliadosarg@betwarrior.com</span></div>
+      <button class="icon-btn" onclick="showStats()" title="Estadísticas del mes">📊</button>
       <button class="icon-btn" onclick="showSettings()" title="Configurar">⚙️</button>
       <button class="sync-btn" onclick="syncAll()">↻ Sincronizar</button>
       <button class="icon-btn" onclick="logout()" title="Salir">🚪</button>
     </div>
   </div>
 
-  <!-- SIDEBAR -->
   <div class="sidebar">
     <button class="compose-btn" onclick="showTemplates()">✏️ Plantillas de respuesta</button>
-    <div class="nav-item active" onclick="filterEmails('all',this)"><div class="ni-left">📥 Todos</div><span class="nav-count" id="nc-all">0</span></div>
-    <div class="nav-item" onclick="filterEmails('attention',this)"><div class="ni-left">⚠️ Tu atención</div><span class="nav-count hot" id="nc-att">0</span></div>
-    <div class="nav-item" onclick="filterEmails('auto',this)"><div class="ni-left">✅ Auto-respondidos</div><span class="nav-count" id="nc-auto">0</span></div>
-    <div class="nav-item" onclick="filterEmails('unidentified',this)"><div class="ni-left">❓ Sin identificar</div><span class="nav-count" id="nc-uid">0</span></div>
-    <div class="nav-item" onclick="filterEmails('vip',this)"><div class="ni-left">⭐ VIP</div><span class="nav-count vip" id="nc-vip">0</span></div>
-    <div class="nav-item" onclick="filterEmails('followup',this)"><div class="ni-left">🕐 Seguimiento</div><span class="nav-count" id="nc-fu">0</span></div>
+    <div class="days-filter" id="days-filter"></div>
+    <div class="nav-item active" id="nav-all" onclick="filterEmails('all',this)"><div class="ni-left">📥 Todos</div><span class="nav-count" id="nc-all">0</span></div>
+    <div class="nav-item" id="nav-attention" onclick="filterEmails('attention',this)"><div class="ni-left">⚠️ Tu atención</div><span class="nav-count hot" id="nc-att">0</span></div>
+    <div class="nav-item" id="nav-auto" onclick="filterEmails('auto',this)"><div class="ni-left">✅ Auto-respondidos</div><span class="nav-count" id="nc-auto">0</span></div>
+    <div class="nav-item" id="nav-unidentified" onclick="filterEmails('unidentified',this)"><div class="ni-left">❓ Sin identificar</div><span class="nav-count" id="nc-uid">0</span></div>
+    <div class="nav-item" id="nav-vip" onclick="filterEmails('vip',this)"><div class="ni-left">⭐ VIP</div><span class="nav-count vip" id="nc-vip">0</span></div>
+    <div class="nav-item" id="nav-followup" onclick="filterEmails('followup',this)"><div class="ni-left">🕐 Seguimiento</div><span class="nav-count" id="nc-fu">0</span></div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section-title">Por estado</div>
-    <div class="nav-item" onclick="filterEmails('activa',this)"><div class="ni-left"><span style="color:var(--green)">●</span> Activas</div><span class="nav-count" id="nc-act">0</span></div>
-    <div class="nav-item" onclick="filterEmails('candidato',this)"><div class="ni-left"><span style="color:var(--accent)">●</span> Candidatas</div><span class="nav-count" id="nc-cand">0</span></div>
-    <div class="nav-item" onclick="filterEmails('inscripto',this)"><div class="ni-left"><span style="color:var(--teal)">●</span> Inscriptas</div><span class="nav-count" id="nc-insc">0</span></div>
-    <div class="nav-item" onclick="filterEmails('en_proceso',this)"><div class="ni-left"><span style="color:var(--purple)">●</span> En proceso</div><span class="nav-count" id="nc-proc">0</span></div>
-    <div class="nav-item" onclick="filterEmails('pendiente',this)"><div class="ni-left"><span style="color:var(--amber)">●</span> Pendientes</div><span class="nav-count" id="nc-pend">0</span></div>
+    <div class="nav-item" id="nav-activa" onclick="filterEmails('activa',this)"><div class="ni-left"><span style="color:var(--green)">●</span> Activas</div><span class="nav-count" id="nc-act">0</span></div>
+    <div class="nav-item" id="nav-candidato" onclick="filterEmails('candidato',this)"><div class="ni-left"><span style="color:var(--accent)">●</span> Candidatas</div><span class="nav-count" id="nc-cand">0</span></div>
+    <div class="nav-item" id="nav-inscripto" onclick="filterEmails('inscripto',this)"><div class="ni-left"><span style="color:var(--teal)">●</span> Inscriptas</div><span class="nav-count" id="nc-insc">0</span></div>
+    <div class="nav-item" id="nav-proceso" onclick="filterEmails('proceso',this)"><div class="ni-left"><span style="color:var(--purple)">●</span> En proceso</div><span class="nav-count" id="nc-proc">0</span></div>
+    <div style="padding:3px 16px 6px 38px;margin-right:16px"><button onclick="showKitModal()" style="width:100%;padding:5px 10px;font-size:11px;background:var(--purple-bg);color:var(--purple);border:1px solid rgba(124,58,237,.2);border-radius:10px;cursor:pointer;font-family:var(--font);font-weight:500;transition:all .15s" onmouseover="this.style.background='var(--purple)';this.style.color='white'" onmouseout="this.style.background='var(--purple-bg)';this.style.color='var(--purple)'">🎁 Enviar Kit de Bienvenida</button></div>
+    <div class="nav-item" id="nav-pendiente" onclick="filterEmails('pendiente',this)"><div class="ni-left"><span style="color:var(--amber)">●</span> Pendientes</div><span class="nav-count" id="nc-pend">0</span></div>
+    <div class="nav-item" id="nav-suspendida" onclick="filterEmails('suspendida',this)"><div class="ni-left"><span style="color:var(--red)">●</span> Suspendidas</div><span class="nav-count" id="nc-susp">0</span></div>
+    <div class="sidebar-divider"></div>
+    <div class="prov-toggle" id="prov-toggle" onclick="toggleProvFilter()"><div style="display:flex;align-items:center;gap:12px">🗺️ Por provincia</div><span id="prov-arrow" style="font-size:11px;color:var(--text3)">▶</span></div>
+    <div class="prov-list" id="prov-list"></div>
   </div>
 
-  <!-- MAIN -->
   <div class="main" id="main-content">
-    <!-- Summary + alerts -->
     <div class="summary-strip">
-      <div class="sum-item"><div class="sum-val blue" id="s-total">0</div><div class="sum-label">total</div></div>
-      <div class="sum-item"><div class="sum-val green" id="s-id">0</div><div class="sum-label">identificados</div></div>
-      <div class="sum-item"><div class="sum-val amber" id="s-auto">0</div><div class="sum-label">auto-respondidos</div></div>
-      <div class="sum-item"><div class="sum-val red" id="s-att">0</div><div class="sum-label">tu atención</div></div>
+      <div class="sum-item" onclick="filterEmails('all',document.getElementById('nav-all'))"><div class="sum-val blue" id="s-total">0</div><div class="sum-label">total</div></div>
+      <div class="sum-item" onclick="filterEmails('unidentified',document.getElementById('nav-unidentified'))"><div class="sum-val green" id="s-id">0</div><div class="sum-label">identificados</div></div>
+      <div class="sum-item" onclick="filterEmails('auto',document.getElementById('nav-auto'))"><div class="sum-val amber" id="s-auto">0</div><div class="sum-label">auto-respondidos</div></div>
+      <div class="sum-item" onclick="filterEmails('attention',document.getElementById('nav-attention'))"><div class="sum-val red" id="s-att">0</div><div class="sum-label">tu atención</div></div>
       <div class="sum-item"><div class="sum-val" id="s-date" style="font-size:12px;color:var(--text3)"></div><div class="sum-label">hoy</div></div>
     </div>
-    <div class="alerts-bar" id="alerts-bar"></div>
+    <div class="alerts-bar" id="alerts-bar" style="display:none"></div>
     <div class="email-list-header">
       <span style="font-size:13px;color:var(--text2);font-weight:500" id="list-title">Bandeja de entrada</span>
-      <span class="mail-count-info" id="mail-count"></span>
+      <div class="bulk-actions" id="bulk-actions" style="display:none">
+        <select class="conf-filter" id="conf-filter" onchange="renderList()">
+          <option value="">Todas las confianzas</option>
+          <option value="high">Confianza Alta</option>
+          <option value="medium">Confianza Media</option>
+          <option value="low">Confianza Baja</option>
+        </select>
+        <button class="bulk-btn bulk-btn-send" onclick="sendBulkAuto()">✅ Enviar automáticas (<span id="bulk-count">0</span>)</button>
+        <button class="bulk-btn bulk-btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
+        <button class="bulk-btn bulk-btn-cancel" onclick="clearSelection()">✕ Deseleccionar</button>
+      </div>
+      <span class="mail-count-info" id="mail-count" style="margin-left:auto"></span>
     </div>
     <div id="email-list"></div>
   </div>
@@ -326,8 +319,12 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
     <div class="modal-title">Configuración</div>
     <div class="modal-sub">Ajustá las preferencias del panel.</div>
     <div class="form-group"><label class="form-label">ID del Dash Maestro</label><input class="form-input" id="set-sheet" value="1YmeOp8Jg5ffXBeTNoZkhjUZsc7_VBZK9R1JKYVJ9H0Y"></div>
-    <div class="form-group"><label class="form-label">Tu mail principal (alertas VIP y baja)</label><input class="form-input" id="set-email" placeholder="tu@gmail.com"></div>
-    <div class="form-group"><label class="form-label">Máximo de correos a cargar</label><input class="form-input" id="set-max" type="number" value="200" min="25" max="500"><div class="form-hint">Recomendado: 200. Más correos = más tiempo de carga.</div></div>
+    <div class="form-group"><label class="form-label">Tu mail (resumen diario)</label><input class="form-input" id="set-email" placeholder="facundobarile@betwarrior.com"></div>
+    <div class="form-group">
+      <label class="form-label">Días a cargar</label>
+      <input class="form-input" id="set-days" type="number" value="30" min="7" max="90">
+      <div class="form-hint">Mails de los últimos N días. Recomendado: 30.</div>
+    </div>
     <div class="divider"></div>
     <div class="form-group">
       <label class="form-label">Remitentes internos confiables</label>
@@ -353,6 +350,20 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
   </div>
 </div>
 
+<!-- KIT BIENVENIDA MODAL -->
+<div class="modal-overlay" id="kit-modal" style="display:none">
+  <div class="modal" style="width:580px">
+    <div class="modal-title">🎁 Kit de Bienvenida</div>
+    <div class="modal-sub">Agencias "En Proceso" con usuario y contraseña cargados en el dash.</div>
+    <div id="kit-list" style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;margin-bottom:16px"></div>
+    <div style="font-size:12px;color:var(--text3);padding:8px 12px;background:var(--amber-bg);border-radius:8px;margin-bottom:16px">⚠️ Solo se muestran agencias con usuario y contraseña cargados. Las que faltan datos no aparecen.</div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="closeKitModal()">Cancelar</button>
+      <button class="modal-btn modal-btn-save" onclick="sendKitSelected()" id="kit-send-btn">Enviar seleccionados</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const DEFAULT_SHEET='1YmeOp8Jg5ffXBeTNoZkhjUZsc7_VBZK9R1JKYVJ9H0Y';
 const FOLLOWUP_DAYS=3;
@@ -360,32 +371,76 @@ const VIP_PCT=0.9;
 const REDIRECT=window.location.origin+window.location.pathname;
 const SCOPES='https://mail.google.com/ https://www.googleapis.com/auth/spreadsheets.readonly';
 const CABA_PROVS=['caba','ciudad de buenos aires','ciudad autónoma de buenos aires'];
-
+const MY_EMAIL='afiliadosarg@betwarrior.com';
+const RESUMEN_TO='facundobarile@betwarrior.com';
 const AVATAR_COLORS=['av-color-0','av-color-1','av-color-2','av-color-3','av-color-4','av-color-5','av-color-6','av-color-7','av-color-8','av-color-9'];
+const DAY_OPTIONS=[7,15,30,60];
 
 const DEFAULT_TMPLS={
   'Nueva agencia':'Hola,\n\nGracias por comunicarte con nosotros. Recibimos tu consulta y registramos tus datos en nuestro sistema de afiliados.\n\nEn breve alguien del equipo se va a comunicar con vos para darte toda la info sobre el Programa de Afiliados Betwarrior.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
   'Candidata':'Hola {agencia},\n\nGracias por comunicarte. Tu agencia ya está en nuestro sistema como candidata al Programa de Afiliados Betwarrior.\n\nPronto nos comunicamos con vos para contarte todos los beneficios y el proceso de incorporación.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
   'Inscripta':'Hola {agencia},\n\nConfirmamos que recibimos tu solicitud de adhesión al Programa de Afiliados Betwarrior. Tus datos quedaron registrados correctamente.\n\nNuestro equipo va a procesar tu solicitud y se comunica con vos a la brevedad con los próximos pasos.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
   'En proceso':'Hola {agencia},\n\nTu solicitud de afiliación está en proceso de activación. Estamos configurando tu cuenta y en breve te enviamos tus credenciales de acceso.\n\nCualquier duda no dudes en escribirnos.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
+  'Kit de bienvenida':'Hola {agencia},\n\n¡Bienvenidos al Programa de Afiliados de BetWarrior! Nos alegra sumar a su agencia como parte de esta red.\n\nPara comenzar de forma rápida y ordenada, ya tienen disponible el Kit de Bienvenida:\nhttps://drive.google.com/drive/folders/1ljaoyi_hZyOsEwWu4ev5YbwRKSjCOiWQ\n\n¿Qué van a encontrar en él?\n\n- Carpeta "Guía + Videos Instructivos": Incluye el paso a paso y videos cortos para aprender a usar el sistema y entender cómo funciona el programa.\n- Carpeta "Manual de Marca + Contenidos": Incluye el manual de marca, videos y piezas listas para usar (material para el punto de venta y contenido digital), junto con lineamientos para comunicar correctamente.\n- Preguntas frecuentes\n\nAdemás, les adjunto al final del archivo su QR dentro de nuestro marco.\n\nAnte cualquier duda, pueden escribirnos a: afiliadosarg@betwarrior.com\n\nIMPORTANTE:\nUsuario Myaffs: {usuario}\nContraseña: {password}\nWeb: https://login.betwarrioraffiliates.bet/signin.php\nLink de afiliados: {link_afiliados}\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
 };
 
-let cfg={token:'',refresh_token:'',clientId:'',clientSecret:'',sheetId:DEFAULT_SHEET,myEmail:'',maxMails:200,internalSenders:['piarodriguez@betwarrior.com'],templates:{...DEFAULT_TMPLS}};
-let dashData=[],allEmails=[],processed={},currentFilter='all',selectedId=null,currentTmpl='Nueva agencia',vipThreshold=0,tokenExpiry=0,starredIds=new Set();
+let cfg={token:'',refresh_token:'',clientId:'',clientSecret:'',sheetId:DEFAULT_SHEET,myEmail:RESUMEN_TO,daysToLoad:30,internalSenders:['piarodriguez@betwarrior.com'],templates:{...DEFAULT_TMPLS}};
+let dashData=[],allEmails=[],processed={},currentFilter='all',currentProv='',selectedId=null,currentTmpl='Nueva agencia',vipThreshold=0,tokenExpiry=0,starredIds=new Set(),selectedEmails=new Set(),sentAutoIds=new Set(),sentKitIds=new Set(),provOpen=false;
 
 // ============ INIT ============
 window.onload=()=>{
   loadCfg();
   document.getElementById('s-date').textContent=new Date().toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+  renderDaysFilter();
   const params=new URLSearchParams(window.location.search);
   if(params.get('code'))handleCallback(params.get('code'));
   else if(cfg.token){showApp();syncAll();}
 };
 
-function loadCfg(){try{const s=localStorage.getItem('bw_v6');if(s){const p=JSON.parse(s);cfg={...cfg,...p};if(p.starred)starredIds=new Set(p.starred);}}catch(e){}}
-function saveCfg(){try{localStorage.setItem('bw_v6',JSON.stringify({...cfg,starred:[...starredIds]}));}catch(e){}}
+function loadCfg(){try{const s=localStorage.getItem('bw_v8');if(s){const p=JSON.parse(s);cfg={...cfg,...p};if(p.starred)starredIds=new Set(p.starred);if(p.sentAutoIds)sentAutoIds=new Set(p.sentAutoIds);if(p.sentKitIds)sentKitIds=new Set(p.sentKitIds);}}catch(e){}}
+function saveCfg(){try{localStorage.setItem('bw_v8',JSON.stringify({...cfg,starred:[...starredIds],sentAutoIds:[...sentAutoIds],sentKitIds:[...sentKitIds]}));}catch(e){}}
 function showApp(){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='grid';}
 function logout(){cfg.token='';cfg.refresh_token='';saveCfg();location.reload();}
+
+// ============ DAYS FILTER ============
+function renderDaysFilter(){
+  const d=document.getElementById('days-filter');
+  d.innerHTML=DAY_OPTIONS.map(n=>`<button class="day-btn${cfg.daysToLoad===n?' active':''}" onclick="setDays(${n})">${n}d</button>`).join('')+
+    `<button class="day-btn${![7,15,30,60].includes(cfg.daysToLoad)?' active':''}" onclick="setCustomDays()">✏️</button>`;
+}
+function setDays(n){cfg.daysToLoad=n;saveCfg();renderDaysFilter();syncAll();}
+function setCustomDays(){const v=prompt('Días a cargar:',cfg.daysToLoad);if(v&&parseInt(v)>0){cfg.daysToLoad=parseInt(v);saveCfg();renderDaysFilter();syncAll();}}
+
+// ============ PROVINCE FILTER ============
+function toggleProvFilter(){
+  provOpen=!provOpen;
+  document.getElementById('prov-list').classList.toggle('open',provOpen);
+  document.getElementById('prov-arrow').textContent=provOpen?'▼':'▶';
+}
+function renderProvFilter(){
+  const list=document.getElementById('prov-list');if(!list)return;
+  // Count emails per province from processed data
+  const counts={};
+  allEmails.forEach(e=>{
+    const r=processed[e.id];const prov=r?.match?.agency?.provincia;
+    if(prov){counts[prov]=(counts[prov]||0)+1;}
+  });
+  const provs=Object.keys(counts).sort();
+  list.innerHTML=provs.map(p=>`<div class="prov-item${currentProv===p?' active':''}" onclick="filterByProv('${p}')"><span>${p}</span><span class="prov-count">${counts[p]}</span></div>`).join('');
+  // Update toggle style
+  const toggle=document.getElementById('prov-toggle');
+  if(toggle)toggle.className='prov-toggle'+(currentProv?' has-active':'');
+}
+function filterByProv(prov){
+  if(currentProv===prov){currentProv='';} else {currentProv=prov;}
+  // Clear state filter when filtering by province
+  currentFilter='all';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-all')?.classList.add('active');
+  document.getElementById('list-title').textContent=currentProv?`📍 ${currentProv}`:'Bandeja de entrada';
+  renderProvFilter();
+  if(selectedId){selectedId=null;rebuildMain();}else{renderList();}
+}
 
 // ============ AUTH ============
 function startOAuth(){
@@ -397,7 +452,6 @@ function startOAuth(){
   saveCfg();
   window.location.href=`https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(cid)}&redirect_uri=${encodeURIComponent(REDIRECT)}&response_type=code&scope=${encodeURIComponent(SCOPES)}&access_type=offline&prompt=consent`;
 }
-
 async function handleCallback(code){
   if(!cfg.clientId||!cfg.clientSecret){alert('Necesitás Client ID y Secret');return;}
   try{
@@ -407,7 +461,6 @@ async function handleCallback(code){
     else{alert('Error: '+JSON.stringify(d));}
   }catch(e){alert('Error: '+e.message);}
 }
-
 async function refreshToken(){
   if(!cfg.refresh_token||!cfg.clientId||!cfg.clientSecret)return false;
   try{
@@ -417,9 +470,7 @@ async function refreshToken(){
   }catch(e){}
   return false;
 }
-
 async function getToken(){if(tokenExpiry&&Date.now()>tokenExpiry)await refreshToken();return cfg.token;}
-
 function loginToken(){
   const t=document.getElementById('inp-tok').value.trim();
   if(!t){alert('Ingresá el token');return;}
@@ -430,9 +481,9 @@ function loginToken(){
 }
 
 // ============ SETTINGS ============
-function showSettings(){document.getElementById('set-sheet').value=cfg.sheetId;document.getElementById('set-email').value=cfg.myEmail||'';document.getElementById('set-max').value=cfg.maxMails||200;renderSenders();document.getElementById('settings-modal').style.display='flex';}
+function showSettings(){document.getElementById('set-sheet').value=cfg.sheetId;document.getElementById('set-email').value=cfg.myEmail||RESUMEN_TO;document.getElementById('set-days').value=cfg.daysToLoad||30;renderSenders();document.getElementById('settings-modal').style.display='flex';}
 function closeSettings(){document.getElementById('settings-modal').style.display='none';}
-function saveSettings(){cfg.sheetId=document.getElementById('set-sheet').value.trim()||DEFAULT_SHEET;cfg.myEmail=document.getElementById('set-email').value.trim();cfg.maxMails=parseInt(document.getElementById('set-max').value)||200;saveCfg();closeSettings();}
+function saveSettings(){cfg.sheetId=document.getElementById('set-sheet').value.trim()||DEFAULT_SHEET;cfg.myEmail=document.getElementById('set-email').value.trim()||RESUMEN_TO;cfg.daysToLoad=parseInt(document.getElementById('set-days').value)||30;saveCfg();renderDaysFilter();closeSettings();}
 function addSender(){const v=document.getElementById('set-newsender').value.trim();if(!v||cfg.internalSenders.includes(v))return;cfg.internalSenders.push(v);renderSenders();saveCfg();document.getElementById('set-newsender').value='';}
 function removeSender(s){cfg.internalSenders=cfg.internalSenders.filter(x=>x!==s);renderSenders();saveCfg();}
 function renderSenders(){document.getElementById('set-senders').innerHTML=cfg.internalSenders.map(s=>`<div class="sender-row"><span>${s}</span><span class="sender-del" onclick="removeSender('${s}')">×</span></div>`).join('');}
@@ -458,12 +509,11 @@ async function syncAll(){
 async function loadDash(){
   const t=await getToken();
   try{
-    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/Data%20Maestro!A:AN`,{headers:{Authorization:'Bearer '+t}});
+    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/Data%20Maestro!A:ZZ`,{headers:{Authorization:'Bearer '+t}});
     const d=await r.json();
     if(d.values)parseDash(d.values);
   }catch(e){console.log('Sheets:',e);}
 }
-
 function parseDash(rows){
   dashData=[];
   let hi=-1;
@@ -474,45 +524,49 @@ function parseDash(rows){
   const iAg=idx('Agencias'),iTipo=idx('Tipo de agencia'),iSit=idx('Situación');
   const iNom=idx('Nombre y Apellido'),iMail=idx('Mail'),iCuil=idx('CUIL');
   const iProv=idx('Provincia'),iNgr=idx('NGR'),iCl=idx('Clicks'),iSu=idx('Sign up'),iFt=idx('FTDs');
+  const iUser=idx('Usuario MYAFFS'),iPass=idx('Contraseña'),iLink=idx('Link Afiliados');
   for(let i=hi+1;i<rows.length;i++){
     const row=rows[i];if(!row[iAg]||!row[iSit])continue;
-    const ngr=parseFloat((row[iNgr]||'0').replace(/[$\s]/g,'').replace(',','.'))||0;
+    const ngr=parseFloat((row[iNgr]||'0').replace(/[$\s,]/g,'').replace(',','.'))||0;
     const prov=(row[iProv]||'').toLowerCase().trim();
     const isCABA=CABA_PROVS.includes(prov);
     const agNum=row[iAg].replace(/[^0-9]/g,'');
     const ctaCte=isCABA?agNum:null;
-    dashData.push({agencia:row[iAg]||'',agNum,tipo:row[iTipo]||'Agente',estado:row[iSit]||'',titular:row[iNom]||'',mail:(row[iMail]||'').toLowerCase().trim(),cuil:row[iCuil]||'',provincia:row[iProv]||'',ngr,clicks:parseInt(row[iCl])||0,signups:parseInt(row[iSu])||0,ftds:parseInt(row[iFt])||0,ctaCte,isCABA});
+    let estado=row[iSit]||'';
+    if(estado==='Proceso')estado='En Proceso';
+    dashData.push({agencia:row[iAg]||'',agNum,tipo:row[iTipo]||'Agente',estado,titular:row[iNom]||'',mail:(row[iMail]||'').toLowerCase().trim(),cuil:row[iCuil]||'',provincia:row[iProv]||'',ngr,clicks:parseInt(row[iCl])||0,signups:parseInt(row[iSu])||0,ftds:parseInt(row[iFt])||0,ctaCte,isCABA,usuario:row[iUser]||'',password:row[iPass]||'',linkAfiliados:row[iLink]||''});
   }
   const ngrs=dashData.filter(a=>a.ngr>0).map(a=>a.ngr).sort((a,b)=>a-b);
   vipThreshold=ngrs.length?ngrs[Math.floor(ngrs.length*VIP_PCT)]||50:50;
 }
-
 function isVip(ag){return ag&&ag.ngr>=vipThreshold&&vipThreshold>0;}
-function agLabel(ag){return ag?ag.agencia:''}
 
 // ============ GMAIL ============
 async function loadGmail(){
   const t=await getToken();
-  const max=cfg.maxMails||200;
+  const days=cfg.daysToLoad||30;
+  const after=Math.floor((Date.now()-days*86400000)/1000);
+  // Only inbox, exclude sent by us
+  const query=`in:inbox -from:${MY_EMAIL} after:${after}`;
   let msgs=[],pt=null;
   try{
     do{
-      const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100${pt?'&pageToken='+pt:''}`,{headers:{Authorization:'Bearer '+t}});
+      const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100&q=${encodeURIComponent(query)}${pt?'&pageToken='+pt:''}`,{headers:{Authorization:'Bearer '+t}});
       const d=await r.json();
       if(d.messages)msgs=msgs.concat(d.messages);
       pt=d.nextPageToken||null;
-    }while(pt&&msgs.length<max);
-    msgs=msgs.slice(0,max);
-    document.getElementById('mail-count').textContent=`Cargando ${msgs.length} correos...`;
+    }while(pt&&msgs.length<500);
+    const el=document.getElementById('mail-count');
+    if(el)el.textContent=`Cargando ${msgs.length} correos...`;
     const emails=[];
     for(let i=0;i<msgs.length;i+=10){
       const batch=msgs.slice(i,i+10);
       const res=await Promise.all(batch.map(m=>fetchMsg(m.id)));
       emails.push(...res.filter(Boolean));
-      document.getElementById('mail-count').textContent=`Cargando... ${emails.length}/${msgs.length}`;
+      if(el)el.textContent=`Cargando... ${emails.length}/${msgs.length}`;
     }
     allEmails=emails;
-    document.getElementById('mail-count').textContent=`${allEmails.length} correos`;
+    if(el)el.textContent=`${allEmails.length} correos`;
     processAll();
   }catch(e){console.error('Gmail:',e);}
 }
@@ -526,6 +580,7 @@ async function fetchMsg(id){
     const fromRaw=h.find(x=>x.name==='From')?.value||'';
     const subject=fixEnc(h.find(x=>x.name==='Subject')?.value||'(sin asunto)');
     const date=h.find(x=>x.name==='Date')?.value||'';
+    const threadId=d.threadId||id;
     const em=fromRaw.match(/<(.+?)>/);
     const fromEmail=(em?em[1]:fromRaw).toLowerCase().trim();
     const fromName=fixEnc(fromRaw.replace(/<.+>/,'').replace(/"/g,'').trim()||fromEmail);
@@ -533,12 +588,11 @@ async function fetchMsg(id){
     const isInt=cfg.internalSenders.some(s=>fromEmail.includes(s.toLowerCase()));
     let fwdFrom='',fwdEmail='',body=rawBody;
     if(isInt){const fi=extractFwd(rawBody);if(fi.name){fwdFrom=fi.name;fwdEmail=fi.email;body=fi.body;}}
-    return{id,fromEmail,fromName,isForwarded:isInt&&!!fwdFrom,fwdFrom,fwdEmail,subject,body,rawBody,time:fmtDate(date),rawDate:date,unread:d.labelIds?.includes('UNREAD')};
+    return{id,threadId,fromEmail,fromName,isForwarded:isInt&&!!fwdFrom,fwdFrom,fwdEmail,subject,body,rawBody,time:fmtDate(date),rawDate:date,unread:d.labelIds?.includes('UNREAD')};
   }catch(e){return null;}
 }
 
 function fixEnc(s){if(!s)return'';return s.replace(/Ã±/g,'ñ').replace(/Ã¡/g,'á').replace(/Ã©/g,'é').replace(/Ã­/g,'í').replace(/Ã³/g,'ó').replace(/Ãº/g,'ú').replace(/Ã¼/g,'ü').replace(/â€™/g,"'").replace(/â€œ/g,'"').replace(/â€/g,'"').replace(/=C3=B1/g,'ñ').replace(/=C3=A1/g,'á').replace(/=C3=A9/g,'é').replace(/=C3=AD/g,'í').replace(/=C3=B3/g,'ó').replace(/=C3=BA/g,'ú').replace(/=\r?\n/g,'');}
-
 function extractBody(p){if(!p)return'';if(p.mimeType==='text/plain'&&p.body?.data)return dec64(p.body.data);if(p.parts){for(const x of p.parts){if(x.mimeType==='text/plain'&&x.body?.data)return dec64(x.body.data);}for(const x of p.parts){const t=extractBody(x);if(t)return t;}}if(p.body?.data)return dec64(p.body.data);return'';}
 function dec64(d){try{return decodeURIComponent(escape(atob(d.replace(/-/g,'+').replace(/_/g,'/'))));}catch(e){try{return atob(d.replace(/-/g,'+').replace(/_/g,'/'));}catch(e2){return'';}}}
 function extractFwd(body){const m=body.match(/[-]{3,}\s*Forwarded message\s*[-]{3,}[\s\S]*?(?:De|From):\s*([^\n<]+?)(?:\s*<([^>]+)>)?\s*\n/i)||body.match(/(?:De|From):\s*([^\n<]+?)(?:\s*<([^>]+)>)?\s*\n/i);if(!m)return{name:'',email:'',body};const name=fixEnc(m[1].trim());const email=(m[2]||'').trim().toLowerCase();const start=body.indexOf('\n',body.indexOf(m[0])+m[0].length)+1;const clean=body.slice(start).replace(/^(Date:|Subject:|To:|Para:|Fecha:|Asunto:|Cc:)[^\n]*\n/gim,'').trim();return{name,email,body:clean||body};}
@@ -574,21 +628,41 @@ function matchEmail(email){
 
 function classify(email,m){
   const bl=(email.body||'').toLowerCase();
-  const isUrgent=/urgent|urgente|error|problema|falla|no funciona|no puedo|no veo|caído|caido|no carga/i.test(email.subject+' '+bl);
   const isBaja=/baja|no quiero continuar|no me interesa|cancelar|darme de baja/i.test(email.subject+' '+bl);
   const ag=m.matched?m.agency:null;
   const estado=ag?ag.estado:'desconocido';
-  const estadoKey=estado.toLowerCase().replace(/ /g,'_');
+  const estadoKey=estado.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso');
   const vip=isVip(ag);
-  const needsAtt=ag&&(estado==='Activa'||estado==='En Proceso'||estado==='Pendiente');
+  const needsAtt=ag&&(estado==='Activa'||estado==='En Proceso'||estado==='Pendiente'||estado==='Suspendida');
   const daysOld=getDays(email.rawDate);
-  return{estado,estadoKey,needsAttention:needsAtt,autoReply:!needsAtt,urgent:isUrgent&&needsAtt,baja:isBaja,vip,needsFollowup:needsAtt&&daysOld>=FOLLOWUP_DAYS,daysOld};
+  const autoReply=!needsAtt;
+  // Followup: needs attention AND no recent reply from us
+  const needsFollowup=needsAtt&&daysOld>=FOLLOWUP_DAYS;
+  return{estado,estadoKey,needsAttention:needsAtt,autoReply,baja:isBaja,vip,needsFollowup,daysOld};
+}
+
+function detectDuplicates(){
+  const seen={};
+  allEmails.forEach(e=>{
+    const r=processed[e.id];if(!r)return;
+    const ag=r.match?.agency?.agencia;
+    const key=ag||e.fromEmail;
+    if(!seen[key])seen[key]=[];
+    seen[key].push(e.id);
+  });
+  allEmails.forEach(e=>{
+    const r=processed[e.id];if(!r)return;
+    const ag=r.match?.agency?.agencia;
+    const key=ag||e.fromEmail;
+    processed[e.id].isDuplicate=seen[key].length>1;
+  });
 }
 
 function processAll(){
   processed={};
   allEmails.forEach(e=>{const m=matchEmail(e);processed[e.id]={match:m,cls:classify(e,m)};});
-  updateMetrics();renderAlerts();renderList();
+  detectDuplicates();
+  updateMetrics();renderAlerts();renderProvFilter();renderList();
 }
 
 function updateMetrics(){
@@ -607,8 +681,9 @@ function updateMetrics(){
   document.getElementById('nc-act').textContent=byState('activa');
   document.getElementById('nc-cand').textContent=byState('candidato');
   document.getElementById('nc-insc').textContent=byState('inscripto');
-  document.getElementById('nc-proc').textContent=byState('en_proceso');
+  document.getElementById('nc-proc').textContent=byState('proceso');
   document.getElementById('nc-pend').textContent=byState('pendiente');
+  document.getElementById('nc-susp').textContent=byState('suspendida');
 }
 
 function renderAlerts(){
@@ -620,29 +695,94 @@ function renderAlerts(){
   if(bajas.length)chips.push(`<div class="alert-chip baja" onclick="filterEmails('baja',null)">⚠️ ${bajas.length} posible${bajas.length>1?'s':''} baja</div>`);
   if(vips.length)chips.push(`<div class="alert-chip vip" onclick="filterEmails('vip',null)">⭐ ${vips.length} VIP</div>`);
   if(fus.length)chips.push(`<div class="alert-chip followup" onclick="filterEmails('followup',null)">🕐 ${fus.length} sin respuesta +${FOLLOWUP_DAYS}d</div>`);
-  bar.innerHTML=chips.join('');
+  bar.innerHTML=chips.join('')+(chips.length?`<button class="resumen-btn" onclick="sendResumen()">📧 Enviar resumen del día</button>`:'');
   bar.style.display=chips.length?'flex':'none';
 }
 
 function filterEmails(f,el){
   currentFilter=f;
+  currentProv='';
+  renderProvFilter();
+  clearSelection();
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(el)el.classList.add('active');
-  const titles={'all':'Bandeja de entrada','attention':'Tu atención','auto':'Auto-respondidos','unidentified':'Sin identificar','vip':'VIP','followup':'Seguimiento','baja':'Posibles bajas','activa':'Activas','candidato':'Candidatas','inscripto':'Inscriptas','en_proceso':'En proceso','pendiente':'Pendientes'};
+  else{
+    const map={'all':'nav-all','attention':'nav-attention','auto':'nav-auto','unidentified':'nav-unidentified','vip':'nav-vip','followup':'nav-followup','baja':null,'activa':'nav-activa','candidato':'nav-candidato','inscripto':'nav-inscripto','proceso':'nav-proceso','pendiente':'nav-pendiente','suspendida':'nav-suspendida'};
+    if(map[f])document.getElementById(map[f])?.classList.add('active');
+  }
+  const titles={'all':'Bandeja de entrada','attention':'Tu atención','auto':'Auto-respondidos','unidentified':'Sin identificar','vip':'VIP','followup':'Seguimiento','baja':'Posibles bajas','activa':'Activas','candidato':'Candidatas','inscripto':'Inscriptas','proceso':'En proceso','pendiente':'Pendientes','suspendida':'Suspendidas'};
   document.getElementById('list-title').textContent=titles[f]||'Correos';
-  closeDetail();renderList();
+  // Show bulk actions for states that support auto-reply
+  const bulkStates=['auto','candidato','inscripto','proceso','all','unidentified'];
+  const bulkEl=document.getElementById('bulk-actions');
+  const confEl=document.getElementById('conf-filter');
+  if(bulkStates.includes(f)){bulkEl.style.display='flex';confEl.style.display='';}
+  else{bulkEl.style.display='none';}
+  // Only show conf filter for candidato
+  if(f==='candidato'||f==='all')confEl.style.display='';
+  else confEl.style.display='none';
+  // Close detail if open, then render
+  if(selectedId){
+    selectedId=null;
+    rebuildMain();
+  } else {
+    renderList();
+  }
+}
+
+function rebuildMain(){
+  const mc=document.getElementById('main-content');
+  mc.innerHTML=`<div class="summary-strip">
+    <div class="sum-item" onclick="filterEmails('all',document.getElementById('nav-all'))"><div class="sum-val blue" id="s-total">0</div><div class="sum-label">total</div></div>
+    <div class="sum-item" onclick="filterEmails('unidentified',document.getElementById('nav-unidentified'))"><div class="sum-val green" id="s-id">0</div><div class="sum-label">identificados</div></div>
+    <div class="sum-item" onclick="filterEmails('auto',document.getElementById('nav-auto'))"><div class="sum-val amber" id="s-auto">0</div><div class="sum-label">auto-respondidos</div></div>
+    <div class="sum-item" onclick="filterEmails('attention',document.getElementById('nav-attention'))"><div class="sum-val red" id="s-att">0</div><div class="sum-label">tu atención</div></div>
+    <div class="sum-item"><div class="sum-val" id="s-date" style="font-size:12px;color:var(--text3)"></div><div class="sum-label">hoy</div></div>
+  </div>
+  <div class="alerts-bar" id="alerts-bar" style="display:none"></div>
+  <div class="email-list-header">
+    <span style="font-size:13px;color:var(--text2);font-weight:500" id="list-title">Bandeja de entrada</span>
+    <div class="bulk-actions" id="bulk-actions" style="display:none">
+      <select class="conf-filter" id="conf-filter" onchange="renderList()">
+        <option value="">Todas las confianzas</option>
+        <option value="high">Confianza Alta</option>
+        <option value="medium">Confianza Media</option>
+        <option value="low">Confianza Baja</option>
+      </select>
+      <button class="bulk-btn bulk-btn-send" onclick="sendBulkAuto()">✅ Enviar automáticas (<span id="bulk-count">0</span>)</button>
+      <button class="bulk-btn bulk-btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
+      <button class="bulk-btn bulk-btn-cancel" onclick="clearSelection()">✕ Deseleccionar</button>
+    </div>
+    <span class="mail-count-info" id="mail-count" style="margin-left:auto">${allEmails.length} correos</span>
+  </div>
+  <div id="email-list"></div>`;
+  document.getElementById('s-date').textContent=new Date().toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+  updateMetrics();renderAlerts();renderList();
 }
 
 function applySearch(q){renderList(q);}
 
 function getFiltered(q=''){
+  const confF=(document.getElementById('conf-filter')?.value)||'';
   return allEmails.filter(e=>{
     const r=processed[e.id];if(!r)return false;
     const pass=currentFilter==='all'||(currentFilter==='attention'&&r.cls.needsAttention)||(currentFilter==='auto'&&r.cls.autoReply)||(currentFilter==='unidentified'&&!r.match.matched)||(currentFilter==='vip'&&r.cls.vip)||(currentFilter==='followup'&&r.cls.needsFollowup)||(currentFilter==='baja'&&r.cls.baja)||r.cls.estadoKey===currentFilter;
     if(!pass)return false;
+    if(confF&&r.match.confidence!==confF)return false;
+    if(currentProv&&r.match?.agency?.provincia!==currentProv)return false;
     if(!q)return true;
     const qn=normT(q);
-    return normT(e.fromName).includes(qn)||normT(e.fwdFrom).includes(qn)||normT(e.subject).includes(qn)||normT(e.body).includes(qn)||(r.match.agency&&normT(r.match.agency.agencia).includes(qn))||(r.match.agency&&normT(r.match.agency.titular).includes(qn));
+    const qnum=q.replace(/[^0-9]/g,'');
+    const ag=r.match?.agency;
+    // Text search
+    if(normT(e.fromName).includes(qn)||normT(e.fwdFrom).includes(qn)||normT(e.subject).includes(qn)||normT(e.body).includes(qn)||(ag&&normT(ag.agencia).includes(qn))||(ag&&normT(ag.titular).includes(qn)))return true;
+    // Number search: agency number, ctaCte, CUIL
+    if(qnum.length>=3&&ag){
+      if(ag.agNum&&ag.agNum.includes(qnum))return true;
+      if(ag.ctaCte&&ag.ctaCte.includes(qnum))return true;
+      if(ag.cuil&&normNum(ag.cuil).includes(qnum))return true;
+    }
+    return false;
   });
 }
 
@@ -658,15 +798,11 @@ function mkEl(tag,styles,cls){
 
 function renderList(q=''){
   const list=document.getElementById('email-list');
+  if(!list)return;
   const emails=getFiltered(q);
   list.innerHTML='';
-  if(!emails.length){
-    const empty=document.createElement('div');
-    empty.className='empty';
-    empty.textContent='No hay correos en esta categoría';
-    list.appendChild(empty);
-    return;
-  }
+  if(!emails.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='No hay correos en esta categoría';list.appendChild(empty);return;}
+
   const frag=document.createDocumentFragment();
   for(const e of emails){
     const r=processed[e.id]||{};
@@ -675,78 +811,156 @@ function renderList(q=''){
     const dn=e.isForwarded&&e.fwdFrom?e.fwdFrom:e.fromName;
     const bClass='b-'+(m.matched?c.estadoKey:'unknown');
     const badgeClass=c.baja?'b-pendiente':c.vip?'b-vip':bClass;
-    const bLabel=c.baja?'⚠ Baja':c.vip?'⭐ VIP':m.matched?(c.estado||'—'):'Sin identificar';
+    const prov=m.matched&&m.agency?.provincia?` · ${m.agency.provincia}`:'';
+    const bLabel=c.baja?'⚠ Baja':c.vip?`⭐ VIP${prov}`:m.matched?`${c.estado||'—'}${prov}`:'Sin identificar';
     const isStarred=starredIds.has(e.id);
-    const preview=(e.body||'').replace(/\n/g,' ').slice(0,80);
+    const isSelected=selectedEmails.has(e.id);
+    const isSent=sentAutoIds.has(e.id);
+    const preview=(e.body||'').replace(/[\n\r]/g,' ').slice(0,80);
 
-    // Row
     const row=mkEl('div',{display:'flex',alignItems:'center',padding:'0 16px',height:'52px',minHeight:'52px',maxHeight:'52px',borderBottom:'1px solid #e2e8f0',cursor:'pointer',overflow:'hidden',flexWrap:'nowrap',width:'100%'});
-    row.className=['email-row',e.unread?'unread':'read',selectedId===e.id?'selected-row':''].filter(Boolean).join(' ');
+    row.className=['email-row',e.unread?'unread':'read',isSelected?'selected-row':''].filter(Boolean).join(' ');
     row.addEventListener('click',()=>selectEmail(e.id));
 
+    // Checkbox
+    const cbWrap=mkEl('div',{width:'20px',flexShrink:'0',display:'flex',alignItems:'center',justifyContent:'center',marginRight:'4px'});
+    const cb=document.createElement('input');cb.type='checkbox';cb.checked=isSelected;cb.style.cursor='pointer';cb.style.width='14px';cb.style.height='14px';
+    cb.addEventListener('click',ev=>{ev.stopPropagation();toggleSelect(e.id);});
+    cbWrap.appendChild(cb);row.appendChild(cbWrap);
+
     // Unread dot
-    const dotWrap=mkEl('div',{width:'12px',flexShrink:'0',display:'flex',alignItems:'center',justifyContent:'center'});
+    const dotWrap=mkEl('div',{width:'8px',flexShrink:'0',display:'flex',alignItems:'center',justifyContent:'center',marginRight:'4px'});
     if(e.unread){const dot=mkEl('div',{width:'8px',height:'8px',borderRadius:'50%',background:'#1a73e8'});dotWrap.appendChild(dot);}
     row.appendChild(dotWrap);
 
     // Star
-    const star=mkEl('div',{width:'28px',flexShrink:'0',display:'flex',alignItems:'center',justifyContent:'center',color:isStarred?'#f4b400':'#c5c8cb',cursor:'pointer',fontSize:'16px'});
+    const star=mkEl('div',{width:'24px',flexShrink:'0',display:'flex',alignItems:'center',justifyContent:'center',color:isStarred?'#f4b400':'#c5c8cb',cursor:'pointer',fontSize:'15px'});
     star.textContent=isStarred?'★':'☆';
     star.addEventListener('click',ev=>toggleStar(ev,e.id));
     row.appendChild(star);
 
     // Avatar
-    const av=mkEl('div',{width:'32px',height:'32px',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',fontWeight:'600',flexShrink:'0',marginRight:'12px',color:'white'});
-    av.classList.add(avatarColor(dn));
-    av.textContent=getInitials(dn);
+    const av=mkEl('div',{width:'32px',height:'32px',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',fontWeight:'600',flexShrink:'0',marginRight:'10px',color:'white'});
+    av.classList.add(avatarColor(dn));av.textContent=getInitials(dn);
     row.appendChild(av);
 
     // Sender
-    const sender=mkEl('div',{width:'180px',flexShrink:'0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontSize:'14px',fontWeight:e.unread?'700':'400',color:e.unread?'#202124':'#5f6368'});
+    const sender=mkEl('div',{width:'170px',flexShrink:'0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontSize:'14px',fontWeight:e.unread?'700':'400',color:e.unread?'#202124':'#5f6368'});
     sender.textContent=dn;
     if(e.isForwarded){const fwd=mkEl('span',{fontSize:'10px',color:'#80868b',fontWeight:'400',marginLeft:'4px'});fwd.textContent='↩ vía '+e.fromName;sender.appendChild(fwd);}
     row.appendChild(sender);
 
-    // Content (subject + preview)
+    // Content
     const content=mkEl('div',{flex:'1',overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis',display:'flex',gap:'6px',alignItems:'center',minWidth:'0'});
-    const subj=mkEl('span',{fontSize:'14px',fontWeight:e.unread?'600':'400',color:e.unread?'#202124':'#5f6368',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flexShrink:'0',maxWidth:'300px'});
+    const subj=mkEl('span',{fontSize:'14px',fontWeight:e.unread?'600':'400',color:e.unread?'#202124':'#5f6368',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flexShrink:'0',maxWidth:'280px'});
     subj.textContent=e.subject;
     const prev=mkEl('span',{fontSize:'13px',color:'#80868b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:'1'});
     prev.textContent='— '+preview;
-    content.appendChild(subj);
-    content.appendChild(prev);
+    content.appendChild(subj);content.appendChild(prev);
     row.appendChild(content);
 
-    // Right (badge + time)
-    const right=mkEl('div',{display:'flex',alignItems:'center',gap:'8px',flexShrink:'0',marginLeft:'8px'});
-    const badge=mkEl('span',null,['badge',badgeClass]);
-    badge.textContent=bLabel;
+    // Right
+    const right=mkEl('div',{display:'flex',alignItems:'center',gap:'6px',flexShrink:'0',marginLeft:'8px'});
+    if(isSent){const sent=mkEl('span',null,['badge']);sent.style.background='#e6f4ea';sent.style.color='#137333';sent.textContent='✓ Enviado';right.appendChild(sent);}
+    if(r.isDuplicate){const dup=mkEl('span',null,['badge','b-duplicado']);dup.textContent='dup';right.appendChild(dup);}
+    const badge=mkEl('span',null,['badge',badgeClass]);badge.textContent=bLabel;
     const time=mkEl('span',{fontSize:'12px',color:'#80868b',whiteSpace:'nowrap',fontWeight:e.unread?'600':'400'});
     time.textContent=e.time;
-    right.appendChild(badge);
-    right.appendChild(time);
+    right.appendChild(badge);right.appendChild(time);
     row.appendChild(right);
 
     frag.appendChild(row);
   }
   list.appendChild(frag);
+  // Update bulk count
+  const bc=document.getElementById('bulk-count');
+  if(bc)bc.textContent=selectedEmails.size;
 }
 
-function toggleStar(ev,id){ev.stopPropagation();if(starredIds.has(id))starredIds.delete(id);else starredIds.add(id);saveCfg();renderList(document.getElementById('search-input').value);}
+function toggleStar(ev,id){ev.stopPropagation();if(starredIds.has(id))starredIds.delete(id);else starredIds.add(id);saveCfg();renderList(document.getElementById('search-input')?.value||'');}
 
-function closeDetail(){
-  selectedId=null;
-  const mc=document.getElementById('main-content');
-  mc.innerHTML=`<div class="summary-strip"><div class="sum-item"><div class="sum-val blue" id="s-total">0</div><div class="sum-label">total</div></div><div class="sum-item"><div class="sum-val green" id="s-id">0</div><div class="sum-label">identificados</div></div><div class="sum-item"><div class="sum-val amber" id="s-auto">0</div><div class="sum-label">auto-respondidos</div></div><div class="sum-item"><div class="sum-val red" id="s-att">0</div><div class="sum-label">tu atención</div></div><div class="sum-item"><div class="sum-val" id="s-date" style="font-size:12px;color:var(--text3)"></div><div class="sum-label">hoy</div></div></div><div class="alerts-bar" id="alerts-bar"></div><div class="email-list-header"><span style="font-size:13px;color:var(--text2);font-weight:500" id="list-title">Bandeja de entrada</span><span class="mail-count-info" id="mail-count"></span></div><div id="email-list"></div>`;
-  document.getElementById('s-date').textContent=new Date().toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
-  document.getElementById('mail-count').textContent=`${allEmails.length} correos`;
-  updateMetrics();renderAlerts();renderList();
+function toggleSelect(id){
+  if(selectedEmails.has(id))selectedEmails.delete(id);else selectedEmails.add(id);
+  const bc=document.getElementById('bulk-count');if(bc)bc.textContent=selectedEmails.size;
+  renderList(document.getElementById('search-input')?.value||'');
+}
+function clearSelection(){selectedEmails.clear();const bc=document.getElementById('bulk-count');if(bc)bc.textContent=0;renderList(document.getElementById('search-input')?.value||'');}
+
+// ============ BULK SEND ============
+async function sendBulkAuto(){
+  const toSend=selectedEmails.size>0?[...selectedEmails]:getFiltered().filter(e=>{const r=processed[e.id];return r&&r.cls.autoReply&&!sentAutoIds.has(e.id);}).map(e=>e.id);
+  if(!toSend.length){alert('No hay correos para enviar.');return;}
+  if(!confirm(`¿Enviás respuesta automática a ${toSend.length} agencia${toSend.length>1?'s':''}?`))return;
+  let ok=0,fail=0;
+  for(const id of toSend){
+    const e=allEmails.find(x=>x.id===id);if(!e)continue;
+    const r=processed[id]||{};const ag=r.match?.agency;
+    const de=e.isForwarded&&e.fwdEmail?e.fwdEmail:e.fromEmail;
+    const dn=e.isForwarded&&e.fwdFrom?e.fwdFrom:e.fromName;
+    const tk=ag?ag.estado==='Candidato'?'Candidata':ag.estado==='Inscripto'?'Inscripta':ag.estado==='En Proceso'?'En proceso':'Nueva agencia':'Nueva agencia';
+    const txt=(cfg.templates[tk]||cfg.templates['Nueva agencia']||'').replace(/\{agencia\}/g,ag?ag.agencia:'').replace(/\{nombre\}/g,dn);
+    const sent=await sendGmail(de,e.subject.startsWith('Re:')?e.subject:'Re: '+e.subject,txt,e.threadId);
+    if(sent){sentAutoIds.add(id);ok++;}else{fail++;}
+  }
+  saveCfg();
+  clearSelection();
+  alert(`✅ Enviados: ${ok}${fail?` · ❌ Fallidos: ${fail}`:''}`);
+  renderList();
 }
 
+// ============ GMAIL SEND ============
+async function sendGmail(to,subject,body,threadId){
+  const t=await getToken();
+  try{
+    const raw=makeRaw(MY_EMAIL,to,subject,body,threadId);
+    const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify({raw,threadId})});
+    const d=await r.json();
+    return !!d.id;
+  }catch(e){console.error('Send error:',e);return false;}
+}
+
+function makeRaw(from,to,subject,body,threadId){
+  const msg=[`From: ${from}`,`To: ${to}`,`Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,'MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: base64','',btoa(unescape(encodeURIComponent(body)))].join('\r\n');
+  return btoa(unescape(encodeURIComponent(msg))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+// ============ EXPORT CSV ============
+function exportCSV(){
+  const emails=selectedEmails.size>0?allEmails.filter(e=>selectedEmails.has(e.id)):getFiltered();
+  const attn=emails.filter(e=>processed[e.id]?.cls.needsAttention);
+  const rows=[['Agencia','Titular','Estado','Provincia','Email','Asunto','Fecha','Confianza']];
+  for(const e of attn){
+    const r=processed[e.id]||{};const ag=r.match?.agency;
+    rows.push([ag?.agencia||'',ag?.titular||'',r.cls?.estado||'Sin identificar',ag?.provincia||'',e.isForwarded?e.fwdEmail:e.fromEmail,e.subject,e.time,r.match?.confidence||'']);
+  }
+  const csv=rows.map(r=>r.map(v=>'"'+(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download=`afiliados_pendientes_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.csv`;
+  a.click();
+}
+
+// ============ RESUMEN EMAIL ============
+async function sendResumen(){
+  const sent=allEmails.filter(e=>sentAutoIds.has(e.id));
+  if(!sent.length){alert('No se enviaron respuestas automáticas hoy.');return;}
+  const byProv={};
+  sent.forEach(e=>{
+    const r=processed[e.id];const ag=r?.match?.agency;
+    const prov=ag?.provincia||'Sin provincia';
+    if(!byProv[prov])byProv[prov]=[];
+    byProv[prov].push(`  • ${ag?.agencia||'Nueva'} · ${ag?.titular||e.fromName} — ${r?.cls?.estado||'Sin estado'}`);
+  });
+  const lines=Object.entries(byProv).sort(([a],[b])=>a.localeCompare(b)).map(([prov,items])=>`${prov.toUpperCase()} (${items.length})\n${items.join('\n')}`).join('\n\n');
+  const body=`Resumen de respuestas automáticas — ${new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}\n\nSe enviaron respuestas automáticas a ${sent.length} agencia${sent.length>1?'s':''}:\n\n${lines}\n\nRecordá actualizar el estado en el Dash Maestro.\n\nEquipo Betwarrior Afiliados`;
+  const ok=await sendGmail(cfg.myEmail||RESUMEN_TO,`Resumen afiliados ${new Date().toLocaleDateString('es-AR')}`,body,null);
+  if(ok)alert(`✅ Resumen enviado a ${cfg.myEmail||RESUMEN_TO}`);
+  else alert('❌ Error al enviar el resumen.');
+}
+
+// ============ DETAIL ============
 function selectEmail(id){
   selectedId=id;
   const e=allEmails.find(x=>x.id===id);if(!e)return;
-  // Mark as read visually
   e.unread=false;
   const r=processed[id]||{};const m=r.match||{};const c=r.cls||{};
   const ag=m.agency;
@@ -754,57 +968,40 @@ function selectEmail(id){
   const de=e.isForwarded&&e.fwdEmail?e.fwdEmail:e.fromEmail;
   const mc=document.getElementById('main-content');
 
-  // Match section
   let matchHTML='';
   if(m.matched&&ag){
     const cc=m.confidence==='high'?'var(--green)':m.confidence==='medium'?'var(--amber)':'var(--red)';
     const cl=m.confidence==='high'?'Alta':m.confidence==='medium'?'Media':'Baja';
     const sigH=(m.signals||[]).map(s=>`<span class="sig ${s.h?'sig-hit':'sig-miss'}">${s.h?'✓':'-'} ${s.l}</span>`).join('');
     const perf=ag.ngr>0||ag.clicks>0?`<div class="perf-chips"><span class="perf-chip">${ag.clicks} clicks</span><span class="perf-chip">${ag.signups} sign ups</span><span class="perf-chip">${ag.ftds} FTDs</span><span class="perf-chip ${ag.ngr>0?'pos':ag.ngr<0?'neg':''}">${ag.ngr?'$'+ag.ngr.toLocaleString('es-AR'):'$0'} NGR</span></div>`:'';
-    matchHTML=`<div class="match-row ${m.confidence}">
-      <div class="match-info">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <div class="match-agency-name">${ag.agencia} · ${ag.provincia}</div>
-          ${isVip(ag)?'<span class="badge b-vip">⭐ VIP</span>':''}
-          <span class="badge b-${ag.estado.toLowerCase().replace(/ /g,'_')}">${ag.estado}</span>
-          <span style="font-size:11px;color:var(--text3)">${ag.tipo}</span>
-          <span style="font-size:11px;color:${cc};font-weight:500">Confianza: ${cl}</span>
-        </div>
-        ${ag.titular?`<div class="match-meta">Titular: ${ag.titular}</div>`:''}
-        <div class="signals">${sigH}</div>
-        ${perf}
-      </div>
-    </div>`;
+    matchHTML=`<div class="match-row ${m.confidence}"><div class="match-info"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="match-agency-name">${ag.agencia} · ${ag.provincia}</div>${isVip(ag)?'<span class="badge b-vip">⭐ VIP</span>':''}<span class="badge b-${c.estadoKey}">${ag.estado}</span><span style="font-size:11px;color:var(--text3)">${ag.tipo}</span><span style="font-size:11px;color:${cc};font-weight:500">Confianza: ${cl}</span></div>${ag.titular?`<div class="match-meta">Titular: ${ag.titular}</div>`:''}<div class="signals">${sigH}</div>${perf}</div></div>`;
   }else if(!m.matched&&m.candidates?.length){
-    matchHTML=`<div class="match-row low"><div class="match-info"><div class="match-agency-name" style="margin-bottom:8px">No identificada — posibles coincidencias:</div><div class="candidates-list">${m.candidates.slice(0,3).map(c=>`<div class="cand-row" onclick="confirmMatch('${id}','${c.ag.agencia}')"><div><div style="font-size:13px;font-weight:500">${c.ag.agencia} · ${c.ag.provincia}</div><div style="font-size:12px;color:var(--text3)">${c.ag.titular||'sin titular'} · ${c.ag.estado}</div></div><span style="font-size:12px;font-weight:600;color:${c.score>=40?'var(--green)':c.score>=25?'var(--amber)':'var(--text3)'}">${c.score}pts →</span></div>`).join('')}</div><div style="font-size:12px;color:var(--text3);margin-top:8px">Hacé click para confirmar.</div></div></div>`;
+    matchHTML=`<div class="match-row low"><div class="match-info"><div class="match-agency-name" style="margin-bottom:8px">No identificada — posibles coincidencias:</div><div class="candidates-list">${m.candidates.slice(0,3).map(cd=>`<div class="cand-row" onclick="confirmMatch('${id}','${cd.ag.agencia}')"><div><div style="font-size:13px;font-weight:500">${cd.ag.agencia} · ${cd.ag.provincia}</div><div style="font-size:12px;color:var(--text3)">${cd.ag.titular||'sin titular'} · ${cd.ag.estado}</div></div><span style="font-size:12px;font-weight:600;color:${cd.score>=40?'var(--green)':cd.score>=25?'var(--amber)':'var(--text3)'}">${cd.score}pts →</span></div>`).join('')}</div><div style="font-size:12px;color:var(--text3);margin-top:8px">Hacé click para confirmar.</div></div></div>`;
   }else{
     matchHTML=`<div class="match-row none"><div class="match-info"><div class="match-agency-name">Nueva agencia — no figura en el dash</div><div class="match-meta">Se enviará respuesta automática de bienvenida.</div></div></div>`;
   }
 
-  // Alerts
   let alertsHTML='';
   if(c.baja)alertsHTML+=`<div class="abox abox-baja">⚠️ Posible solicitud de baja detectada. Revisá y respondé con urgencia.</div>`;
   if(c.vip&&c.needsAttention)alertsHTML+=`<div class="abox abox-vip">⭐ Agencia VIP (top 10% NGR). Atención prioritaria.</div>`;
   if(c.needsFollowup)alertsHTML+=`<div class="abox abox-followup">🕐 Sin respuesta hace ${Math.floor(c.daysOld)} días.</div>`;
-  if(c.estado==='En Proceso')alertsHTML+=`<div class="abox abox-proceso">🔄 En proceso de activación — vos estás gestionando la cuenta.</div>`;
-  if(c.estado==='Pendiente')alertsHTML+=`<div class="abox abox-pendiente">⏳ Pendiente — verificá qué documentos o datos faltan.</div>`;
+  if(c.estado==='En Proceso')alertsHTML+=`<div class="abox abox-proceso">🔄 En proceso de activación.</div>`;
+  if(c.estado==='Pendiente')alertsHTML+=`<div class="abox abox-pendiente">⏳ Pendiente — verificá qué documentos faltan.</div>`;
+  if(c.estado==='Suspendida')alertsHTML+=`<div class="abox abox-suspendida">🚫 Agencia suspendida — revisá antes de responder.</div>`;
 
-  // Auto reply
+  const isSent=sentAutoIds.has(id);
   let autoHTML='';
   if(c.autoReply){
     const tk=ag?ag.estado==='Candidato'?'Candidata':ag.estado==='Inscripto'?'Inscripta':ag.estado==='En Proceso'?'En proceso':'Nueva agencia':'Nueva agencia';
-    const agLabel2=ag?ag.agencia:'';
-    const txt=(cfg.templates[tk]||cfg.templates['Nueva agencia']||'').replace(/\{agencia\}/g,agLabel2).replace(/\{nombre\}/g,dn);
-    autoHTML=`<div class="auto-reply-box"><div class="arb-title">✅ Respuesta automática preparada</div><div class="arb-body" id="auto-body-${id}">${txt}</div><div class="arb-actions"><button class="ai-btn" onclick="editAuto('${id}')">✏️ Editar</button><button class="send-btn" style="background:var(--green)" onclick="sendAuto('${id}','${de}')">Enviar desde afiliadosarg@betwarrior.com</button></div></div>`;
+    const txt=(cfg.templates[tk]||cfg.templates['Nueva agencia']||'').replace(/\{agencia\}/g,ag?ag.agencia:'').replace(/\{nombre\}/g,dn);
+    autoHTML=`<div class="auto-reply-box"><div class="arb-title">${isSent?'✓ Respuesta enviada':'✅ Respuesta automática preparada'}</div><div class="arb-body" id="auto-body-${id}">${txt}</div><div class="arb-actions"><button class="ai-btn" onclick="editAuto('${id}')">✏️ Editar</button>${isSent?`<span style="font-size:12px;color:var(--green);padding:8px">✓ Ya enviado</span>`:`<button class="send-btn" style="background:var(--green)" onclick="sendAutoSingle('${id}','${de}')">Enviar desde afiliadosarg@betwarrior.com</button>`}</div></div>`;
   }
 
-  // Reply box
   let replyHTML='';
   if(c.needsAttention){
-    replyHTML=`<div class="reply-box"><div class="rb-header">💬 Tu respuesta personal a <strong>${de}</strong></div><textarea id="reply-${id}" placeholder="Escribí tu respuesta acá..."></textarea><div class="rb-actions"><button class="send-btn" onclick="sendReply('${id}','${de}')">Enviar desde afiliadosarg@betwarrior.com</button><button class="ai-btn" onclick="suggestReply('${id}')">✨ Sugerir con IA</button></div></div>`;
+    replyHTML=`<div class="reply-box"><div class="rb-header">💬 Tu respuesta personal a <strong>${de}</strong></div><textarea id="reply-${id}" placeholder="Escribí tu respuesta acá..."></textarea><div class="rb-actions"><button class="send-btn" onclick="sendReplySingle('${id}','${de}')">Enviar desde afiliadosarg@betwarrior.com</button><button class="ai-btn" onclick="openClaudeAI('${id}')">✨ Analizar con IA</button></div></div>`;
   }
 
-  // History
   const related=allEmails.filter(x=>x.id!==id&&processed[x.id]?.match?.agency?.agencia===ag?.agencia);
   const histHTML=related.length?`<div class="analysis-panel"><div class="ap-title">📋 Historial de ${ag?.agencia} (${related.length} correo${related.length>1?'s':''})</div>${related.map(x=>`<div class="history-item" onclick="selectEmail('${x.id}')"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">${x.isForwarded?x.fwdFrom:x.fromName}</span><span style="font-size:12px;color:var(--text3)">${x.time}</span></div><div style="font-size:13px;color:var(--text2)">${x.subject}</div></div>`).join('')}</div>`:'';
 
@@ -812,6 +1009,7 @@ function selectEmail(id){
     <div class="detail-header">
       <button class="detail-back" onclick="closeDetail()">← Volver</button>
       <div style="display:flex;gap:8px;align-items:center">
+        ${r.isDuplicate?'<span class="badge b-duplicado">duplicado</span>':''}
         <span style="font-size:12px;color:var(--text3)">${c.daysOld>=1?`hace ${Math.floor(c.daysOld)} días`:e.time}</span>
       </div>
     </div>
@@ -819,67 +1017,161 @@ function selectEmail(id){
     <div class="mail-bubble">
       <div class="mb-header">
         <div class="mb-avatar ${avatarColor(dn)}">${getInitials(dn)}</div>
-        <div>
-          <div class="mb-from">${dn}</div>
-          <div class="mb-email">${de}</div>
-          ${e.isForwarded?`<div class="mb-fwd">↩ Reenviado por ${e.fromName}</div>`:''}
-        </div>
+        <div><div class="mb-from">${dn}</div><div class="mb-email">${de}</div>${e.isForwarded?`<div class="mb-fwd">↩ Reenviado por ${e.fromName}</div>`:''}</div>
         <div class="mb-time">${e.time}</div>
       </div>
       <div class="mb-body">${(e.body||'').trim()}</div>
     </div>
+    <div class="analysis-panel"><div class="ap-title">🔍 Identificación de agencia</div>${matchHTML}${alertsHTML}</div>
+    ${autoHTML}${replyHTML}
     <div class="analysis-panel">
-      <div class="ap-title">🔍 Identificación de agencia</div>
-      ${matchHTML}
-      ${alertsHTML}
-    </div>
-    ${autoHTML}
-    ${replyHTML}
-    <div class="analysis-panel">
-      <div class="ap-title">🤖 Análisis IA <span class="spin" id="spin-${id}"></span></div>
-      <div id="ai-${id}"><div style="font-size:13px;color:var(--text3)">Analizando...</div></div>
+      <div class="ap-title">🤖 Análisis IA</div>
+      <div style="display:flex;gap:8px;align-items:center;padding:4px 0">
+        <button class="ai-btn" onclick="openClaudeAI('${id}')">✨ Analizar este mail con Claude</button>
+        <span style="font-size:12px;color:var(--text3)">Se abre una nueva conversación con el contexto del mail.</span>
+      </div>
     </div>
     ${histHTML}
   </div>`;
-
-  analyzeAI(e,m,c,id);
 }
 
-async function analyzeAI(email,m,c,id){
-  const ag=m.agency;
-  const prompt=`Sos asistente interno de afiliados de Betwarrior Argentina. Estados: Candidato (habilitada por ente regulador, puede no saber del programa), Inscripto (quiere sumarse), En Proceso (cuenta en creación), Pendiente (esperando documentos), Activa (funcionando).
-Mail de: ${email.isForwarded?email.fwdFrom+' (vía '+email.fromName+')':email.fromName}
-Asunto: ${email.subject}
-Cuerpo: ${(email.body||'').slice(0,500)}
-${ag?`Agencia: ${ag.agencia}, Estado: ${ag.estado}, Provincia: ${ag.provincia}, NGR: $${ag.ngr||0}`:'No identificada en el dash'}
-Respondé SOLO en JSON: {"resumen":"1 oración en español argentino","intencion":"solicitud_afiliacion|consulta_estado|soporte_tecnico|material_promo|datos_bancarios|comisiones|confusion_programa|posible_baja|otro","prioridad":"alta|media|baja","nota_interna":"observación máx 15 palabras, tono directo"}`;
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:prompt}]})});
-    const data=await res.json();
-    const p=JSON.parse((data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim());
-    const sp=document.getElementById('spin-'+id);if(sp)sp.style.display='none';
-    const pc=p.prioridad==='alta'?'var(--red)':p.prioridad==='media'?'var(--amber)':'var(--green)';
-    const el=document.getElementById('ai-'+id);
-    if(el)el.innerHTML=`<div class="ai-result-box"><div class="air-summary">${p.resumen||''}</div><div class="air-tags"><span class="air-tag">${(p.intencion||'').replace(/_/g,' ')}</span><span class="air-tag" style="color:${pc};border-color:${pc}">${p.prioridad} prioridad</span></div>${p.nota_interna?`<div class="air-note">📝 ${p.nota_interna}</div>`:''}</div>`;
-  }catch(e){const sp=document.getElementById('spin-'+id);if(sp)sp.style.display='none';const el=document.getElementById('ai-'+id);if(el)el.innerHTML='<div style="font-size:13px;color:var(--text3)">Error al analizar.</div>';}
+function openClaudeAI(id){
+  const e=allEmails.find(x=>x.id===id);if(!e)return;
+  const r=processed[id]||{};const ag=r.match?.agency;
+  const prompt=`Sos asistente interno de afiliados de Betwarrior Argentina. Analizá este mail:\n\nDe: ${e.isForwarded?e.fwdFrom+' (reenviado por '+e.fromName+')':e.fromName} <${e.isForwarded?e.fwdEmail:e.fromEmail}>\nAsunto: ${e.subject}\nMensaje: ${(e.body||'').slice(0,800)}\n${ag?`\nAgencia identificada: ${ag.agencia} · ${ag.estado} · ${ag.provincia} · NGR: $${ag.ngr||0}`:'No identificada en el dash.'}\n\nIndicame: 1) Resumen en 1 oración, 2) Intención del mail, 3) Prioridad y por qué, 4) Sugerencia de respuesta en tono argentino informal.`;
+  window.open(`https://claude.ai/new?q=${encodeURIComponent(prompt)}`,'_blank');
 }
 
-async function suggestReply(id){
-  const e=allEmails.find(x=>x.id===id);const r=processed[id]||{};
-  const ta=document.getElementById('reply-'+id);if(!ta)return;
-  ta.value='Generando sugerencia...';
-  const ag=r.match?.agency;
-  const prompt=`Escribí una respuesta personal, profesional pero en tono argentino informal (tuteo, sin "estimado") para esta agencia activa de Betwarrior.${ag?` Agencia: ${ag.agencia}, Estado: ${ag.estado}, NGR: $${ag.ngr||0}.`:''} De: ${e.isForwarded?e.fwdFrom:e.fromName}. Asunto: ${e.subject}. Mensaje: ${(e.body||'').slice(0,400)}. Firmá como Equipo de Afiliados Betwarrior Argentina. Solo el texto del mail.`;
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})});
-    const data=await res.json();ta.value=data.content?.[0]?.text||'';
-  }catch{ta.value='Error al generar.';}
+async function sendAutoSingle(id,to){
+  const e=allEmails.find(x=>x.id===id);if(!e)return;
+  const r=processed[id]||{};const ag=r.match?.agency;
+  const dn=e.isForwarded&&e.fwdFrom?e.fwdFrom:e.fromName;
+  const bodyEl=document.getElementById('auto-body-'+id);
+  const txt=bodyEl?(bodyEl.querySelector('textarea')?.value||bodyEl.textContent||''):'';
+  if(!txt){alert('El texto de la respuesta está vacío.');return;}
+  const subject=e.subject.startsWith('Re:')?e.subject:'Re: '+e.subject;
+  const btn=event.target;btn.textContent='Enviando...';btn.disabled=true;
+  const ok=await sendGmail(to,subject,txt,e.threadId);
+  if(ok){sentAutoIds.add(id);saveCfg();selectEmail(id);}
+  else{btn.textContent='Enviar desde afiliadosarg@betwarrior.com';btn.disabled=false;alert('Error al enviar. Intentá de nuevo.');}
+}
+
+async function sendReplySingle(id,to){
+  const e=allEmails.find(x=>x.id===id);if(!e)return;
+  const ta=document.getElementById('reply-'+id);
+  if(!ta?.value.trim()){alert('Escribí una respuesta primero');return;}
+  const subject=e.subject.startsWith('Re:')?e.subject:'Re: '+e.subject;
+  const btn=event.target;btn.textContent='Enviando...';btn.disabled=true;
+  const ok=await sendGmail(to,subject,ta.value,e.threadId);
+  if(ok){alert('✅ Respuesta enviada');ta.value='';}
+  else{btn.textContent='Enviar desde afiliadosarg@betwarrior.com';btn.disabled=false;alert('Error al enviar.');}
 }
 
 function editAuto(id){const el=document.getElementById('auto-body-'+id);if(!el)return;const t=el.textContent;el.innerHTML=`<textarea style="width:100%;min-height:100px;border:1px solid #a5d6a7;border-radius:6px;font-size:13px;font-family:var(--font);padding:8px;background:#f1f8e9;resize:vertical;outline:none">${t}</textarea>`;}
-function sendAuto(id,to){alert(`Respuesta automática enviada a ${to} desde afiliadosarg@betwarrior.com`);}
-function sendReply(id,to){const ta=document.getElementById('reply-'+id);if(!ta?.value.trim()){alert('Escribí una respuesta primero');return;}alert(`Respuesta enviada a ${to} desde afiliadosarg@betwarrior.com`);}
-function confirmMatch(emailId,agName){const ag=dashData.find(a=>a.agencia===agName);if(!ag)return;const e=allEmails.find(x=>x.id===emailId);if(!e)return;processed[emailId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'confirmado manualmente',h:true}]};processed[emailId].cls=classify(e,processed[emailId].match);updateMetrics();renderAlerts();selectEmail(emailId);}
+
+function closeDetail(){
+  selectedId=null;
+  rebuildMain();
+  // Restore active nav
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const map={'all':'nav-all','attention':'nav-attention','auto':'nav-auto','unidentified':'nav-unidentified','vip':'nav-vip','followup':'nav-followup','activa':'nav-activa','candidato':'nav-candidato','inscripto':'nav-inscripto','proceso':'nav-proceso','pendiente':'nav-pendiente','suspendida':'nav-suspendida'};
+  if(map[currentFilter])document.getElementById(map[currentFilter])?.classList.add('active');
+}
+
+function confirmMatch(emailId,agName){
+  const ag=dashData.find(a=>a.agencia===agName);if(!ag)return;
+  const e=allEmails.find(x=>x.id===emailId);if(!e)return;
+  processed[emailId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'confirmado manualmente',h:true}]};
+  processed[emailId].cls=classify(e,processed[emailId].match);
+  updateMetrics();renderAlerts();selectEmail(emailId);
+}
+
+// ============ STATS ============
+function showStats(){
+  const mc=document.getElementById('main-content');
+  const totalNGR=dashData.reduce((s,a)=>s+a.ngr,0);
+  const totalClicks=dashData.reduce((s,a)=>s+a.clicks,0);
+  const totalFTDs=dashData.reduce((s,a)=>s+a.ftds,0);
+  const topAgencias=[...dashData].filter(a=>a.ngr>0).sort((a,b)=>b.ngr-a.ngr).slice(0,5);
+  const byEstado={Activa:0,Candidato:0,Inscripto:0,'En Proceso':0,Pendiente:0,Suspendida:0};
+  dashData.forEach(a=>{if(byEstado[a.estado]!==undefined)byEstado[a.estado]++;});
+  mc.innerHTML=`<div class="stats-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:18px;font-weight:500;color:var(--text)">📊 Estadísticas del Dash Maestro</div>
+      <button class="detail-back" onclick="closeDetail()">← Volver</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-card-val" style="color:var(--accent)">${dashData.length}</div><div class="stat-card-label">Agencias totales</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:var(--green)">$${totalNGR.toLocaleString('es-AR')}</div><div class="stat-card-label">NGR total</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:var(--purple)">${totalClicks.toLocaleString('es-AR')}</div><div class="stat-card-label">Clicks totales</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:var(--amber)">${totalFTDs}</div><div class="stat-card-label">FTDs totales</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Top 5 por NGR</div>
+        <div class="top-list">${topAgencias.map(a=>`<div class="top-item"><div><div style="font-size:13px;font-weight:500">${a.agencia}</div><div style="font-size:11px;color:var(--text3)">${a.provincia} · ${a.estado}</div></div><span style="font-size:13px;font-weight:600;color:var(--green)">$${a.ngr.toLocaleString('es-AR')}</span></div>`).join('')}</div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Por estado</div>
+        <div class="top-list">${Object.entries(byEstado).map(([k,v])=>`<div class="top-item"><span style="font-size:13px">${k}</span><span class="badge b-${k.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso')}">${v}</span></div>`).join('')}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ============ KIT BIENVENIDA ============
+function showKitModal(){
+  const candidates=dashData.filter(ag=>ag.estado==='En Proceso'&&ag.usuario&&ag.password&&ag.mail);
+  const list=document.getElementById('kit-list');
+  if(!candidates.length){
+    list.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">No hay agencias en proceso con usuario y contraseña cargados en el dash.</div>';
+  }else{
+    list.innerHTML=candidates.map(ag=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">
+        <input type="checkbox" id="kit-cb-${ag.agNum}" ${sentKitIds.has(ag.agNum)?'':'checked'} style="width:15px;height:15px;cursor:pointer">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;color:var(--text)">${ag.agencia} · ${ag.provincia}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${ag.titular||''} · ${ag.mail}</div>
+          <div style="font-size:11px;color:var(--text3)">Usuario: ${ag.usuario} · ${ag.linkAfiliados?'✓ Link cargado':'⚠ Sin link de afiliados'}</div>
+        </div>
+        ${sentKitIds.has(ag.agNum)?'<span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px;white-space:nowrap">✓ Ya enviado</span>':''}
+      </div>`).join('');
+  }
+  document.getElementById('kit-modal').style.display='flex';
+}
+function closeKitModal(){document.getElementById('kit-modal').style.display='none';}
+async function sendKitSelected(){
+  const candidates=dashData.filter(ag=>ag.estado==='En Proceso'&&ag.usuario&&ag.password&&ag.mail);
+  const toSend=candidates.filter(ag=>{const cb=document.getElementById('kit-cb-'+ag.agNum);return cb&&cb.checked&&!sentKitIds.has(ag.agNum);});
+  if(!toSend.length){alert('No hay agencias nuevas seleccionadas para enviar.');return;}
+  if(!confirm(`¿Enviás el Kit de Bienvenida a ${toSend.length} agencia${toSend.length>1?'s':''}?`))return;
+  const btn=document.getElementById('kit-send-btn');btn.textContent='Enviando...';btn.disabled=true;
+  let ok=0,fail=0,failList=[];
+  const tmpl=cfg.templates['Kit de bienvenida']||DEFAULT_TMPLS['Kit de bienvenida'];
+  for(const ag of toSend){
+    const body=tmpl.replace(/\{agencia\}/g,ag.agencia).replace(/\{usuario\}/g,ag.usuario).replace(/\{password\}/g,ag.password).replace(/\{link_afiliados\}/g,ag.linkAfiliados||'(pendiente)');
+    const sent=await sendGmail(ag.mail,'Bienvenidos al Programa de Afiliados',body,null);
+    if(sent){sentKitIds.add(ag.agNum);ok++;}else{fail++;failList.push(ag.agencia);}
+  }
+  saveCfg();
+  btn.textContent='Enviar seleccionados';btn.disabled=false;
+  closeKitModal();
+  let msg=`✅ Kit enviado a ${ok} agencia${ok>1?'s':''}`;
+  if(fail)msg+=`\n❌ Fallaron: ${failList.join(', ')}`;
+  alert(msg);
+  if(ok>0){
+    const byProv={};
+    toSend.filter(ag=>sentKitIds.has(ag.agNum)).forEach(ag=>{
+      const p=ag.provincia||'Sin provincia';
+      if(!byProv[p])byProv[p]=[];
+      byProv[p].push(`  • ${ag.agencia} · ${ag.titular||''}\n    Usuario: ${ag.usuario} | Link: ${ag.linkAfiliados||'pendiente'}`);
+    });
+    const lines=Object.entries(byProv).sort(([a],[b])=>a.localeCompare(b)).map(([p,items])=>`${p.toUpperCase()} (${items.length})\n${items.join('\n')}`).join('\n\n');
+    const resumen=`Kit de Bienvenida enviado — ${new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}\n\nSe envió el Kit a ${ok} agencia${ok>1?'s':''}:\n\n${lines}\n\nRecordá adjuntar el Marco QR a cada una respondiendo el mail.\n\nEquipo Betwarrior Afiliados`;
+    await sendGmail(cfg.myEmail||RESUMEN_TO,`Kit Bienvenida ${new Date().toLocaleDateString('es-AR')}`,resumen,null);
+  }
+}
+
 </script>
 </body>
 </html>
