@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Betwarrior Afiliados</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --bg2: #161820;
+  --bg3: #1e2030;
+  --bg4: #252840;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8eaf0;
+  --text2: #9499b0;
+  --text3: #5a5f78;
+  --accent: #4f7fff;
+  --accent2: #6b8fff;
+  --green: #3dd68c;
+  --green2: #1a3d2b;
+  --amber: #f5a623;
+  --amber2: #3d2e0a;
+  --red: #ff5c5c;
+  --red2: #3d1515;
+  --purple: #a78bfa;
+  --purple2: #2d1f4a;
+  --teal: #2dd4bf;
+  --teal2: #0f2d2a;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+
+/* LAYOUT */
+.app { display: grid; grid-template-columns: 260px 1fr; grid-template-rows: 56px 1fr; height: 100vh; overflow: hidden; }
+.topbar { grid-column: 1/-1; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 16px; }
+.sidebar { background: var(--bg2); border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
+.main { overflow-y: auto; background: var(--bg); }
+
+/* TOPBAR */
+.logo { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
+.logo span { color: var(--accent); }
+.account-pill { font-size: 11px; color: var(--text3); background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; font-family: var(--mono); }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); flex-shrink: 0; }
+.topbar-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.btn { font-family: var(--font); font-size: 12px; font-weight: 500; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); cursor: pointer; transition: all .15s; white-space: nowrap; }
+.btn:hover { background: var(--bg4); color: var(--text); border-color: var(--border2); }
+.btn-accent { background: var(--accent); color: white; border-color: var(--accent); }
+.btn-accent:hover { background: var(--accent2); border-color: var(--accent2); color: white; }
+
+/* SIDEBAR */
+.sidebar-section { padding: 16px 14px 8px; }
+.sidebar-label { font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; padding: 0 6px; }
+.nav-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border-radius: 8px; cursor: pointer; transition: all .15s; color: var(--text2); font-size: 13px; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: var(--bg4); color: var(--text); }
+.nav-item .ni-left { display: flex; align-items: center; gap: 8px; }
+.nav-icon { width: 16px; height: 16px; opacity: 0.6; }
+.nav-count { font-size: 10px; font-weight: 600; background: var(--bg4); color: var(--text3); padding: 1px 6px; border-radius: 10px; min-width: 20px; text-align: center; }
+.nav-count.hot { background: var(--red2); color: var(--red); }
+.nav-count.vip { background: var(--amber2); color: var(--amber); }
+
+/* SUMMARY CARD */
+.summary-card { margin: 14px; background: linear-gradient(135deg, #1a2040 0%, #0f1530 100%); border: 1px solid rgba(79,127,255,0.2); border-radius: 12px; padding: 14px; }
+.summary-date { font-size: 10px; color: var(--text3); margin-bottom: 8px; font-family: var(--mono); }
+.summary-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sum-item { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 8px 10px; }
+.sum-val { font-size: 20px; font-weight: 600; color: var(--accent); line-height: 1; }
+.sum-label { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.sum-item.green .sum-val { color: var(--green); }
+.sum-item.amber .sum-val { color: var(--amber); }
+.sum-item.red .sum-val { color: var(--red); }
+
+/* ALERTS BANNER */
+.alerts-area { padding: 0 14px 8px; display: flex; flex-direction: column; gap: 6px; }
+.alert-pill { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; transition: all .15s; }
+.alert-pill:hover { filter: brightness(1.1); }
+.alert-vip { background: var(--amber2); border: 1px solid rgba(245,166,35,0.2); color: var(--amber); }
+.alert-baja { background: var(--red2); border: 1px solid rgba(255,92,92,0.2); color: var(--red); }
+.alert-followup { background: var(--purple2); border: 1px solid rgba(167,139,250,0.2); color: var(--purple); }
+.alert-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.alert-dot-amber { background: var(--amber); }
+.alert-dot-red { background: var(--red); }
+.alert-dot-purple { background: var(--purple); }
+
+/* TEMPLATE EDITOR */
+.tmpl-section { padding: 14px; border-top: 1px solid var(--border); margin-top: auto; }
+.tmpl-title { font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.tmpl-tabs { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+.tmpl-tab { font-size: 10px; padding: 3px 8px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); color: var(--text3); background: transparent; transition: all .15s; }
+.tmpl-tab.active { background: var(--bg4); color: var(--text); border-color: var(--border2); }
+.tmpl-textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text2); font-size: 11px; font-family: var(--font); padding: 8px; resize: none; height: 70px; line-height: 1.5; }
+.tmpl-textarea:focus { outline: none; border-color: var(--accent); }
+
+/* MAIN CONTENT */
+.main-inner { padding: 20px; max-width: 900px; }
+
+/* EMAIL LIST */
+.email-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; cursor: pointer; transition: all .2s; position: relative; overflow: hidden; }
+.email-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: transparent; border-radius: 3px 0 0 3px; }
+.email-card.unread::before { background: var(--accent); }
+.email-card.urgent::before { background: var(--red); }
+.email-card.vip::before { background: var(--amber); }
+.email-card.autosent::before { background: var(--green); }
+.email-card.followup::before { background: var(--purple); }
+.email-card:hover { border-color: var(--border2); background: var(--bg3); transform: translateX(2px); }
+.email-card.selected { border-color: rgba(79,127,255,0.4); background: var(--bg3); }
+.ec-top { display: flex; align-items: flex-start; gap: 12px; }
+.av { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; font-family: var(--mono); }
+.av-unknown { background: var(--bg4); color: var(--text3); }
+.av-candidato { background: rgba(79,127,255,0.15); color: var(--accent); }
+.av-inscripto { background: rgba(45,212,191,0.15); color: var(--teal); }
+.av-en_proceso { background: rgba(167,139,250,0.15); color: var(--purple); }
+.av-pendiente { background: rgba(245,166,35,0.15); color: var(--amber); }
+.av-activa { background: rgba(61,214,140,0.15); color: var(--green); }
+.ec-meta { flex: 1; min-width: 0; }
+.ec-from { font-size: 13px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.ec-from-original { font-size: 11px; color: var(--accent); font-weight: 400; }
+.ec-subj { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.ec-prev { font-size: 11px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ec-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+.ec-time { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+.badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+.b-unknown { background: var(--bg4); color: var(--text3); }
+.b-candidato { background: rgba(79,127,255,0.15); color: var(--accent2); }
+.b-inscripto { background: rgba(45,212,191,0.15); color: var(--teal); }
+.b-en_proceso { background: var(--purple2); color: var(--purple); }
+.b-pendiente { background: var(--amber2); color: var(--amber); }
+.b-activa { background: var(--green2); color: var(--green); }
+.b-vip { background: var(--amber2); color: var(--amber); border: 1px solid rgba(245,166,35,0.3); }
+.b-auto { background: var(--teal2); color: var(--teal); }
+.conf-dots { display: flex; gap: 3px; margin-top: 2px; }
+.cd { width: 5px; height: 5px; border-radius: 50%; background: var(--bg4); }
+.cd.on { background: var(--green); }
+.cd.on-med { background: var(--amber); }
+.cd.on-low { background: var(--red); }
+
+/* DETAIL */
+.detail-panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 8px; }
+.dp-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+.dp-from { font-size: 15px; font-weight: 600; color: var(--text); }
+.dp-email { font-size: 11px; color: var(--text3); font-family: var(--mono); margin-top: 2px; }
+.dp-fwd { font-size: 11px; color: var(--accent); margin-top: 3px; display: flex; align-items: center; gap-4px; }
+.dp-subj { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 10px; }
+.dp-body { font-size: 12px; color: var(--text2); line-height: 1.8; padding: 12px 14px; background: var(--bg3); border-radius: 10px; margin-bottom: 14px; white-space: pre-wrap; font-family: var(--mono); border: 1px solid var(--border); }
+
+/* MATCH CARD */
+.match-card { border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; border: 1px solid var(--border); }
+.match-card.high { border-color: rgba(61,214,140,0.3); background: rgba(61,214,140,0.05); }
+.match-card.medium { border-color: rgba(245,166,35,0.3); background: rgba(245,166,35,0.05); }
+.match-card.low { border-color: rgba(255,92,92,0.2); background: rgba(255,92,92,0.03); }
+.match-card.none { border-color: rgba(79,127,255,0.2); background: rgba(79,127,255,0.03); }
+.match-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.match-title { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; }
+.match-agency { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.match-titular { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
+.signals { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.sig { font-size: 10px; padding: 2px 7px; border-radius: 6px; }
+.sig-hit { background: rgba(61,214,140,0.1); color: var(--green); border: 1px solid rgba(61,214,140,0.2); }
+.sig-miss { background: var(--bg4); color: var(--text3); }
+.perf-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 8px; }
+.perf-item .pl { font-size: 10px; color: var(--text3); }
+.perf-item .pv { font-size: 14px; font-weight: 600; color: var(--text); }
+.perf-item .pv.pos { color: var(--green); }
+.perf-item .pv.neg { color: var(--red); }
+.candidates { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+.cand-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: all .15s; }
+.cand-row:hover { border-color: var(--accent); background: rgba(79,127,255,0.05); }
+.cand-name { font-size: 12px; font-weight: 500; color: var(--text); }
+.cand-sub { font-size: 10px; color: var(--text3); }
+.cand-score { font-size: 11px; font-weight: 600; font-family: var(--mono); }
+
+/* ALERT BOXES */
+.abox { border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; display: flex; gap: 10px; align-items: flex-start; }
+.abox-vip { background: var(--amber2); border: 1px solid rgba(245,166,35,0.2); }
+.abox-baja { background: var(--red2); border: 1px solid rgba(255,92,92,0.2); }
+.abox-proceso { background: var(--purple2); border: 1px solid rgba(167,139,250,0.2); }
+.abox-pendiente { background: var(--amber2); border: 1px solid rgba(245,166,35,0.15); }
+.abox-followup { background: var(--purple2); border: 1px solid rgba(167,139,250,0.2); }
+.abox p { font-size: 12px; line-height: 1.5; }
+.abox-vip p, .abox-pendiente p { color: var(--amber); }
+.abox-baja p { color: var(--red); }
+.abox-proceso p, .abox-followup p { color: var(--purple); }
+
+/* AUTO BOX */
+.auto-box { background: var(--teal2); border: 1px solid rgba(45,212,191,0.2); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.auto-title { font-size: 10px; font-weight: 600; color: var(--teal); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.auto-body { font-size: 12px; color: rgba(45,212,191,0.8); line-height: 1.7; white-space: pre-wrap; }
+
+/* AI SECTION */
+.ai-section { margin-top: 12px; }
+.sec-title { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.ai-result { font-size: 12px; color: var(--text2); line-height: 1.6; }
+.ai-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.ai-tag { font-size: 10px; padding: 2px 8px; border-radius: 6px; background: var(--bg4); color: var(--text3); border: 1px solid var(--border); }
+.ai-note { font-size: 11px; color: var(--text3); font-style: italic; margin-top: 6px; padding: 6px 10px; background: var(--bg3); border-radius: 6px; border-left: 2px solid var(--border2); }
+
+/* REPLY */
+.reply-section { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
+textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 12px; font-family: var(--font); padding: 10px 12px; resize: vertical; min-height: 80px; line-height: 1.6; transition: border-color .15s; }
+textarea:focus { outline: none; border-color: var(--accent); }
+.reply-actions { display: flex; gap: 7px; margin-top: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.btn-green { background: var(--green2); color: var(--green); border-color: rgba(61,214,140,0.3); }
+.btn-green:hover { background: rgba(61,214,140,0.15); }
+.btn-teal { background: var(--teal2); color: var(--teal); border-color: rgba(45,212,191,0.3); }
+.btn-teal:hover { background: rgba(45,212,191,0.12); }
+
+/* SETUP MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; padding: 24px; width: 480px; max-width: 95vw; max-height: 85vh; overflow-y: auto; }
+.modal-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.modal-sub { font-size: 12px; color: var(--text3); margin-bottom: 20px; }
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 11px; font-weight: 500; color: var(--text2); margin-bottom: 5px; display: block; }
+.form-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; font-family: var(--font); padding: 8px 12px; transition: border-color .15s; }
+.form-input:focus { outline: none; border-color: var(--accent); }
+.form-hint { font-size: 10px; color: var(--text3); margin-top: 4px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+.internal-senders { display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
+.sender-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: var(--bg3); border-radius: 6px; font-size: 12px; color: var(--text2); font-family: var(--mono); }
+.sender-del { cursor: pointer; color: var(--text3); font-size: 14px; line-height: 1; }
+.sender-del:hover { color: var(--red); }
+.add-sender-row { display: flex; gap: 6px; margin-top: 6px; }
+
+/* SPINNER */
+.spin { width: 12px; height: 12px; border: 2px solid var(--border2); border-top-color: var(--green); border-radius: 50%; animation: sp .8s linear infinite; display: inline-block; vertical-align: middle; }
+@keyframes sp { to { transform: rotate(360deg); } }
+
+/* EMPTY */
+.empty { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
+
+/* SEARCH BAR */
+.search-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.search-input { flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13px; font-family: var(--font); padding: 8px 14px; transition: border-color .15s; }
+.search-input:focus { outline: none; border-color: var(--accent); }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+
+/* HISTORY */
+.history-item { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 5px; }
+.hi-from { font-size: 11px; font-weight: 500; color: var(--text2); }
+.hi-subj { font-size: 11px; color: var(--text3); }
+.hi-time { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+</style>
+</head>
+<body>
+<div class="app" id="app" style="display:none">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo">Betwarrior <span>Afiliados</span></div>
+    <div class="status-dot" id="status-dot" style="background:var(--text3);box-shadow:none"></div>
+    <div class="account-pill" id="account-pill">no conectado</div>
+    <div class="topbar-actions">
+      <span id="last-sync" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></span>
+      <button class="btn" onclick="showSettings()">⚙ Configurar</button>
+      <button class="btn btn-accent" onclick="syncAll()">↻ Sincronizar</button>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <!-- DAILY SUMMARY -->
+    <div class="summary-card">
+      <div class="summary-date" id="sum-date"></div>
+      <div class="summary-title">Resumen del día</div>
+      <div class="summary-grid">
+        <div class="sum-item"><div class="sum-val" id="s-total">0</div><div class="sum-label">correos totales</div></div>
+        <div class="sum-item green"><div class="sum-val" id="s-identified">0</div><div class="sum-label">identificadas</div></div>
+        <div class="sum-item amber"><div class="sum-val" id="s-auto">0</div><div class="sum-label">auto-respondidas</div></div>
+        <div class="sum-item red"><div class="sum-val" id="s-attention">0</div><div class="sum-label">tu atención</div></div>
+      </div>
+    </div>
+
+    <!-- ALERTS -->
+    <div class="alerts-area" id="alerts-area"></div>
+
+    <!-- NAV -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Bandeja</div>
+      <div class="nav-item active" onclick="filterEmails('all',this)">
+        <div class="ni-left"><svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor"/><rect x="2" y="7" width="9" height="2" rx="1" fill="currentColor"/><rect x="2" y="11" width="6" height="2" rx="1" fill="currentColor"/></svg>Todos</div>
+        <span class="nav-count" id="nc-all">0</span>
+      </div>
+      <div class="nav-item" onclick="filterEmails('attention',this)">
+        <div class="ni-left"><svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><rect x="7.25" y="4" width="1.5" height="5" rx=".75" fill="currentColor"/><circle cx="8" cy="11" r=".75" fill="currentColor"/></svg>Tu atención</div>
+        <span class="nav-count hot" id="nc-att">0</span>
+      </div>
+      <div class="nav-item" onclick="filterEmails('auto',this)">
+        <div class="ni-left"><svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Auto-respondidos</div>
+        <span class="nav-count" id="nc-auto">0</span>
+      </div>
+      <div class="nav-item" onclick="filterEmails('unidentified',this)">
+        <div class="ni-left"><svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Sin identificar</div>
+        <span class="nav-count" id="nc-uid">0</span>
+      </div>
+      <div class="nav-item" onclick="filterEmails('vip',this)">
+        <div class="ni-left"><svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 3.5L13 6l-2.5 2.5.5 3.5L8 10.5 5 12l.5-3.5L3 6l3.5-.5L8 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>VIP</div>
+        <span class="nav-count vip" id="nc-vip">0</span>
+      </div>
+      <div class="nav-item" onclick="filterEmails('followup',this)">
+        <div class="ni-left"><svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Seguimiento</div>
+        <span class="nav-count" id="nc-fu">0</span>
+      </div>
+    </div>
+
+    <!-- TEMPLATES -->
+    <div class="tmpl-section">
+      <div class="tmpl-title">Plantillas de respuesta</div>
+      <div class="tmpl-tabs" id="tmpl-tabs"></div>
+      <textarea class="tmpl-textarea" id="tmpl-editor" placeholder="Seleccioná una plantilla..."></textarea>
+      <div style="display:flex;gap:5px;margin-top:5px">
+        <button class="btn" style="font-size:11px;padding:4px 10px" onclick="saveTmpl()">Guardar</button>
+        <button class="btn" style="font-size:11px;padding:4px 10px" onclick="resetTmpl()">Restaurar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="main-inner">
+      <div class="search-bar">
+        <input class="search-input" id="search-input" placeholder="Buscar por nombre, agencia, número..." oninput="applySearch(this.value)">
+      </div>
+      <div id="email-list"></div>
+      <div id="detail-area"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SETUP MODAL -->
+<div class="modal-overlay" id="setup-modal">
+  <div class="modal">
+    <div class="modal-title">Configurar Betwarrior Afiliados</div>
+    <div class="modal-sub">Conectá tu Gmail y el Dash Maestro para activar el sistema completo.</div>
+    <div class="form-group">
+      <label class="form-label">Access Token Gmail + Sheets (OAuth2)</label>
+      <input class="form-input" id="inp-token" type="password" placeholder="ya29.a0...">
+      <div class="form-hint">Obtené el token en <a href="https://developers.google.com/oauthplayground" target="_blank" style="color:var(--accent)">OAuth Playground</a> con scopes: <code>https://mail.google.com/</code> y <code>https://www.googleapis.com/auth/spreadsheets.readonly</code></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ID del Dash Maestro (Google Sheets)</label>
+      <input class="form-input" id="inp-sheetid" placeholder="1YmeOp8Jg5ffXBeTNoZkhjUZsc7_VBZK9R1JKYVJ9H0Y">
+      <div class="form-hint">Es el ID en la URL de tu Google Sheet</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tu mail principal (para alertas VIP y baja)</label>
+      <input class="form-input" id="inp-myemail" placeholder="tu@gmail.com">
+    </div>
+    <div class="divider"></div>
+    <div class="form-group">
+      <label class="form-label">Remitentes internos confiables (@betwarrior.com)</label>
+      <div class="internal-senders" id="internal-senders"></div>
+      <div class="add-sender-row">
+        <input class="form-input" id="inp-newsender" placeholder="nombre@betwarrior.com" style="font-size:12px;padding:6px 10px">
+        <button class="btn" onclick="addSender()" style="padding:6px 12px">+ Agregar</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeSettings()">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveSettings()">Guardar y conectar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ CONFIG ============
+const DEFAULT_SHEET_ID = '1YmeOp8Jg5ffXBeTNoZkhjUZsc7_VBZK9R1JKYVJ9H0Y';
+const FOLLOWUP_DAYS = 3;
+const VIP_PERCENTILE = 0.9;
+
+const PROVINCE_SUFFIX = {
+  'mendoza':'MZA','salta':'SLA','chubut':'CHU','neuquen':'NQN','neuquén':'NQN',
+  'la rioja':'LRJ','pba':'PBA','buenos aires':'PBA','caba':'CABA',
+  'ciudad de buenos aires':'CABA','ciudad autónoma de buenos aires':'CABA'
+};
+const CABA_PROVINCES = ['caba','ciudad de buenos aires','ciudad autónoma de buenos aires'];
+
+const DEFAULT_TEMPLATES = {
+  'Nueva agencia': 'Estimado/a {nombre},\n\nMuchas gracias por comunicarse con nosotros. Hemos recibido su consulta y nos complace informarle que sus datos han sido registrados en nuestro sistema de afiliados.\n\nEn breve un integrante de nuestro equipo se comunicará con usted para brindarle toda la información sobre el Programa de Afiliados Betwarrior.\n\nSaludos cordiales,\nEquipo de Afiliados Betwarrior Argentina',
+  'Candidata': 'Estimado/a {nombre},\n\nGracias por su interés en el Programa de Afiliados Betwarrior. Su agencia ha sido identificada y registrada en nuestro sistema como candidata al programa.\n\nPronto nos comunicaremos con usted para explicarle los beneficios y el proceso de incorporación.\n\nSaludos cordiales,\nEquipo de Afiliados Betwarrior Argentina',
+  'Inscripta': 'Estimado/a {nombre},\n\nConfirmamos la recepción de su solicitud de adhesión al Programa de Afiliados Betwarrior. Sus datos han sido registrados correctamente.\n\nNuestro equipo procesará su solicitud y se comunicará con usted a la brevedad para los próximos pasos.\n\nSaludos cordiales,\nEquipo de Afiliados Betwarrior Argentina',
+  'Confirmación estado': 'Estimado/a {nombre},\n\nLe informamos que su solicitud de afiliación se encuentra actualmente en proceso de activación. Nuestro equipo está trabajando para completar la configuración de su cuenta.\n\nSe comunicaremos con usted en breve con sus credenciales de acceso.\n\nSaludos cordiales,\nEquipo de Afiliados Betwarrior Argentina',
+};
+
+// ============ STATE ============
+let cfg = {
+  token: '', sheetId: DEFAULT_SHEET_ID, myEmail: '',
+  internalSenders: ['piarodriguez@betwarrior.com'],
+  templates: {...DEFAULT_TEMPLATES}
+};
+let dashData = [];
+let allEmails = [];
+let processed = {};
+let currentFilter = 'all';
+let selectedId = null;
+let currentTmpl = 'Nueva agencia';
+let vipThreshold = 0;
+
+// ============ INIT ============
+window.onload = () => {
+  loadConfig();
+  document.getElementById('app').style.display = 'grid';
+  document.getElementById('sum-date').textContent = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  initTemplateUI();
+  if(cfg.token) { closeSettings(); syncAll(); }
+};
+
+function loadConfig(){
+  try { const s=localStorage.getItem('bw_cfg'); if(s){ const p=JSON.parse(s); cfg={...cfg,...p}; } } catch(e){}
+  document.getElementById('inp-token').value = cfg.token||'';
+  document.getElementById('inp-sheetid').value = cfg.sheetId||DEFAULT_SHEET_ID;
+  document.getElementById('inp-myemail').value = cfg.myEmail||'';
+  renderInternalSenders();
+}
+
+function saveConfig(){ try{ localStorage.setItem('bw_cfg',JSON.stringify(cfg)); }catch(e){} }
+
+function showSettings(){ document.getElementById('setup-modal').style.display='flex'; loadConfig(); }
+function closeSettings(){ document.getElementById('setup-modal').style.display='none'; }
+
+function saveSettings(){
+  cfg.token = document.getElementById('inp-token').value.trim();
+  cfg.sheetId = document.getElementById('inp-sheetid').value.trim()||DEFAULT_SHEET_ID;
+  cfg.myEmail = document.getElementById('inp-myemail').value.trim();
+  saveConfig(); closeSettings();
+  if(cfg.token){ setConnected(true); syncAll(); }
+}
+
+function setConnected(ok){
+  const dot=document.getElementById('status-dot');
+  const pill=document.getElementById('account-pill');
+  if(ok){ dot.style.background='var(--green)'; dot.style.boxShadow='0 0 6px var(--green)'; pill.textContent='afiliadosarg@betwarrior.com — conectado'; }
+  else { dot.style.background='var(--text3)'; dot.style.boxShadow='none'; pill.textContent='no conectado'; }
+}
+
+function addSender(){
+  const v=document.getElementById('inp-newsender').value.trim();
+  if(!v||cfg.internalSenders.includes(v))return;
+  cfg.internalSenders.push(v); renderInternalSenders(); saveConfig();
+  document.getElementById('inp-newsender').value='';
+}
+
+function renderInternalSenders(){
+  const el=document.getElementById('internal-senders');
+  el.innerHTML=cfg.internalSenders.map(s=>`<div class="sender-row"><span>${s}</span><span class="sender-del" onclick="removeSender('${s}')">×</span></div>`).join('');
+}
+
+function removeSender(s){ cfg.internalSenders=cfg.internalSenders.filter(x=>x!==s); renderInternalSenders(); saveConfig(); }
+
+// ============ TEMPLATES ============
+function initTemplateUI(){
+  const tabs=document.getElementById('tmpl-tabs');
+  tabs.innerHTML=Object.keys(cfg.templates).map(k=>`<div class="tmpl-tab${k===currentTmpl?' active':''}" onclick="selectTmpl('${k}')">${k}</div>`).join('');
+  document.getElementById('tmpl-editor').value=cfg.templates[currentTmpl]||'';
+}
+
+function selectTmpl(k){
+  currentTmpl=k; initTemplateUI();
+}
+
+function saveTmpl(){
+  cfg.templates[currentTmpl]=document.getElementById('tmpl-editor').value;
+  saveConfig();
+  const btn=event.target; btn.textContent='✓ Guardado'; setTimeout(()=>btn.textContent='Guardar',1500);
+}
+
+function resetTmpl(){
+  cfg.templates[currentTmpl]=DEFAULT_TEMPLATES[currentTmpl]||'';
+  document.getElementById('tmpl-editor').value=cfg.templates[currentTmpl];
+}
+
+// ============ SYNC ============
+async function syncAll(){
+  if(!cfg.token){ showSettings(); return; }
+  setConnected(true);
+  document.getElementById('last-sync').textContent='Sincronizando...';
+  await Promise.all([loadDash(), loadGmail()]);
+  document.getElementById('last-sync').textContent='Última sincronización: '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ============ LOAD DASH ============
+async function loadDash(){
+  try{
+    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/A:Z?key=`,{headers:{Authorization:'Bearer '+cfg.token}});
+    // fallback to drive read if sheets API blocked
+    const data=await r.json();
+    if(data.values) parseDashRows(data.values);
+  }catch(e){ console.log('Sheets API not available, using cached data'); }
+}
+
+function parseDashRows(rows){
+  dashData=[];
+  if(!rows||rows.length<2)return;
+  let headerRow=-1;
+  for(let i=0;i<rows.length;i++){
+    if(rows[i].includes('Nombre y Apellido')&&rows[i].includes('Situación')){ headerRow=i; break; }
+  }
+  if(headerRow<0)return;
+  const h=rows[headerRow];
+  const idx=(name)=>h.findIndex(c=>c.trim().toLowerCase()===name.toLowerCase());
+  const iAg=idx('Agencias'), iTipo=idx('Tipo de agencia'), iSit=idx('Situación');
+  const iNom=idx('Nombre y Apellido'), iMail=idx('Mail'), iCuil=idx('CUIL');
+  const iProv=idx('Provincia'), iNgr=idx('NGR'), iClicks=idx('Clicks');
+  const iSignup=idx('Sign up'), iFtds=idx('FTDs');
+  for(let i=headerRow+1;i<rows.length;i++){
+    const row=rows[i];
+    if(!row[iAg]||!row[iSit])continue;
+    const ngr=parseFloat((row[iNgr]||'0').replace(/[$,.]/g,''))||0;
+    const prov=(row[iProv]||'').toLowerCase();
+    const ctaCte = CABA_PROVINCES.includes(prov) ? extractCtaFromAgencia(row[iAg]) : null;
+    dashData.push({
+      agencia:row[iAg]||'', tipo:row[iTipo]||'Agente', estado:row[iSit]||'',
+      titular:row[iNom]||'', mail:(row[iMail]||'').toLowerCase().trim(),
+      cuil:row[iCuil]||'', provincia:row[iProv]||'',
+      ngr, clicks:parseInt(row[iClicks])||0,
+      signups:parseInt(row[iSignup])||0, ftds:parseInt(row[iFtds])||0,
+      ctaCte
+    });
+  }
+  computeVipThreshold();
+}
+
+function extractCtaFromAgencia(agStr){
+  const m=agStr.match(/\d+/g);
+  return m ? m.join('') : null;
+}
+
+function computeVipThreshold(){
+  const ngrs=dashData.filter(a=>a.ngr>0).map(a=>a.ngr).sort((a,b)=>a-b);
+  if(!ngrs.length){ vipThreshold=50; return; }
+  const idx=Math.floor(ngrs.length*VIP_PERCENTILE);
+  vipThreshold=ngrs[Math.min(idx,ngrs.length-1)];
+}
+
+function isVip(ag){ return ag && ag.ngr >= vipThreshold && vipThreshold > 0; }
+
+// ============ LOAD GMAIL ============
+async function loadGmail(){
+  try{
+    const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=25',{headers:{Authorization:'Bearer '+cfg.token}});
+    const data=await r.json();
+    if(!data.messages)return;
+    const emails=await Promise.all(data.messages.slice(0,20).map(m=>fetchMsg(m.id)));
+    allEmails=emails.filter(Boolean);
+    processAll();
+  }catch(e){ console.error('Gmail error',e); }
+}
+
+async function fetchMsg(id){
+  const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`,{headers:{Authorization:'Bearer '+cfg.token}});
+  const d=await r.json();
+  const h=d.payload?.headers||[];
+  const fromRaw=h.find(x=>x.name==='From')?.value||'';
+  const subject=fixEncoding(h.find(x=>x.name==='Subject')?.value||'(sin asunto)');
+  const date=h.find(x=>x.name==='Date')?.value||'';
+  const emMatch=fromRaw.match(/<(.+?)>/);
+  const fromEmail=(emMatch?emMatch[1]:fromRaw).toLowerCase().trim();
+  const fromName=fixEncoding(fromRaw.replace(/<.+>/,'').replace(/"/g,'').trim()||fromEmail);
+  const rawBody=fixEncoding(extractBody(d.payload));
+  const isInternal=cfg.internalSenders.some(s=>fromEmail.includes(s.toLowerCase()));
+  let displayFrom=fromName, displayEmail=fromEmail, body=rawBody, isForwarded=false, fwdFrom='', fwdEmail='';
+  if(isInternal){
+    isForwarded=true;
+    const fwdInfo=extractForwarded(rawBody);
+    if(fwdInfo.name){ fwdFrom=fwdInfo.name; fwdEmail=fwdInfo.email; body=fwdInfo.body; }
+  }
+  const isUnread=d.labelIds?.includes('UNREAD');
+  return{id,fromEmail,fromName,displayFrom,displayEmail,subject,body,rawBody,isForwarded,fwdFrom,fwdEmail,time:fmtDate(date),rawDate:date,unread:isUnread};
+}
+
+function fixEncoding(str){
+  if(!str)return'';
+  try{
+    return str
+      .replace(/Ã±/g,'ñ').replace(/Ã¡/g,'á').replace(/Ã©/g,'é').replace(/Ã­/g,'í')
+      .replace(/Ã³/g,'ó').replace(/Ãº/g,'ú').replace(/Ã/g,'Á').replace(/â€™/g,"'")
+      .replace(/Ã¼/g,'ü').replace(/Ã¶/g,'ö').replace(/â€œ/g,'"').replace(/â€/g,'"')
+      .replace(/=C3=B1/g,'ñ').replace(/=C3=A1/g,'á').replace(/=C3=A9/g,'é')
+      .replace(/=C3=AD/g,'í').replace(/=C3=B3/g,'ó').replace(/=C3=BA/g,'ú')
+      .replace(/=\r?\n/g,'');
+  }catch(e){return str;}
+}
+
+function extractBody(payload){
+  if(!payload)return'';
+  if(payload.mimeType==='text/plain'&&payload.body?.data) return decodeBase64(payload.body.data);
+  if(payload.parts){
+    for(const p of payload.parts){
+      if(p.mimeType==='text/plain'&&p.body?.data) return decodeBase64(p.body.data);
+    }
+    for(const p of payload.parts){
+      const t=extractBody(p); if(t)return t;
+    }
+  }
+  if(payload.body?.data) return decodeBase64(payload.body.data);
+  return '';
+}
+
+function decodeBase64(data){
+  try{
+    const b=data.replace(/-/g,'+').replace(/_/g,'/');
+    return decodeURIComponent(escape(atob(b)));
+  }catch(e){
+    try{ return atob(data.replace(/-/g,'+').replace(/_/g,'/')); }catch(e2){return'';}
+  }
+}
+
+function extractForwarded(body){
+  const fwdMatch=body.match(/[-]{5,}\s*Forwarded message\s*[-]{5,}[\s\S]*?De:\s*([^\n<]+?)(?:\s*<([^>]+)>)?\s*\n/i)
+    || body.match(/De:\s*([^\n<]+?)(?:\s*<([^>]+)>)?\s*\n/i);
+  if(!fwdMatch)return{name:'',email:'',body};
+  const name=fixEncoding(fwdMatch[1].trim());
+  const email=(fwdMatch[2]||'').trim().toLowerCase();
+  const bodyStart=body.indexOf('\n',body.indexOf(fwdMatch[0])+fwdMatch[0].length)+1;
+  const cleanBody=body.slice(bodyStart).replace(/^(Date:|Subject:|To:|Para:|Fecha:|Asunto:)[^\n]*\n/gim,'').trim();
+  return{name,email,body:cleanBody||body};
+}
+
+function fmtDate(s){
+  try{
+    const d=new Date(s),n=new Date(),diff=n-d;
+    if(diff<86400000)return d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+    if(diff<604800000)return d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric'});
+    return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
+  }catch{return'';}
+}
+
+// ============ MATCHING ============
+function normalizeText(s){ return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+function normalizeNum(s){ return(s||'').replace(/[^0-9]/g,''); }
+
+function matchEmail(email){
+  const body=normalizeText(email.body);
+  const fromEmail=(email.isForwarded&&email.fwdEmail?email.fwdEmail:email.fromEmail).toLowerCase();
+  const fromName=normalizeText(email.isForwarded&&email.fwdFrom?email.fwdFrom:email.fromName);
+  const bodyNums=normalizeNum(body);
+  const emailsInBody=(email.body.match(/[\w.\-+]+@[\w.\-]+\.\w{2,}/g)||[]).map(e=>e.toLowerCase());
+  let scores=[];
+  for(const ag of dashData){
+    let score=0; let signals=[];
+    // Email directo
+    if(ag.mail&&(fromEmail===ag.mail||emailsInBody.includes(ag.mail))){score+=45;signals.push({l:'email',h:true});}
+    else signals.push({l:'email',h:false});
+    // Nombre titular
+    if(ag.titular){
+      const parts=normalizeText(ag.titular).split(/[\s,]+/).filter(p=>p.length>2);
+      const hits=parts.filter(p=>body.includes(p)||fromName.includes(p));
+      if(hits.length>=2){score+=35;signals.push({l:'nombre',h:true});}
+      else if(hits.length===1){score+=15;signals.push({l:'nombre parcial',h:true});}
+      else signals.push({l:'nombre',h:false});
+    }
+    // CUIL/DNI
+    if(ag.cuil){
+      const cn=normalizeNum(ag.cuil);
+      if(cn.length>=8&&bodyNums.includes(cn)){score+=40;signals.push({l:'CUIL/DNI',h:true});}
+      else signals.push({l:'CUIL/DNI',h:false});
+    }
+    // Número agencia (no CABA)
+    if(!CABA_PROVINCES.includes(normalizeText(ag.provincia))){
+      const num=normalizeNum(ag.agencia);
+      if(num&&new RegExp('\\b'+num+'\\b').test(body)){score+=25;signals.push({l:'nº agencia',h:true});}
+      else signals.push({l:'nº agencia',h:false});
+    }
+    // Cuenta corriente CABA
+    if(ag.ctaCte&&CABA_PROVINCES.includes(normalizeText(ag.provincia))){
+      const ctn=ag.ctaCte;
+      if(ctn.length>=4&&bodyNums.includes(ctn)){score+=45;signals.push({l:'cta. cte.',h:true});}
+      else if(ctn.length>=4&&bodyNums.includes(ctn.slice(-4))){score+=15;signals.push({l:'cta. parcial',h:true});}
+      else signals.push({l:'cta. cte.',h:false});
+    }
+    if(score>0)scores.push({ag,score,signals});
+  }
+  scores.sort((a,b)=>b.score-a.score);
+  const top=scores[0];
+  if(!top||top.score<20)return{matched:false,confidence:'none',candidates:scores.slice(0,3)};
+  const conf=top.score>=60?'high':top.score>=30?'medium':'low';
+  return{matched:conf!=='low'||top.score>=25,confidence:conf,agency:top.ag,score:top.score,signals:top.signals,candidates:scores.slice(0,3)};
+}
+
+function classifyEmail(email,match){
+  const bodyLow=(email.body||'').toLowerCase();
+  const isUrgent=/urgent|urgente|error|problema|falla|no funciona|no puedo|no veo|no entiendo|caído|caido|no carga/i.test(email.subject+' '+bodyLow);
+  const isBaja=/baja|no quiero continuar|no me interesa|cancelar|darme de baja|no seguir/i.test(email.subject+' '+bodyLow);
+  const ag=match.matched?match.agency:null;
+  const estado=ag?ag.estado:'desconocido';
+  const vip=isVip(ag);
+  const needsAttention=ag&&(estado==='Activa'||estado==='En Proceso'||estado==='Pendiente');
+  const autoReply=!needsAttention;
+  const daysOld=getDaysOld(email.rawDate);
+  const needsFollowup=needsAttention&&daysOld>=FOLLOWUP_DAYS;
+  return{estado,needsAttention,autoReply,urgent:isUrgent&&needsAttention,baja:isBaja,vip,needsFollowup,daysOld};
+}
+
+function getDaysOld(dateStr){
+  try{ return (Date.now()-new Date(dateStr).getTime())/(1000*86400); }catch{return 0;}
+}
+
+function processAll(){
+  processed={};
+  allEmails.forEach(e=>{
+    const m=matchEmail(e);
+    const c=classifyEmail(e,m);
+    processed[e.id]={match:m,cls:c};
+  });
+  updateMetrics();
+  renderAlerts();
+  renderList();
+}
+
+// ============ METRICS ============
+function updateMetrics(){
+  const vals=Object.values(processed);
+  const total=allEmails.length;
+  const identified=vals.filter(v=>v.match.matched).length;
+  const auto=vals.filter(v=>v.cls.autoReply).length;
+  const attention=vals.filter(v=>v.cls.needsAttention).length;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-identified').textContent=identified;
+  document.getElementById('s-auto').textContent=auto;
+  document.getElementById('s-attention').textContent=attention;
+  document.getElementById('nc-all').textContent=total;
+  document.getElementById('nc-att').textContent=attention;
+  document.getElementById('nc-auto').textContent=auto;
+  document.getElementById('nc-uid').textContent=vals.filter(v=>!v.match.matched).length;
+  document.getElementById('nc-vip').textContent=vals.filter(v=>v.cls.vip).length;
+  document.getElementById('nc-fu').textContent=vals.filter(v=>v.cls.needsFollowup).length;
+}
+
+function renderAlerts(){
+  const area=document.getElementById('alerts-area');
+  const alerts=[];
+  const vips=allEmails.filter(e=>processed[e.id]?.cls.vip);
+  const bajas=allEmails.filter(e=>processed[e.id]?.cls.baja);
+  const followups=allEmails.filter(e=>processed[e.id]?.cls.needsFollowup);
+  if(bajas.length) alerts.push(`<div class="alert-pill alert-baja" onclick="filterEmails('baja',null)"><div class="alert-dot alert-dot-red"></div>${bajas.length} posible${bajas.length>1?'s':''} solicitud${bajas.length>1?'es':''} de baja</div>`);
+  if(vips.length) alerts.push(`<div class="alert-pill alert-vip" onclick="filterEmails('vip',null)"><div class="alert-dot alert-dot-amber"></div>${vips.length} agencia${vips.length>1?'s':''} VIP escribi${vips.length>1?'eron':'ó'}</div>`);
+  if(followups.length) alerts.push(`<div class="alert-pill alert-followup" onclick="filterEmails('followup',null)"><div class="alert-dot alert-dot-purple"></div>${followups.length} sin respuesta hace +${FOLLOWUP_DAYS} días</div>`);
+  area.innerHTML=alerts.join('');
+}
+
+// ============ FILTER & RENDER ============
+function filterEmails(filter, el){
+  currentFilter=filter;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderList();
+}
+
+function applySearch(q){
+  renderList(q);
+}
+
+function getFilteredEmails(q=''){
+  return allEmails.filter(e=>{
+    const r=processed[e.id]; if(!r)return false;
+    const passFilter = currentFilter==='all'||
+      (currentFilter==='attention'&&r.cls.needsAttention)||
+      (currentFilter==='auto'&&r.cls.autoReply)||
+      (currentFilter==='unidentified'&&!r.match.matched)||
+      (currentFilter==='vip'&&r.cls.vip)||
+      (currentFilter==='followup'&&r.cls.needsFollowup)||
+      (currentFilter==='baja'&&r.cls.baja);
+    if(!passFilter)return false;
+    if(!q)return true;
+    const qn=normalizeText(q);
+    return normalizeText(e.fromName).includes(qn)||normalizeText(e.fwdFrom).includes(qn)||
+      normalizeText(e.subject).includes(qn)||normalizeText(e.body).includes(qn)||
+      (r.match.agency&&normalizeText(r.match.agency.agencia).includes(qn))||
+      (r.match.agency&&normalizeText(r.match.agency.titular).includes(qn));
+  });
+}
+
+function getInitials(name){ return(name||'').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?'; }
+
+function renderList(q=''){
+  const list=document.getElementById('email-list');
+  const emails=getFilteredEmails(q);
+  if(!emails.length){list.innerHTML='<div class="empty">No hay correos en esta categoría</div>';return;}
+  list.innerHTML=emails.map(e=>{
+    const r=processed[e.id]||{};const m=r.match||{};const c=r.cls||{};
+    const estado=(c.estado||'desconocido').toLowerCase().replace(/ /g,'_');
+    const avCls='av-'+(m.matched?estado:'unknown');
+    const bCls='b-'+(m.matched?estado:'unknown');
+    const bLabel=c.baja?'⚠ Posible baja':c.vip?'★ VIP':m.matched?(c.estado||'—'):'Sin identificar';
+    const cardCls=[c.urgent?'urgent':'',c.vip?'vip':'',c.autoReply&&!c.urgent?'autosent':'',c.needsFollowup?'followup':'',e.unread?'unread':'',selectedId===e.id?'selected':''].filter(Boolean).join(' ');
+    const confDots=m.matched?`<div class="conf-dots">${[0,1,2].map(i=>`<div class="cd ${m.confidence==='high'?'on':m.confidence==='medium'&&i<2?'on-med':m.confidence==='low'&&i<1?'on-low':''}"></div>`).join('')}</div>`:'';
+    const displayName=e.isForwarded&&e.fwdFrom?e.fwdFrom:e.fromName;
+    const fwdTag=e.isForwarded?`<span style="font-size:10px;color:var(--text3);font-weight:400">(vía ${e.fromName})</span>`:'';
+    return`<div class="email-card ${cardCls}" onclick="selectEmail('${e.id}')">
+      <div class="ec-top">
+        <div class="av ${avCls}">${getInitials(displayName)}</div>
+        <div class="ec-meta">
+          <div class="ec-from">${displayName} ${fwdTag}</div>
+          <div class="ec-subj">${e.subject}</div>
+          <div class="ec-prev">${(e.body||'').replace(/\n/g,' ').slice(0,70)}...</div>
+        </div>
+        <div class="ec-right">
+          <span class="ec-time">${e.time}</span>
+          <span class="badge ${c.baja?'b-pendiente':c.vip?'b-vip':bCls}">${bLabel}</span>
+          ${confDots}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============ DETAIL ============
+function selectEmail(id){
+  selectedId=id; renderList(document.getElementById('search-input').value);
+  const e=allEmails.find(x=>x.id===id); if(!e)return;
+  const r=processed[id]||{};const m=r.match||{};const c=r.cls||{};
+  const ag=m.agency;
+  const displayName=e.isForwarded&&e.fwdFrom?e.fwdFrom:e.fromName;
+  const displayEmail=e.isForwarded&&e.fwdEmail?e.fwdEmail:e.fromEmail;
+
+  // Match card
+  let matchHTML='';
+  if(m.matched&&ag){
+    const confColor=m.confidence==='high'?'var(--green)':m.confidence==='medium'?'var(--amber)':'var(--red)';
+    const confLabel=m.confidence==='high'?'Alta — identificación segura':m.confidence==='medium'?'Media — muy probable':'Baja — revisar';
+    const sigHTML=(m.signals||[]).map(s=>`<span class="sig ${s.h?'sig-hit':'sig-miss'}">${s.h?'✓':'-'} ${s.l}</span>`).join('');
+    const ngrFmt=ag.ngr?'$'+ag.ngr.toLocaleString('es-AR'):'$0';
+    const perfHTML=ag.ngr>0||ag.clicks>0?`<div class="perf-row">
+      <div class="perf-item"><div class="pl">Clicks</div><div class="pv">${ag.clicks||0}</div></div>
+      <div class="perf-item"><div class="pl">Sign ups</div><div class="pv">${ag.signups||0}</div></div>
+      <div class="perf-item"><div class="pl">FTDs</div><div class="pv">${ag.ftds||0}</div></div>
+      <div class="perf-item"><div class="pl">NGR</div><div class="pv ${ag.ngr>0?'pos':ag.ngr<0?'neg':''}">${ngrFmt}</div></div>
+    </div>`:'';
+    const vipBadge=isVip(ag)?'<span class="badge b-vip" style="margin-left:8px">★ VIP</span>':'';
+    matchHTML=`<div class="match-card ${m.confidence}">
+      <div class="match-header"><div class="match-title">Agencia identificada — confianza ${confLabel}</div></div>
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:4px">
+        <div class="match-agency">${ag.agencia} · ${ag.provincia}</div>${vipBadge}
+        <span class="badge b-${ag.estado.toLowerCase().replace(/ /g,'_')}">${ag.estado}</span>
+        <span style="font-size:10px;color:var(--text3)">${ag.tipo}</span>
+      </div>
+      ${ag.titular?`<div class="match-titular">Titular: ${ag.titular}</div>`:''}
+      <div class="signals">${sigHTML}</div>
+      ${perfHTML}
+    </div>`;
+  } else if(!m.matched&&m.candidates?.length){
+    const cands=m.candidates.slice(0,3).map(c=>`<div class="cand-row" onclick="confirmMatch('${id}','${c.ag.agencia}')">
+      <div><div class="cand-name">${c.ag.agencia} · ${c.ag.provincia}</div><div class="cand-sub">${c.ag.titular||'sin titular'} · ${c.ag.estado}</div></div>
+      <span class="cand-score" style="color:${c.score>=40?'var(--green)':c.score>=25?'var(--amber)':'var(--text3)'}">${c.score}pts</span>
+    </div>`).join('');
+    matchHTML=`<div class="match-card low">
+      <div class="match-title" style="margin-bottom:8px">No identificada con certeza — posibles coincidencias</div>
+      <div class="candidates">${cands}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">Hacé click en la agencia correcta para confirmar, o tratala como nueva si no figura.</div>
+    </div>`;
+  } else {
+    matchHTML=`<div class="match-card none">
+      <div class="match-title" style="margin-bottom:4px">Nueva agencia — no figura en el dash</div>
+      <div style="font-size:12px;color:var(--text3)">Se enviará respuesta automática de bienvenida.</div>
+    </div>`;
+  }
+
+  // Alert boxes
+  let alertsHTML='';
+  if(c.baja) alertsHTML+=`<div class="abox abox-baja"><div class="alert-dot alert-dot-red" style="width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px"></div><p>⚠ Posible solicitud de baja detectada. Requiere tu atención urgente.</p></div>`;
+  if(c.vip&&c.needsAttention) alertsHTML+=`<div class="abox abox-vip"><div class="alert-dot alert-dot-amber" style="width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px"></div><p>★ Agencia VIP (top 10% NGR). Atención prioritaria.</p></div>`;
+  if(c.needsFollowup) alertsHTML+=`<div class="abox abox-followup"><div class="alert-dot alert-dot-purple" style="width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px"></div><p>Sin respuesta hace ${Math.floor(c.daysOld)} días. Requiere seguimiento.</p></div>`;
+  if(c.estado==='En Proceso') alertsHTML+=`<div class="abox abox-proceso"><div class="alert-dot" style="width:7px;height:7px;border-radius:50%;background:var(--purple);flex-shrink:0;margin-top:3px"></div><p>Agencia en proceso de activación — vos estás gestionando la cuenta.</p></div>`;
+  if(c.estado==='Pendiente') alertsHTML+=`<div class="abox abox-pendiente"><div class="alert-dot alert-dot-amber" style="width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px"></div><p>Estado pendiente — verificá qué documentos o datos faltan de la agencia.</p></div>`;
+
+  // Auto reply
+  let autoHTML='';
+  if(c.autoReply){
+    const tmplKey=ag?ag.estado==='Candidato'?'Candidata':ag.estado==='Inscripto'?'Inscripta':'Confirmación estado':'Nueva agencia';
+    const tmplText=(cfg.templates[tmplKey]||cfg.templates['Nueva agencia']||'').replace('{nombre}',displayName);
+    autoHTML=`<div class="auto-box">
+      <div class="auto-title"><span>✦</span> Respuesta automática preparada</div>
+      <div class="auto-body" id="auto-body-${id}">${tmplText}</div>
+      <div style="display:flex;gap:6px;margin-top:10px;justify-content:flex-end">
+        <button class="btn" onclick="editAutoReply('${id}')">Editar</button>
+        <button class="btn btn-teal" onclick="sendAutoReply('${id}','${displayEmail}')">Enviar desde afiliadosarg@betwarrior.com</button>
+      </div>
+    </div>`;
+  }
+
+  // Reply section
+  let replyHTML='';
+  if(c.needsAttention){
+    replyHTML=`<div class="reply-section">
+      <div class="sec-title"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block"></span>Tu respuesta personal</div>
+      <textarea id="reply-${id}" placeholder="Escribí tu respuesta..."></textarea>
+      <div class="reply-actions">
+        <button class="btn" onclick="suggestReply('${id}')">✦ Sugerir con IA</button>
+        <button class="btn btn-accent" onclick="sendReply('${id}','${displayEmail}')">Enviar desde afiliadosarg@betwarrior.com</button>
+      </div>
+    </div>`;
+  }
+
+  // History (other emails from same agency)
+  let historyHTML='';
+  if(ag){
+    const related=allEmails.filter(x=>x.id!==id&&processed[x.id]?.match?.agency?.agencia===ag.agencia);
+    if(related.length){
+      historyHTML=`<div class="ai-section" style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
+        <div class="sec-title"><span style="width:6px;height:6px;border-radius:50%;background:var(--purple);display:inline-block"></span>Historial de esta agencia (${related.length} mail${related.length>1?'s':''})</div>
+        ${related.map(x=>`<div class="history-item"><div style="display:flex;justify-content:space-between"><div class="hi-from">${x.isForwarded?x.fwdFrom:x.fromName}</div><div class="hi-time">${x.time}</div></div><div class="hi-subj">${x.subject}</div></div>`).join('')}
+      </div>`;
+    }
+  }
+
+  document.getElementById('detail-area').innerHTML=`<div class="detail-panel">
+    <div class="dp-header">
+      <div>
+        <div class="dp-from">${displayName}</div>
+        <div class="dp-email">${displayEmail}</div>
+        ${e.isForwarded?`<div class="dp-fwd">↩ Reenviado por ${e.fromName}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${e.time}</span>
+        ${c.daysOld>=1?`<span style="font-size:10px;color:var(--text3)">hace ${Math.floor(c.daysOld)}d</span>`:''}
+      </div>
+    </div>
+    <div class="dp-subj">${e.subject}</div>
+    <div class="dp-body">${(e.body||'').trim()}</div>
+    ${matchHTML}
+    ${alertsHTML}
+    ${autoHTML}
+    <div class="ai-section">
+      <div class="sec-title"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>Análisis IA <span class="spin" id="spin-${id}"></span></div>
+      <div id="ai-result-${id}" class="ai-result" style="color:var(--text3)">Analizando...</div>
+    </div>
+    ${replyHTML}
+    ${historyHTML}
+  </div>`;
+
+  analyzeWithAI(e,m,c,id);
+}
+
+async function analyzeWithAI(email,m,c,id){
+  const ag=m.agency;
+  const agInfo=ag?`Agencia: ${ag.agencia}, Estado: ${ag.estado}, Provincia: ${ag.provincia}, NGR: $${ag.ngr||0}, Tipo: ${ag.tipo}`:'No identificada en el dash';
+  const prompt=`Sos asistente interno de afiliados de Betwarrior Argentina.
+Estados: Candidato (ente regulador la habilitó, quizás no sabe del programa), Inscripto (se contactó y quiere sumarse), En Proceso (cuenta en creación), Pendiente (esperando algo de la agencia), Activa (funcionando).
+Mail:
+De: ${email.isForwarded?email.fwdFrom+' (reenviado por '+email.fromName+')':email.fromName} <${email.isForwarded?email.fwdEmail:email.fromEmail}>
+Asunto: ${email.subject}
+Cuerpo: ${(email.body||'').slice(0,600)}
+${agInfo}
+Respondé SOLO en JSON:
+{"resumen":"1 oración","intencion":"solicitud_afiliacion|consulta_estado|soporte_tecnico|material_promo|datos_bancarios|comisiones|confusion_programa|posible_baja|otro","prioridad":"alta|media|baja","nota_interna":"observación máx 15 palabras para el operador"}`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();
+    const parsed=JSON.parse((data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim());
+    const spin=document.getElementById('spin-'+id); if(spin)spin.style.display='none';
+    const pColor=parsed.prioridad==='alta'?'var(--red)':parsed.prioridad==='media'?'var(--amber)':'var(--green)';
+    const el=document.getElementById('ai-result-'+id);
+    if(el)el.innerHTML=`<div style="color:var(--text2);margin-bottom:6px">${parsed.resumen||''}</div>
+      <div class="ai-tags">
+        <span class="ai-tag">${(parsed.intencion||'').replace(/_/g,' ')}</span>
+        <span class="ai-tag" style="color:${pColor};border-color:${pColor}33">prioridad ${parsed.prioridad}</span>
+      </div>
+      ${parsed.nota_interna?`<div class="ai-note">${parsed.nota_interna}</div>`:''}`;
+  }catch(err){
+    const spin=document.getElementById('spin-'+id);if(spin)spin.style.display='none';
+    const el=document.getElementById('ai-result-'+id);if(el)el.textContent='Error al analizar.';
+  }
+}
+
+async function suggestReply(id){
+  const e=allEmails.find(x=>x.id===id);const r=processed[id]||{};
+  const ta=document.getElementById('reply-'+id);if(!ta)return;
+  ta.value='Generando sugerencia...';
+  const ag=r.match?.agency;
+  const prompt=`Generá una respuesta personal, profesional y cálida para esta agencia activa de Betwarrior Argentina.
+${ag?`Agencia: ${ag.agencia}, Estado: ${ag.estado}, NGR: $${ag.ngr||0}`:''}
+De: ${e.isForwarded?e.fwdFrom:e.fromName}
+Asunto: ${e.subject}
+Mensaje: ${(e.body||'').slice(0,400)}
+Firmá como Equipo de Afiliados Betwarrior Argentina. Solo el texto del mail, sin JSON ni encabezados.`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();
+    ta.value=data.content?.[0]?.text||'';
+  }catch{ta.value='Error al generar sugerencia.';}
+}
+
+function editAutoReply(id){
+  const bodyEl=document.getElementById('auto-body-'+id);
+  if(!bodyEl)return;
+  const current=bodyEl.textContent;
+  bodyEl.innerHTML=`<textarea id="auto-edit-${id}" style="width:100%;min-height:100px;background:rgba(0,0,0,0.2);border:1px solid rgba(45,212,191,0.3);border-radius:6px;color:rgba(45,212,191,0.9);font-size:12px;font-family:var(--font);padding:8px;resize:vertical">${current}</textarea>`;
+}
+
+function sendAutoReply(id, toEmail){
+  if(!cfg.token){alert(`Demo: respuesta automática enviada a ${toEmail} desde afiliadosarg@betwarrior.com`);return;}
+  alert(`Enviando a ${toEmail} desde afiliadosarg@betwarrior.com...`);
+}
+
+function sendReply(id, toEmail){
+  const ta=document.getElementById('reply-'+id);
+  if(!ta?.value.trim()){alert('Escribí una respuesta primero');return;}
+  if(!cfg.token){alert(`Demo: respuesta enviada a ${toEmail} desde afiliadosarg@betwarrior.com`);return;}
+  alert(`Enviando a ${toEmail} desde afiliadosarg@betwarrior.com...`);
+}
+
+function confirmMatch(emailId,agName){
+  const ag=dashData.find(a=>a.agencia===agName);if(!ag)return;
+  const e=allEmails.find(x=>x.id===emailId);if(!e)return;
+  processed[emailId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'confirmado manualmente',h:true}]};
+  processed[emailId].cls=classifyEmail(e,processed[emailId].match);
+  updateMetrics();renderAlerts();renderList();selectEmail(emailId);
+}
+</script>
+</body>
+</html>
