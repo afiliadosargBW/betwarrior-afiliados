@@ -402,7 +402,7 @@ const DEFAULT_TMPLS={
 };
 
 let cfg={token:'',refresh_token:'',clientId:'',clientSecret:'',sheetId:DEFAULT_SHEET,myEmail:RESUMEN_TO,daysToLoad:30,internalSenders:['piarodriguez@betwarrior.com'],templates:{...DEFAULT_TMPLS},drafts:{},confirmedMatches:{},rejectedMatches:{}};
-let dashData=[],allEmails=[],processed={},currentFilter='all',currentProv='',selectedId=null,currentTmpl='Nueva agencia',vipThreshold=0,tokenExpiry=0,starredIds=new Set(),selectedEmails=new Set(),sentAutoIds=new Set(),sentKitIds=new Set(),provOpen=false,readInBwafi=new Set(),hiddenFromBwafi=new Set();
+let dashData=[],allEmails=[],processed={},currentFilter='all',currentProv='',selectedId=null,currentTmpl='Nueva agencia',vipThreshold=0,tokenExpiry=0,starredIds=new Set(),selectedEmails=new Set(),sentAutoIds=new Set(),sentKitIds=new Set(),provOpen=false,readInBwafi=new Set(),hiddenFromBwafi=new Set(),inStatsView=false;
 
 // ============ INIT ============
 window.onload=()=>{
@@ -458,8 +458,7 @@ function filterByProv(prov){
   const listTitle=document.getElementById('list-title');
   if(listTitle)listTitle.textContent=currentProv?`📍 ${currentProv}`:'Bandeja de entrada';
   renderProvFilter();
-  if(selectedId){
-    selectedId=null;
+  if(selectedId||inStatsView){
     rebuildMain();
   }else{
     renderList();
@@ -789,9 +788,10 @@ function renderAlerts(){
   const bar=document.getElementById('alerts-bar');
   if(!bar)return;
   const chips=[];
-  const bajas=allEmails.filter(e=>processed[e.id]?.cls.baja);
-  const vips=allEmails.filter(e=>processed[e.id]?.cls.vip);
-  const fus=allEmails.filter(e=>processed[e.id]?.cls.needsFollowup);
+  const visible=allEmails.filter(e=>!hiddenFromBwafi.has(e.id));
+  const bajas=visible.filter(e=>processed[e.id]?.cls.baja);
+  const vips=visible.filter(e=>processed[e.id]?.cls.vip);
+  const fus=visible.filter(e=>processed[e.id]?.cls.needsFollowup);
   if(bajas.length)chips.push(`<div class="alert-chip baja" onclick="filterEmails('baja',null)">⚠️ ${bajas.length} posible${bajas.length>1?'s':''} baja</div>`);
   if(vips.length)chips.push(`<div class="alert-chip vip" onclick="filterEmails('vip',null)">⭐ ${vips.length} VIP</div>`);
   if(fus.length)chips.push(`<div class="alert-chip followup" onclick="filterEmails('followup',null)">🕐 ${fus.length} sin respuesta +${FOLLOWUP_DAYS}d</div>`);
@@ -811,9 +811,8 @@ function filterEmails(f,el){
     if(map[f])document.getElementById(map[f])?.classList.add('active');
   }
   const titles={'all':'Bandeja de entrada','attention':'Tu atención','auto':'Auto-respondidos','unidentified':'Sin identificar','vip':'VIP','followup':'Seguimiento','baja':'Posibles bajas','activa':'Activas','candidato':'Candidatas','inscripto':'Inscriptas','proceso':'En proceso','pendiente':'Pendientes','suspendida':'Suspendidas'};
-  // Always rebuild if in detail view
-  if(selectedId){
-    selectedId=null;
+  // Always rebuild if in detail view OR stats view
+  if(selectedId||inStatsView){
     rebuildMain();
   } else {
     // Update title and bulk actions inline
@@ -829,6 +828,8 @@ function filterEmails(f,el){
 }
 
 function rebuildMain(){
+  selectedId=null;
+  inStatsView=false;
   const mc=document.getElementById('main-content');
   mc.innerHTML=`<div class="summary-strip">
     <div class="sum-item" onclick="filterEmails('all',document.getElementById('nav-all'))"><div class="sum-val blue" id="s-total">0</div><div class="sum-label">total</div></div>
@@ -1318,8 +1319,8 @@ function hideFromBwafi(id){
 
 function closeDetail(){
   selectedId=null;
+  inStatsView=false;
   rebuildMain();
-  // Restore active nav
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const map={'all':'nav-all','attention':'nav-attention','auto':'nav-auto','unidentified':'nav-unidentified','vip':'nav-vip','followup':'nav-followup','activa':'nav-activa','candidato':'nav-candidato','inscripto':'nav-inscripto','proceso':'nav-proceso','pendiente':'nav-pendiente','suspendida':'nav-suspendida'};
   if(map[currentFilter])document.getElementById(map[currentFilter])?.classList.add('active');
@@ -1457,11 +1458,13 @@ function selectChangeMatch(agName){
 
 // ============ STATS ============
 function showStats(){
+  inStatsView=true;
+  selectedId=null;
   const mc=document.getElementById('main-content');
   const totalNGR=dashData.reduce((s,a)=>s+a.ngr,0);
   const totalClicks=dashData.reduce((s,a)=>s+a.clicks,0);
   const totalFTDs=dashData.reduce((s,a)=>s+a.ftds,0);
-  const topAgencias=[...dashData].filter(a=>a.ngr>0).sort((a,b)=>b.ngr-a.ngr).slice(0,5);
+  const topAgencias=[...dashData].filter(a=>a.ngr>0).sort((a,b)=>b.ngr-a.ngr).slice(0,10);
   const byEstado={Activa:0,Candidato:0,Inscripto:0,'En Proceso':0,Pendiente:0,Suspendida:0};
   dashData.forEach(a=>{if(byEstado[a.estado]!==undefined)byEstado[a.estado]++;});
   mc.innerHTML=`<div class="stats-panel">
