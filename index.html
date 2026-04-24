@@ -265,10 +265,10 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
   <div class="sidebar">
     <button class="compose-btn" onclick="showTemplates()">✏️ Plantillas de respuesta</button>
     <div class="days-filter" id="days-filter"></div>
-    <div class="nav-item active" id="nav-all" onclick="filterEmails('all',this)"><div class="ni-left">📥 Todos</div><span class="nav-count" id="nc-all">0</span></div>
-    <div class="nav-item" id="nav-attention" onclick="filterEmails('attention',this)"><div class="ni-left">⚠️ Tu atención</div><span class="nav-count hot" id="nc-att">0</span></div>
-    <div class="nav-item" id="nav-auto" onclick="filterEmails('auto',this)"><div class="ni-left">✅ Auto-respondidos</div><span class="nav-count" id="nc-auto">0</span></div>
-    <div class="nav-item" id="nav-unidentified" onclick="filterEmails('unidentified',this)"><div class="ni-left">❓ Sin identificar</div><span class="nav-count" id="nc-uid">0</span></div>
+    <div class="nav-item active" id="nav-all" onclick="filterEmails('all',this)"><div class="ni-left">📥 Todos</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-all-unread"></span><span class="nav-count" id="nc-all">0</span></div></div>
+    <div class="nav-item" id="nav-attention" onclick="filterEmails('attention',this)"><div class="ni-left">⚠️ Tu atención</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-att-unread"></span><span class="nav-count hot" id="nc-att">0</span></div></div>
+    <div class="nav-item" id="nav-auto" onclick="filterEmails('auto',this)"><div class="ni-left">✅ Auto-respondidos</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-auto-unread"></span><span class="nav-count" id="nc-auto">0</span></div></div>
+    <div class="nav-item" id="nav-unidentified" onclick="filterEmails('unidentified',this)"><div class="ni-left">❓ Sin identificar</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-uid-unread"></span><span class="nav-count" id="nc-uid">0</span></div></div>
     <div class="nav-item" id="nav-vip" onclick="filterEmails('vip',this)"><div class="ni-left">⭐ VIP</div><span class="nav-count vip" id="nc-vip">0</span></div>
     <div class="nav-item" id="nav-followup" onclick="filterEmails('followup',this)"><div class="ni-left">🕐 Seguimiento</div><span class="nav-count" id="nc-fu">0</span></div>
     <div class="sidebar-divider"></div>
@@ -677,8 +677,13 @@ function classify(email,m){
   const needsAtt=ag&&(estado==='Activa'||estado==='En Proceso'||estado==='Pendiente'||estado==='Suspendida');
   const daysOld=getDays(email.rawDate);
   const autoReply=!needsAtt;
-  // Followup: needs attention AND no recent reply from us
-  const needsFollowup=needsAtt&&daysOld>=FOLLOWUP_DAYS;
+  // Followup: needs attention AND no reply from us in same thread
+  const repliedInThread=allEmails.some(x=>
+    x.id!==email.id&&
+    x.threadId===email.threadId&&
+    (x.fromEmail===MY_EMAIL||x.fromEmail.includes('afiliadosarg'))
+  );
+  const needsFollowup=needsAtt&&daysOld>=FOLLOWUP_DAYS&&!repliedInThread;
   return{estado,estadoKey,needsAttention:needsAtt,autoReply,baja:isBaja,vip,needsFollowup,daysOld};
 }
 
@@ -708,18 +713,36 @@ function detectDuplicates(){
 function processAll(){
   processed={};
   allEmails.forEach(e=>{
+    const senderEmail=e.isForwarded?e.fwdEmail:e.fromEmail;
     const m=matchEmail(e);
     const cls=classify(e,m);
     processed[e.id]={match:m,cls};
-    // Apply saved confirmed matches
+
+    // 1. Apply confirmed matches by SENDER EMAIL (new — covers all mails from same sender)
+    if(cfg.confirmedMatches?.[senderEmail]){
+      const ag=dashData.find(a=>a.agencia===cfg.confirmedMatches[senderEmail]);
+      if(ag){
+        processed[e.id].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado por remitente',h:true}]};
+        processed[e.id].cls=classify(e,processed[e.id].match);
+        return;
+      }
+    }
+    // 2. Apply confirmed matches by EMAIL ID (legacy — keep for backwards compat)
     if(cfg.confirmedMatches?.[e.id]){
       const ag=dashData.find(a=>a.agencia===cfg.confirmedMatches[e.id]);
       if(ag){
         processed[e.id].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado manualmente',h:true}]};
         processed[e.id].cls=classify(e,processed[e.id].match);
+        return;
       }
     }
-    // Apply saved rejected matches
+    // 3. Apply rejected matches by sender email
+    if(cfg.rejectedMatches?.[senderEmail]){
+      processed[e.id].match={matched:false,confidence:'none',candidates:[]};
+      processed[e.id].cls=classify(e,processed[e.id].match);
+      return;
+    }
+    // 4. Apply rejected by email ID (legacy)
     if(cfg.rejectedMatches?.[e.id]){
       processed[e.id].match={matched:false,confidence:'none',candidates:[]};
       processed[e.id].cls=classify(e,processed[e.id].match);
@@ -733,11 +756,22 @@ function updateMetrics(){
   const v=Object.values(processed);
   const byState=s=>v.filter(x=>x.cls.estadoKey===s).length;
   const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
-  set('s-total',allEmails.length);
+  // Count unread (not read in BWAFI and unread in Gmail) per category
+  const isUnread=e=>e.unread&&!readInBwafi.has(e.id)&&!hiddenFromBwafi.has(e.id);
+  const unreadAll=allEmails.filter(e=>isUnread(e)&&processed[e.id]).length;
+  const unreadAtt=allEmails.filter(e=>isUnread(e)&&processed[e.id]?.cls.needsAttention).length;
+  const unreadAuto=allEmails.filter(e=>isUnread(e)&&processed[e.id]?.cls.autoReply).length;
+  const unreadUid=allEmails.filter(e=>isUnread(e)&&!processed[e.id]?.match.matched).length;
+  const setUnread=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val>0?`${val} •`:'';};
+  setUnread('nc-all-unread',unreadAll);
+  setUnread('nc-att-unread',unreadAtt);
+  setUnread('nc-auto-unread',unreadAuto);
+  setUnread('nc-uid-unread',unreadUid);
+  set('s-total',allEmails.filter(e=>!hiddenFromBwafi.has(e.id)).length);
   set('s-id',v.filter(x=>x.match.matched).length);
   set('s-auto',v.filter(x=>x.cls.autoReply).length);
   set('s-att',v.filter(x=>x.cls.needsAttention).length);
-  set('nc-all',allEmails.length);
+  set('nc-all',allEmails.filter(e=>!hiddenFromBwafi.has(e.id)).length);
   set('nc-att',v.filter(x=>x.cls.needsAttention).length);
   set('nc-auto',v.filter(x=>x.cls.autoReply).length);
   set('nc-uid',v.filter(x=>!x.match.matched).length);
@@ -1278,8 +1312,8 @@ function editAuto(id){const el=document.getElementById('auto-body-'+id);if(!el)r
 function hideFromBwafi(id){
   hiddenFromBwafi.add(id);
   saveCfg();
-  closeDetail();
-  updateMetrics();
+  selectedId=null;
+  rebuildMain();
 }
 
 function closeDetail(){
@@ -1291,15 +1325,21 @@ function closeDetail(){
   if(map[currentFilter])document.getElementById(map[currentFilter])?.classList.add('active');
 }
 
-async function saveMatchToSheets(emailId,remitente,agencia,provincia){
+async function saveMatchToSheets(senderEmail,remitente,agencia,provincia){
   const t=await getToken();
   if(!t)return;
   try{
-    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/A:D:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
-      body:JSON.stringify({values:[[emailId,remitente,agencia,provincia]]})
-    });
+    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/A:A`,{headers:{Authorization:'Bearer '+t}});
+    const d=await r.json();
+    const rows=d.values||[];
+    let existingRow=-1;
+    for(let i=1;i<rows.length;i++){if(rows[i][0]===senderEmail){existingRow=i+1;break;}}
+    const values=[[senderEmail,remitente,agencia,provincia]];
+    if(existingRow>0){
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/A${existingRow}:D${existingRow}?valueInputOption=RAW`,{method:'PUT',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify({values})});
+    }else{
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/A:D:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify({values})});
+    }
   }catch(e){console.error('Sheets write error:',e);}
 }
 
@@ -1308,12 +1348,13 @@ async function loadMatchesFromSheets(){
   try{
     const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/A2:D`,{headers:{Authorization:'Bearer '+t}});
     const d=await r.json();
-    if(!d.values)return;
+    if(!d.values||!d.values.length)return;
     if(!cfg.confirmedMatches)cfg.confirmedMatches={};
-    // Col A = sender email, Col B = remitente name, Col C = agencia
-    // We can't use email to restore matches since multiple mails can come from same email
-    // Just log for reference - actual matches are in localStorage
-    console.log('Loaded',d.values.length,'matches from Sheets');
+    // Load confirmed matches by senderEmail
+    d.values.forEach(row=>{
+      if(row[0]&&row[2])cfg.confirmedMatches[row[0]]=row[2];
+    });
+    console.log('Loaded',d.values.length,'confirmed matches from Sheets');
   }catch(e){console.error('Sheets read matches error:',e);}
 }
 
@@ -1321,32 +1362,48 @@ function saveDraft(id,val){if(!cfg.drafts)cfg.drafts={};if(val.trim())cfg.drafts
 function clearDraft(id){if(cfg.drafts)delete cfg.drafts[id];saveCfg();selectEmail(id);}
 
 function confirmMatch(emailId,agName){
-  console.log('confirmMatch called - emailId:', emailId, 'selectedId:', selectedId, 'agName:', agName);
-  // Always use selectedId as source of truth if available
-  const resolvedId = selectedId || emailId;
+  const resolvedId=selectedId||emailId;
   const ag=dashData.find(a=>a.agencia===agName);if(!ag)return;
   const e=allEmails.find(x=>x.id===resolvedId);if(!e)return;
   if(!cfg.confirmedMatches)cfg.confirmedMatches={};
-  cfg.confirmedMatches[resolvedId]=agName;
-  if(cfg.rejectedMatches)delete cfg.rejectedMatches[resolvedId];
-  processed[resolvedId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado manualmente',h:true}]};
-  processed[resolvedId].cls=classify(e,processed[resolvedId].match);
-  saveCfg();
-  const remitente=e.isForwarded?e.fwdFrom:e.fromName;
+  if(!cfg.rejectedMatches)cfg.rejectedMatches={};
   const senderEmail=e.isForwarded?e.fwdEmail:e.fromEmail;
+  const remitente=e.isForwarded?e.fwdFrom:e.fromName;
+  // Save by sender email — covers all mails from this sender
+  cfg.confirmedMatches[senderEmail]=agName;
+  delete cfg.rejectedMatches[senderEmail];
+  // Also clean up any legacy per-ID entries for this sender
+  allEmails.filter(x=>(x.isForwarded?x.fwdEmail:x.fromEmail)===senderEmail).forEach(x=>{
+    delete cfg.confirmedMatches[x.id];
+    delete cfg.rejectedMatches[x.id];
+    // Update processed immediately for all their mails
+    processed[x.id].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado por remitente',h:true}]};
+    processed[x.id].cls=classify(x,processed[x.id].match);
+  });
+  saveCfg();
   saveMatchToSheets(senderEmail,remitente,agName,ag.provincia);
-  updateMetrics();renderAlerts();
+  updateMetrics();renderAlerts();renderProvFilter();
   setTimeout(()=>selectEmail(resolvedId),50);
 }
 function rejectMatch(emailId){
+  const resolvedId=selectedId||emailId;
+  const e=allEmails.find(x=>x.id===resolvedId);if(!e)return;
   if(!cfg.rejectedMatches)cfg.rejectedMatches={};
-  const currentAgency=processed[emailId]?.match?.agency?.agencia;
-  if(currentAgency)cfg.rejectedMatches[emailId]=currentAgency;
-  if(cfg.confirmedMatches)delete cfg.confirmedMatches[emailId];
-  processed[emailId].match={matched:false,confidence:'none',candidates:[]};
-  processed[emailId].cls=classify(allEmails.find(x=>x.id===emailId)||{},processed[emailId].match);
-  saveCfg();updateMetrics();renderAlerts();
-  setTimeout(()=>selectEmail(emailId),50);
+  if(!cfg.confirmedMatches)cfg.confirmedMatches={};
+  const senderEmail=e.isForwarded?e.fwdEmail:e.fromEmail;
+  const currentAgency=processed[resolvedId]?.match?.agency?.agencia;
+  // Save by sender email
+  if(currentAgency)cfg.rejectedMatches[senderEmail]=currentAgency;
+  delete cfg.confirmedMatches[senderEmail];
+  // Update all mails from this sender
+  allEmails.filter(x=>(x.isForwarded?x.fwdEmail:x.fromEmail)===senderEmail).forEach(x=>{
+    delete cfg.confirmedMatches[x.id];
+    delete cfg.rejectedMatches[x.id];
+    processed[x.id].match={matched:false,confidence:'none',candidates:[]};
+    processed[x.id].cls=classify(x,processed[x.id].match);
+  });
+  saveCfg();updateMetrics();renderAlerts();renderProvFilter();
+  setTimeout(()=>selectEmail(resolvedId),50);
 }
 
 let changeMatchTargetId=null;
