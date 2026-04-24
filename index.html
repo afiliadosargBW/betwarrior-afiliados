@@ -882,7 +882,8 @@ function renderList(q=''){
     const preview=(e.body||'').replace(/[\n\r]/g,' ').slice(0,80);
 
     const row=mkEl('div',{display:'flex',alignItems:'center',padding:'0 16px',height:'52px',minHeight:'52px',maxHeight:'52px',borderBottom:'1px solid #e2e8f0',cursor:'pointer',overflow:'hidden',flexWrap:'nowrap',width:'100%'});
-    row.className=['email-row',e.unread?'unread':'read',isSelected?'selected-row':''].filter(Boolean).join(' ');
+    const isEffectivelyUnread=e.unread&&!isReadBwafi;
+    row.className=['email-row',isEffectivelyUnread?'unread':'read',isSelected?'selected-row':''].filter(Boolean).join(' ');
     row.addEventListener('click',()=>selectEmail(e.id));
 
     // Checkbox
@@ -891,9 +892,9 @@ function renderList(q=''){
     cb.addEventListener('click',ev=>{ev.stopPropagation();toggleSelect(e.id);});
     cbWrap.appendChild(cb);row.appendChild(cbWrap);
 
-    // Unread dot
+    // Unread dot — only show if not read in BWAFI and not read in Gmail
     const dotWrap=mkEl('div',{width:'8px',flexShrink:'0',display:'flex',alignItems:'center',justifyContent:'center',marginRight:'4px'});
-    if(e.unread){const dot=mkEl('div',{width:'8px',height:'8px',borderRadius:'50%',background:'#1a73e8'});dotWrap.appendChild(dot);}
+    if(e.unread&&!isReadBwafi){const dot=mkEl('div',{width:'8px',height:'8px',borderRadius:'50%',background:'#1a73e8'});dotWrap.appendChild(dot);}
     row.appendChild(dotWrap);
 
     // Star
@@ -908,14 +909,14 @@ function renderList(q=''){
     row.appendChild(av);
 
     // Sender
-    const sender=mkEl('div',{width:'170px',flexShrink:'0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontSize:'14px',fontWeight:e.unread?'700':'400',color:e.unread?'#202124':'#5f6368'});
+    const sender=mkEl('div',{width:'170px',flexShrink:'0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontSize:'14px',fontWeight:isEffectivelyUnread?'700':'400',color:isEffectivelyUnread?'#202124':'#5f6368'});
     sender.textContent=dn;
     if(e.isForwarded){const fwd=mkEl('span',{fontSize:'10px',color:'#80868b',fontWeight:'400',marginLeft:'4px'});fwd.textContent='↩ vía '+e.fromName;sender.appendChild(fwd);}
     row.appendChild(sender);
 
     // Content
     const content=mkEl('div',{flex:'1',overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis',display:'flex',gap:'6px',alignItems:'center',minWidth:'0'});
-    const subj=mkEl('span',{fontSize:'14px',fontWeight:e.unread?'600':'400',color:e.unread?'#202124':'#5f6368',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flexShrink:'0',maxWidth:'280px'});
+    const subj=mkEl('span',{fontSize:'14px',fontWeight:isEffectivelyUnread?'600':'400',color:isEffectivelyUnread?'#202124':'#5f6368',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flexShrink:'0',maxWidth:'280px'});
     subj.textContent=e.subject;
     const prev=mkEl('span',{fontSize:'13px',color:'#80868b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:'1'});
     prev.textContent='— '+preview;
@@ -939,6 +940,7 @@ function renderList(q=''){
     const badge=mkEl('span',null,['badge',badgeClass]);badge.textContent=bLabel;
     const time=mkEl('span',{fontSize:'12px',color:'#80868b',whiteSpace:'nowrap',fontWeight:e.unread?'600':'400'});
     time.textContent=e.time;
+    time.style.fontWeight=isEffectivelyUnread?'600':'400';
     right.appendChild(badge);right.appendChild(time);
     row.appendChild(right);
 
