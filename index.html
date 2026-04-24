@@ -353,6 +353,19 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
   </div>
 </div>
 
+<!-- CHANGE MATCH MODAL -->
+<div class="modal-overlay" id="change-match-modal" style="display:none">
+  <div class="modal" style="width:560px">
+    <div class="modal-title">🔍 Buscar agencia manualmente</div>
+    <div class="modal-sub">Escribí el número o nombre de la agencia para encontrarla.</div>
+    <input class="form-input" id="change-match-search" placeholder="Buscar por nº de agencia, titular, mail..." oninput="renderChangeMatchResults()" autofocus>
+    <div id="change-match-results" style="margin-top:12px;max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:4px"></div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="closeChangeMatchModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- KIT BIENVENIDA MODAL -->
 <div class="modal-overlay" id="kit-modal" style="display:none">
   <div class="modal" style="width:620px">
@@ -1082,16 +1095,54 @@ function selectEmail(id){
   const mc=document.getElementById('main-content');
 
   let matchHTML='';
+  const isConfirmed=cfg.confirmedMatches?.[id];
+  const isRejected=cfg.rejectedMatches?.[id];
   if(m.matched&&ag){
     const cc=m.confidence==='high'?'var(--green)':m.confidence==='medium'?'var(--amber)':'var(--red)';
     const cl=m.confidence==='high'?'Alta':m.confidence==='medium'?'Media':'Baja';
     const sigH=(m.signals||[]).map(s=>`<span class="sig ${s.h?'sig-hit':'sig-miss'}">${s.h?'✓':'-'} ${s.l}</span>`).join('');
     const perf=ag.ngr>0||ag.clicks>0?`<div class="perf-chips"><span class="perf-chip">${ag.clicks} clicks</span><span class="perf-chip">${ag.signups} sign ups</span><span class="perf-chip">${ag.ftds} FTDs</span><span class="perf-chip ${ag.ngr>0?'pos':ag.ngr<0?'neg':''}">${ag.ngr?'$'+ag.ngr.toLocaleString('es-AR'):'$0'} NGR</span></div>`:'';
-    matchHTML=`<div class="match-row ${m.confidence}"><div class="match-info"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="match-agency-name">${ag.agencia} · ${ag.provincia}</div>${isVip(ag)?'<span class="badge b-vip">⭐ VIP</span>':''}<span class="badge b-${c.estadoKey}">${ag.estado}</span><span style="font-size:11px;color:var(--text3)">${ag.tipo}</span><span style="font-size:11px;color:${cc};font-weight:500">Confianza: ${cl}</span></div>${ag.titular?`<div class="match-meta">Titular: ${ag.titular}</div>`:''}<div class="signals">${sigH}</div>${perf}<div style="display:flex;gap:6px;margin-top:8px">${m.confidence!=='high'||m.signals?.[0]?.l!=='✓ Confirmado manualmente'?`<button onclick="confirmMatch('${id}','${ag.agencia}')" style="font-size:11px;padding:3px 10px;border-radius:8px;background:var(--green-bg);color:var(--green);border:1px solid rgba(19,115,51,.2);cursor:pointer;font-family:var(--font)">✓ Confirmar match</button>`:''}<button onclick="rejectMatch('${id}')" style="font-size:11px;padding:3px 10px;border-radius:8px;background:var(--red-bg);color:var(--red);border:1px solid rgba(197,34,31,.2);cursor:pointer;font-family:var(--font)">✗ No es esta agencia</button></div></div></div>`;
+    const confirmedBadge=isConfirmed?'<span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px;font-weight:500">✓ Confirmado</span>':'';
+    matchHTML=`<div class="match-row ${m.confidence}">
+      <div class="match-info">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div class="match-agency-name">${ag.agencia} · ${ag.provincia}</div>
+          ${isVip(ag)?'<span class="badge b-vip">⭐ VIP</span>':''}
+          <span class="badge b-${c.estadoKey}">${ag.estado}</span>
+          <span style="font-size:11px;color:var(--text3)">${ag.tipo}</span>
+          <span style="font-size:11px;color:${cc};font-weight:500">Confianza: ${cl}</span>
+          ${confirmedBadge}
+        </div>
+        ${ag.titular?`<div class="match-meta">Titular: ${ag.titular}</div>`:''}
+        <div class="signals">${sigH}</div>
+        ${perf}
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+          ${!isConfirmed?`<button onclick="confirmMatch('${id}','${ag.agencia.replace(/'/g,"\\'")}')" style="font-size:11px;padding:4px 12px;border-radius:8px;background:var(--green-bg);color:var(--green);border:1px solid rgba(19,115,51,.2);cursor:pointer;font-family:var(--font);font-weight:500">✓ Confirmar esta agencia</button>`:''}
+          <button onclick="openChangeMatch('${id}')" style="font-size:11px;padding:4px 12px;border-radius:8px;background:var(--accent-bg);color:var(--accent);border:1px solid rgba(26,115,232,.2);cursor:pointer;font-family:var(--font);font-weight:500">🔄 Cambiar a otra agencia</button>
+          <button onclick="rejectMatch('${id}')" style="font-size:11px;padding:4px 12px;border-radius:8px;background:var(--red-bg);color:var(--red);border:1px solid rgba(197,34,31,.2);cursor:pointer;font-family:var(--font);font-weight:500">✗ Ninguna / No identificar</button>
+        </div>
+      </div>
+    </div>`;
   }else if(!m.matched&&m.candidates?.length){
-    matchHTML=`<div class="match-row low"><div class="match-info"><div class="match-agency-name" style="margin-bottom:8px">No identificada — posibles coincidencias:</div><div class="candidates-list">${m.candidates.slice(0,3).map(cd=>`<div class="cand-row" onclick="confirmMatch('${id}','${cd.ag.agencia}')"><div><div style="font-size:13px;font-weight:500">${cd.ag.agencia} · ${cd.ag.provincia}</div><div style="font-size:12px;color:var(--text3)">${cd.ag.titular||'sin titular'} · ${cd.ag.estado}</div></div><span style="font-size:12px;font-weight:600;color:${cd.score>=40?'var(--green)':cd.score>=25?'var(--amber)':'var(--text3)'}">${cd.score}pts →</span></div>`).join('')}</div><div style="font-size:12px;color:var(--text3);margin-top:8px">Hacé click para confirmar. Si ninguna es correcta, ignorá.</div></div></div>`;
+    matchHTML=`<div class="match-row low">
+      <div class="match-info">
+        <div class="match-agency-name" style="margin-bottom:8px">${isRejected?'Sin identificar — rechazaste el match anterior':'No identificada — posibles coincidencias:'}</div>
+        <div class="candidates-list">${m.candidates.slice(0,3).map(cd=>`<div class="cand-row" onclick="confirmMatch('${id}','${cd.ag.agencia.replace(/'/g,"\\'")}')"><div><div style="font-size:13px;font-weight:500">${cd.ag.agencia} · ${cd.ag.provincia}</div><div style="font-size:12px;color:var(--text3)">${cd.ag.titular||'sin titular'} · ${cd.ag.estado}</div></div><span style="font-size:12px;font-weight:600;color:${cd.score>=40?'var(--green)':cd.score>=25?'var(--amber)':'var(--text3)'}">${cd.score}pts →</span></div>`).join('')}</div>
+        <div style="display:flex;gap:6px;margin-top:10px">
+          <button onclick="openChangeMatch('${id}')" style="font-size:11px;padding:4px 12px;border-radius:8px;background:var(--accent-bg);color:var(--accent);border:1px solid rgba(26,115,232,.2);cursor:pointer;font-family:var(--font);font-weight:500">🔍 Buscar otra agencia</button>
+        </div>
+      </div>
+    </div>`;
   }else{
-    matchHTML=`<div class="match-row none"><div class="match-info"><div class="match-agency-name">Nueva agencia — no figura en el dash</div><div class="match-meta">Se enviará respuesta automática de bienvenida.</div></div></div>`;
+    matchHTML=`<div class="match-row none">
+      <div class="match-info">
+        <div class="match-agency-name">${isRejected?'Sin identificar — rechazaste el match':'Nueva agencia — no figura en el dash'}</div>
+        <div class="match-meta">${isRejected?'Podés asignarla manualmente.':'Se enviará respuesta automática de bienvenida.'}</div>
+        <div style="display:flex;gap:6px;margin-top:10px">
+          <button onclick="openChangeMatch('${id}')" style="font-size:11px;padding:4px 12px;border-radius:8px;background:var(--accent-bg);color:var(--accent);border:1px solid rgba(26,115,232,.2);cursor:pointer;font-family:var(--font);font-weight:500">🔍 Buscar agencia manualmente</button>
+        </div>
+      </div>
+    </div>`;
   }
 
   let alertsHTML='';
@@ -1207,11 +1258,30 @@ function closeDetail(){
 async function saveMatchToSheets(emailId,remitente,agencia,provincia){
   const t=await getToken();
   try{
-    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/A:A:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
-      body:JSON.stringify({values:[[emailId,remitente,agencia,provincia]]})
-    });
+    // Check if email ID already exists in sheet
+    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/A:A`,{headers:{Authorization:'Bearer '+t}});
+    const d=await r.json();
+    const rows=d.values||[];
+    let existingRow=-1;
+    for(let i=1;i<rows.length;i++){
+      if(rows[i][0]===emailId){existingRow=i+1;break;}
+    }
+    const values=[[emailId,remitente,agencia,provincia]];
+    if(existingRow>0){
+      // Update existing row
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/A${existingRow}:D${existingRow}?valueInputOption=RAW`,{
+        method:'PUT',
+        headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
+        body:JSON.stringify({values})
+      });
+    } else {
+      // Append new row
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/A:A:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
+        body:JSON.stringify({values})
+      });
+    }
   }catch(e){console.error('Sheets write error:',e);}
 }
 
@@ -1249,9 +1319,60 @@ function rejectMatch(emailId){
   if(!cfg.rejectedMatches)cfg.rejectedMatches={};
   const currentAgency=processed[emailId]?.match?.agency?.agencia;
   if(currentAgency)cfg.rejectedMatches[emailId]=currentAgency;
+  // Also remove from confirmed if was there
+  if(cfg.confirmedMatches)delete cfg.confirmedMatches[emailId];
   processed[emailId].match={matched:false,confidence:'none',candidates:[]};
   processed[emailId].cls=classify(allEmails.find(x=>x.id===emailId)||{},processed[emailId].match);
   saveCfg();updateMetrics();renderAlerts();selectEmail(emailId);
+}
+
+let changeMatchTargetId=null;
+function openChangeMatch(emailId){
+  changeMatchTargetId=emailId;
+  document.getElementById('change-match-search').value='';
+  renderChangeMatchResults();
+  document.getElementById('change-match-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('change-match-search').focus(),100);
+}
+function closeChangeMatchModal(){document.getElementById('change-match-modal').style.display='none';changeMatchTargetId=null;}
+
+function renderChangeMatchResults(){
+  const q=document.getElementById('change-match-search').value.trim();
+  const qn=normT(q);
+  const qnum=q.replace(/[^0-9]/g,'');
+  let results;
+  if(!q){
+    results=dashData.slice(0,30);
+  } else {
+    results=dashData.filter(ag=>{
+      if(normT(ag.agencia).includes(qn))return true;
+      if(ag.titular&&normT(ag.titular).includes(qn))return true;
+      if(ag.mail&&ag.mail.includes(qn))return true;
+      if(qnum.length>=2){
+        if(ag.agNum&&ag.agNum.includes(qnum))return true;
+        if(ag.ctaCte&&ag.ctaCte.includes(qnum))return true;
+      }
+      return false;
+    }).slice(0,30);
+  }
+  const el=document.getElementById('change-match-results');
+  if(!results.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">No se encontraron agencias</div>';return;}
+  el.innerHTML=results.map(ag=>`<div onclick="selectChangeMatch('${ag.agencia.replace(/'/g,"\\'")}')" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--white);transition:all .15s" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-bg)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;color:var(--text)">${ag.agencia} · ${ag.provincia}</div>
+        <div style="font-size:11px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ag.titular||'sin titular'} · ${ag.mail||'sin mail'}</div>
+      </div>
+      <span class="badge b-${ag.estado.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso')}">${ag.estado}</span>
+    </div>
+  </div>`).join('');
+}
+
+function selectChangeMatch(agName){
+  if(!changeMatchTargetId)return;
+  const emailId=changeMatchTargetId;
+  closeChangeMatchModal();
+  confirmMatch(emailId,agName);
 }
 
 // ============ STATS ============
