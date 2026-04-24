@@ -431,8 +431,10 @@ function setCustomDays(){const v=prompt('Días a cargar:',cfg.daysToLoad);if(v&&
 // ============ PROVINCE FILTER ============
 function toggleProvFilter(){
   provOpen=!provOpen;
-  document.getElementById('prov-list').classList.toggle('open',provOpen);
-  document.getElementById('prov-arrow').textContent=provOpen?'▼':'▶';
+  const list=document.getElementById('prov-list');
+  const arrow=document.getElementById('prov-arrow');
+  if(list)list.classList.toggle('open',provOpen);
+  if(arrow)arrow.textContent=provOpen?'▼':'▶';
 }
 function renderProvFilter(){
   const list=document.getElementById('prov-list');if(!list)return;
@@ -521,9 +523,10 @@ function resetTmpl(){cfg.templates[currentTmpl]=DEFAULT_TMPLS[currentTmpl]||'';d
 // ============ SYNC ============
 async function syncAll(){
   const t=await getToken();if(!t){logout();return;}
-  document.getElementById('last-sync').textContent='Sincronizando...';
+  const sync=document.getElementById('last-sync');
+  if(sync)sync.textContent='Sincronizando...';
   await Promise.all([loadDash(),loadGmail(),loadMatchesFromSheets()]);
-  document.getElementById('last-sync').textContent='Actualizado: '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  if(sync)sync.textContent='Actualizado: '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
   setTimeout(syncAll,5*60*1000);
 }
 
@@ -723,26 +726,28 @@ function processAll(){
 function updateMetrics(){
   const v=Object.values(processed);
   const byState=s=>v.filter(x=>x.cls.estadoKey===s).length;
-  document.getElementById('s-total').textContent=allEmails.length;
-  document.getElementById('s-id').textContent=v.filter(x=>x.match.matched).length;
-  document.getElementById('s-auto').textContent=v.filter(x=>x.cls.autoReply).length;
-  document.getElementById('s-att').textContent=v.filter(x=>x.cls.needsAttention).length;
-  document.getElementById('nc-all').textContent=allEmails.length;
-  document.getElementById('nc-att').textContent=v.filter(x=>x.cls.needsAttention).length;
-  document.getElementById('nc-auto').textContent=v.filter(x=>x.cls.autoReply).length;
-  document.getElementById('nc-uid').textContent=v.filter(x=>!x.match.matched).length;
-  document.getElementById('nc-vip').textContent=v.filter(x=>x.cls.vip).length;
-  document.getElementById('nc-fu').textContent=v.filter(x=>x.cls.needsFollowup).length;
-  document.getElementById('nc-act').textContent=byState('activa');
-  document.getElementById('nc-cand').textContent=byState('candidato');
-  document.getElementById('nc-insc').textContent=byState('inscripto');
-  document.getElementById('nc-proc').textContent=byState('proceso');
-  document.getElementById('nc-pend').textContent=byState('pendiente');
-  document.getElementById('nc-susp').textContent=byState('suspendida');
+  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+  set('s-total',allEmails.length);
+  set('s-id',v.filter(x=>x.match.matched).length);
+  set('s-auto',v.filter(x=>x.cls.autoReply).length);
+  set('s-att',v.filter(x=>x.cls.needsAttention).length);
+  set('nc-all',allEmails.length);
+  set('nc-att',v.filter(x=>x.cls.needsAttention).length);
+  set('nc-auto',v.filter(x=>x.cls.autoReply).length);
+  set('nc-uid',v.filter(x=>!x.match.matched).length);
+  set('nc-vip',v.filter(x=>x.cls.vip).length);
+  set('nc-fu',v.filter(x=>x.cls.needsFollowup).length);
+  set('nc-act',byState('activa'));
+  set('nc-cand',byState('candidato'));
+  set('nc-insc',byState('inscripto'));
+  set('nc-proc',byState('proceso'));
+  set('nc-pend',byState('pendiente'));
+  set('nc-susp',byState('suspendida'));
 }
 
 function renderAlerts(){
   const bar=document.getElementById('alerts-bar');
+  if(!bar)return;
   const chips=[];
   const bajas=allEmails.filter(e=>processed[e.id]?.cls.baja);
   const vips=allEmails.filter(e=>processed[e.id]?.cls.vip);
