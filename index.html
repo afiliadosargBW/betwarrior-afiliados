@@ -628,7 +628,11 @@ function matchEmail(email){
 
 function classify(email,m){
   const bl=(email.body||'').toLowerCase();
-  const isBaja=/baja|no quiero continuar|no me interesa|cancelar|darme de baja/i.test(email.subject+' '+bl);
+  const subj=(email.subject||'').toLowerCase();
+  const fullText=subj+' '+bl;
+  const hasBajaWord=/\bba[jg]a\b|no quiero continuar|no me interesa|cancelar|darme de baja|desvincula|quiero salir/.test(fullText);
+  const hasContext=/betwarrior|afiliado|afiliados|omnicanal|omnicanalidad|programa de afiliados/.test(fullText);
+  const isBaja=hasBajaWord&&hasContext;
   const ag=m.matched?m.agency:null;
   const estado=ag?ag.estado:'desconocido';
   const estadoKey=estado.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso');
