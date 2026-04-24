@@ -1262,31 +1262,13 @@ function closeDetail(){
 
 async function saveMatchToSheets(emailId,remitente,agencia,provincia){
   const t=await getToken();
+  if(!t)return;
   try{
-    // Check if email ID already exists in sheet
-    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/A:A`,{headers:{Authorization:'Bearer '+t}});
-    const d=await r.json();
-    const rows=d.values||[];
-    let existingRow=-1;
-    for(let i=1;i<rows.length;i++){
-      if(rows[i][0]===emailId){existingRow=i+1;break;}
-    }
-    const values=[[emailId,remitente,agencia,provincia]];
-    if(existingRow>0){
-      // Update existing row
-      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/A${existingRow}:D${existingRow}?valueInputOption=RAW`,{
-        method:'PUT',
-        headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
-        body:JSON.stringify({values})
-      });
-    } else {
-      // Append new row
-      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/A:A:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{
-        method:'POST',
-        headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
-        body:JSON.stringify({values})
-      });
-    }
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/A:D:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
+      body:JSON.stringify({values:[[emailId,remitente,agencia,provincia]]})
+    });
   }catch(e){console.error('Sheets write error:',e);}
 }
 
@@ -1297,9 +1279,10 @@ async function loadMatchesFromSheets(){
     const d=await r.json();
     if(!d.values)return;
     if(!cfg.confirmedMatches)cfg.confirmedMatches={};
-    d.values.forEach(row=>{
-      if(row[0]&&row[2])cfg.confirmedMatches[row[0]]=row[2];
-    });
+    // Col A = sender email, Col B = remitente name, Col C = agencia
+    // We can't use email to restore matches since multiple mails can come from same email
+    // Just log for reference - actual matches are in localStorage
+    console.log('Loaded',d.values.length,'matches from Sheets');
   }catch(e){console.error('Sheets read matches error:',e);}
 }
 
@@ -1307,18 +1290,22 @@ function saveDraft(id,val){if(!cfg.drafts)cfg.drafts={};if(val.trim())cfg.drafts
 function clearDraft(id){if(cfg.drafts)delete cfg.drafts[id];saveCfg();selectEmail(id);}
 
 function confirmMatch(emailId,agName){
+  console.log('confirmMatch called - emailId:', emailId, 'selectedId:', selectedId, 'agName:', agName);
+  // Always use selectedId as source of truth if available
+  const resolvedId = selectedId || emailId;
   const ag=dashData.find(a=>a.agencia===agName);if(!ag)return;
-  const e=allEmails.find(x=>x.id===emailId);if(!e)return;
+  const e=allEmails.find(x=>x.id===resolvedId);if(!e)return;
   if(!cfg.confirmedMatches)cfg.confirmedMatches={};
-  cfg.confirmedMatches[emailId]=agName;
-  if(cfg.rejectedMatches)delete cfg.rejectedMatches[emailId];
-  processed[emailId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado manualmente',h:true}]};
-  processed[emailId].cls=classify(e,processed[emailId].match);
+  cfg.confirmedMatches[resolvedId]=agName;
+  if(cfg.rejectedMatches)delete cfg.rejectedMatches[resolvedId];
+  processed[resolvedId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado manualmente',h:true}]};
+  processed[resolvedId].cls=classify(e,processed[resolvedId].match);
   saveCfg();
   const remitente=e.isForwarded?e.fwdFrom:e.fromName;
-  saveMatchToSheets(emailId,remitente,agName,ag.provincia);
+  const senderEmail=e.isForwarded?e.fwdEmail:e.fromEmail;
+  saveMatchToSheets(senderEmail,remitente,agName,ag.provincia);
   updateMetrics();renderAlerts();
-  setTimeout(()=>selectEmail(emailId),50);
+  setTimeout(()=>selectEmail(resolvedId),50);
 }
 function rejectMatch(emailId){
   if(!cfg.rejectedMatches)cfg.rejectedMatches={};
