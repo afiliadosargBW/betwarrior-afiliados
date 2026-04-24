@@ -1310,20 +1310,20 @@ function confirmMatch(emailId,agName){
   processed[emailId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado manualmente',h:true}]};
   processed[emailId].cls=classify(e,processed[emailId].match);
   saveCfg();
-  // Save to Sheets
   const remitente=e.isForwarded?e.fwdFrom:e.fromName;
   saveMatchToSheets(emailId,remitente,agName,ag.provincia);
-  updateMetrics();renderAlerts();selectEmail(emailId);
+  updateMetrics();renderAlerts();
+  setTimeout(()=>selectEmail(emailId),50);
 }
 function rejectMatch(emailId){
   if(!cfg.rejectedMatches)cfg.rejectedMatches={};
   const currentAgency=processed[emailId]?.match?.agency?.agencia;
   if(currentAgency)cfg.rejectedMatches[emailId]=currentAgency;
-  // Also remove from confirmed if was there
   if(cfg.confirmedMatches)delete cfg.confirmedMatches[emailId];
   processed[emailId].match={matched:false,confidence:'none',candidates:[]};
   processed[emailId].cls=classify(allEmails.find(x=>x.id===emailId)||{},processed[emailId].match);
-  saveCfg();updateMetrics();renderAlerts();selectEmail(emailId);
+  saveCfg();updateMetrics();renderAlerts();
+  setTimeout(()=>selectEmail(emailId),50);
 }
 
 let changeMatchTargetId=null;
