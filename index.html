@@ -860,6 +860,12 @@ function rebuildMain(){
   <div id="email-list"></div>`;
   document.getElementById('s-date').textContent=new Date().toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
   updateMetrics();renderAlerts();renderList();
+  // Restore bulk actions visibility based on current filter
+  const bulkStates=['auto','candidato','inscripto','proceso','all','unidentified'];
+  const bulkEl=document.getElementById('bulk-actions');
+  const confEl=document.getElementById('conf-filter');
+  if(bulkEl)bulkEl.style.display=bulkStates.includes(currentFilter)?'flex':'none';
+  if(confEl)confEl.style.display=(currentFilter==='candidato'||currentFilter==='all')?'':'none';
 }
 
 function applySearch(q){renderList(q);}
