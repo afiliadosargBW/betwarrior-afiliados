@@ -1319,7 +1319,7 @@ function editAuto(id){const el=document.getElementById('auto-body-'+id);if(!el)r
 function hideFromBwafi(id){
   hiddenFromBwafi.add(id);
   saveCfg();
-  selectedId=null;
+  detectDuplicates();
   rebuildMain();
 }
 
