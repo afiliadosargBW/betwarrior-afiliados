@@ -402,7 +402,7 @@ const DEFAULT_TMPLS={
 };
 
 let cfg={token:'',refresh_token:'',clientId:'',clientSecret:'',sheetId:DEFAULT_SHEET,myEmail:RESUMEN_TO,daysToLoad:30,internalSenders:['piarodriguez@betwarrior.com'],templates:{...DEFAULT_TMPLS},drafts:{},confirmedMatches:{},rejectedMatches:{}};
-let dashData=[],allEmails=[],processed={},currentFilter='all',currentProv='',selectedId=null,currentTmpl='Nueva agencia',vipThreshold=0,tokenExpiry=0,starredIds=new Set(),selectedEmails=new Set(),sentAutoIds=new Set(),sentKitIds=new Set(),provOpen=false,readInBwafi=new Set();
+let dashData=[],allEmails=[],processed={},currentFilter='all',currentProv='',selectedId=null,currentTmpl='Nueva agencia',vipThreshold=0,tokenExpiry=0,starredIds=new Set(),selectedEmails=new Set(),sentAutoIds=new Set(),sentKitIds=new Set(),provOpen=false,readInBwafi=new Set(),hiddenFromBwafi=new Set();
 
 // ============ INIT ============
 window.onload=()=>{
@@ -414,8 +414,8 @@ window.onload=()=>{
   else if(cfg.token){showApp();syncAll();}
 };
 
-function loadCfg(){try{const s=localStorage.getItem('bw_v8');if(s){const p=JSON.parse(s);cfg={...cfg,...p};if(p.starred)starredIds=new Set(p.starred);if(p.sentAutoIds)sentAutoIds=new Set(p.sentAutoIds);if(p.sentKitIds)sentKitIds=new Set(p.sentKitIds);if(p.readInBwafi)readInBwafi=new Set(p.readInBwafi);}}catch(e){}}
-function saveCfg(){try{localStorage.setItem('bw_v8',JSON.stringify({...cfg,starred:[...starredIds],sentAutoIds:[...sentAutoIds],sentKitIds:[...sentKitIds],readInBwafi:[...readInBwafi]}));}catch(e){}}
+function loadCfg(){try{const s=localStorage.getItem('bw_v8');if(s){const p=JSON.parse(s);cfg={...cfg,...p};if(p.starred)starredIds=new Set(p.starred);if(p.sentAutoIds)sentAutoIds=new Set(p.sentAutoIds);if(p.sentKitIds)sentKitIds=new Set(p.sentKitIds);if(p.readInBwafi)readInBwafi=new Set(p.readInBwafi);if(p.hiddenFromBwafi)hiddenFromBwafi=new Set(p.hiddenFromBwafi);}}catch(e){}}
+function saveCfg(){try{localStorage.setItem('bw_v8',JSON.stringify({...cfg,starred:[...starredIds],sentAutoIds:[...sentAutoIds],sentKitIds:[...sentKitIds],readInBwafi:[...readInBwafi],hiddenFromBwafi:[...hiddenFromBwafi]}));}catch(e){}}
 function showApp(){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='grid';}
 function logout(){cfg.token='';cfg.refresh_token='';sentAutoIds.clear();saveCfg();location.reload();}
 
@@ -683,19 +683,25 @@ function classify(email,m){
 }
 
 function detectDuplicates(){
-  const seen={};
+  // A duplicate is same fromEmail + same subject within 7 days
+  const groups={};
   allEmails.forEach(e=>{
-    const r=processed[e.id];if(!r)return;
-    const ag=r.match?.agency?.agencia;
-    const key=ag||e.fromEmail;
-    if(!seen[key])seen[key]=[];
-    seen[key].push(e.id);
+    const key=`${e.isForwarded?e.fwdEmail:e.fromEmail}|||${normT(e.subject)}`;
+    if(!groups[key])groups[key]=[];
+    groups[key].push({id:e.id,date:new Date(e.rawDate).getTime()});
   });
   allEmails.forEach(e=>{
     const r=processed[e.id];if(!r)return;
-    const ag=r.match?.agency?.agencia;
-    const key=ag||e.fromEmail;
-    processed[e.id].isDuplicate=seen[key].length>1;
+    const key=`${e.isForwarded?e.fwdEmail:e.fromEmail}|||${normT(e.subject)}`;
+    const group=groups[key];
+    if(group&&group.length>1){
+      const eDate=new Date(e.rawDate).getTime();
+      // Check if any other mail in group is within 7 days
+      const hasDup=group.some(x=>x.id!==e.id&&Math.abs(eDate-x.date)<7*86400000);
+      processed[e.id].isDuplicate=hasDup;
+    } else {
+      processed[e.id].isDuplicate=false;
+    }
   });
 }
 
@@ -826,6 +832,7 @@ function applySearch(q){renderList(q);}
 function getFiltered(q=''){
   const confF=(document.getElementById('conf-filter')?.value)||'';
   return allEmails.filter(e=>{
+    if(hiddenFromBwafi.has(e.id))return false;
     const r=processed[e.id];if(!r)return false;
     const pass=currentFilter==='all'||(currentFilter==='attention'&&r.cls.needsAttention)||(currentFilter==='auto'&&r.cls.autoReply)||(currentFilter==='unidentified'&&!r.match.matched)||(currentFilter==='vip'&&r.cls.vip)||(currentFilter==='followup'&&r.cls.needsFollowup)||(currentFilter==='baja'&&r.cls.baja)||r.cls.estadoKey===currentFilter;
     if(!pass)return false;
@@ -1209,6 +1216,7 @@ function selectEmail(id){
       <div style="display:flex;gap:8px;align-items:center">
         ${r.isDuplicate?'<span class="badge b-duplicado">duplicado</span>':''}
         <span style="font-size:12px;color:var(--text3)">${c.daysOld>=1?`hace ${Math.floor(c.daysOld)} días`:e.time}</span>
+        <button onclick="hideFromBwafi('${id}')" style="font-size:11px;padding:3px 10px;border-radius:8px;background:#f1f3f4;color:var(--text3);border:none;cursor:pointer;font-family:var(--font)" title="Ocultar de BWAFI">🗑 Ocultar de BWAFI</button>
       </div>
     </div>
     <div class="detail-subject">${e.subject}</div>
@@ -1266,6 +1274,13 @@ async function sendReplySingle(id,to){
 }
 
 function editAuto(id){const el=document.getElementById('auto-body-'+id);if(!el)return;const t=el.textContent;el.innerHTML=`<textarea style="width:100%;min-height:100px;border:1px solid #a5d6a7;border-radius:6px;font-size:13px;font-family:var(--font);padding:8px;background:#f1f8e9;resize:vertical;outline:none">${t}</textarea>`;}
+
+function hideFromBwafi(id){
+  hiddenFromBwafi.add(id);
+  saveCfg();
+  closeDetail();
+  updateMetrics();
+}
 
 function closeDetail(){
   selectedId=null;
