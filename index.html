@@ -621,9 +621,9 @@ function matchEmail(email){
   }
   scores.sort((a,b)=>b.score-a.score);
   const top=scores[0];
-  if(!top||top.score<20)return{matched:false,confidence:'none',candidates:scores.slice(0,3)};
-  const conf=top.score>=60?'high':top.score>=30?'medium':'low';
-  return{matched:conf!=='low'||top.score>=25,confidence:conf,agency:top.ag,score:top.score,signals:top.signals,candidates:scores.slice(0,3)};
+  if(!top||top.score<20)return{matched:false,confidence:'none',candidates:scores.filter(s=>s.score>=25).slice(0,3)};
+  const conf=top.score>=60?'high':top.score>=35?'medium':'low';
+  return{matched:conf!=='low'||top.score>=25,confidence:conf,agency:top.ag,score:top.score,signals:top.signals,candidates:scores.filter(s=>s.score>=25).slice(0,3)};
 }
 
 function classify(email,m){
@@ -715,21 +715,19 @@ function filterEmails(f,el){
     if(map[f])document.getElementById(map[f])?.classList.add('active');
   }
   const titles={'all':'Bandeja de entrada','attention':'Tu atención','auto':'Auto-respondidos','unidentified':'Sin identificar','vip':'VIP','followup':'Seguimiento','baja':'Posibles bajas','activa':'Activas','candidato':'Candidatas','inscripto':'Inscriptas','proceso':'En proceso','pendiente':'Pendientes','suspendida':'Suspendidas'};
-  document.getElementById('list-title').textContent=titles[f]||'Correos';
-  // Show bulk actions for states that support auto-reply
-  const bulkStates=['auto','candidato','inscripto','proceso','all','unidentified'];
-  const bulkEl=document.getElementById('bulk-actions');
-  const confEl=document.getElementById('conf-filter');
-  if(bulkStates.includes(f)){bulkEl.style.display='flex';confEl.style.display='';}
-  else{bulkEl.style.display='none';}
-  // Only show conf filter for candidato
-  if(f==='candidato'||f==='all')confEl.style.display='';
-  else confEl.style.display='none';
-  // Close detail if open, then render
+  // Always rebuild if in detail view
   if(selectedId){
     selectedId=null;
     rebuildMain();
   } else {
+    // Update title and bulk actions inline
+    const listTitle=document.getElementById('list-title');
+    if(listTitle)listTitle.textContent=titles[f]||'Correos';
+    const bulkStates=['auto','candidato','inscripto','proceso','all','unidentified'];
+    const bulkEl=document.getElementById('bulk-actions');
+    const confEl=document.getElementById('conf-filter');
+    if(bulkEl)bulkEl.style.display=bulkStates.includes(f)?'flex':'none';
+    if(confEl)confEl.style.display=(f==='candidato'||f==='all')?'':'none';
     renderList();
   }
 }
@@ -1066,8 +1064,20 @@ function selectEmail(id){
     replyHTML=`<div class="reply-box"><div class="rb-header">💬 Tu respuesta personal a <strong>${de}</strong></div><textarea id="reply-${id}" placeholder="Escribí tu respuesta acá..."></textarea><div class="rb-actions"><button class="send-btn" onclick="sendReplySingle('${id}','${de}')">Enviar desde afiliadosarg@betwarrior.com</button><button class="ai-btn" onclick="openClaudeAI('${id}')">✨ Analizar con IA</button></div></div>`;
   }
 
-  const related=allEmails.filter(x=>x.id!==id&&processed[x.id]?.match?.agency?.agencia===ag?.agencia);
-  const histHTML=related.length?`<div class="analysis-panel"><div class="ap-title">📋 Historial de ${ag?.agencia} (${related.length} correo${related.length>1?'s':''})</div>${related.map(x=>`<div class="history-item" onclick="selectEmail('${x.id}')"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">${x.isForwarded?x.fwdFrom:x.fromName}</span><span style="font-size:12px;color:var(--text3)">${x.time}</span></div><div style="font-size:13px;color:var(--text2)">${x.subject}</div></div>`).join('')}</div>`:'';
+  const related=allEmails.filter(x=>{
+    if(x.id===id)return false;
+    const xr=processed[x.id];
+    if(!xr)return false;
+    // Only include if same agency AND confidence is high or medium
+    return xr.match?.agency?.agencia===ag?.agencia&&(xr.match?.confidence==='high'||xr.match?.confidence==='medium');
+  });
+  const histHTML=related.length?`<div class="analysis-panel"><div class="ap-title">📋 Historial de ${ag?.agencia} (${related.length} correo${related.length>1?'s':''})</div>${related.map(x=>{
+    const isFromUs=x.fromEmail===MY_EMAIL||x.fromEmail.includes('afiliadosarg');
+    const bgColor=isFromUs?'#e8f0fe':'var(--bg)';
+    const borderColor=isFromUs?'var(--accent)':'var(--border)';
+    const label=isFromUs?'<span style="font-size:10px;background:var(--accent-bg);color:var(--accent);padding:1px 6px;border-radius:6px;font-weight:500">← Tu respuesta</span>':'';
+    return `<div class="history-item" onclick="selectEmail('${x.id}')" style="background:${bgColor};border-color:${borderColor}"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;font-weight:500">${x.isForwarded?x.fwdFrom:x.fromName}</span>${label}</div><span style="font-size:12px;color:var(--text3)">${x.time}</span></div><div style="font-size:13px;color:var(--text2)">${x.subject}</div></div>`;
+  }).join('')}</div>`:'';
 
   mc.innerHTML=`<div class="detail-view">
     <div class="detail-header">
