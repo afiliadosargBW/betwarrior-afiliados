@@ -295,7 +295,10 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
     </div>
     <div class="alerts-bar" id="alerts-bar" style="display:none"></div>
     <div class="email-list-header">
-      <span style="font-size:13px;color:var(--text2);font-weight:500" id="list-title">Bandeja de entrada</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="select-all-cb" style="width:14px;height:14px;cursor:pointer" onchange="toggleSelectAll(this.checked)" title="Seleccionar todos">
+        <span style="font-size:13px;color:var(--text2);font-weight:500" id="list-title">Bandeja de entrada</span>
+      </div>
       <div class="bulk-actions" id="bulk-actions" style="display:none">
         <select class="conf-filter" id="conf-filter" onchange="renderList()">
           <option value="">Todas las confianzas</option>
@@ -384,7 +387,7 @@ const DEFAULT_TMPLS={
   'Kit de bienvenida':'Hola {agencia},\n\n¡Bienvenidos al Programa de Afiliados de BetWarrior! Nos alegra sumar a su agencia como parte de esta red.\n\nPara comenzar de forma rápida y ordenada, ya tienen disponible el Kit de Bienvenida:\nhttps://drive.google.com/drive/folders/1ljaoyi_hZyOsEwWu4ev5YbwRKSjCOiWQ\n\n¿Qué van a encontrar en él?\n\n- Carpeta "Guía + Videos Instructivos": Incluye el paso a paso y videos cortos para aprender a usar el sistema y entender cómo funciona el programa.\n- Carpeta "Manual de Marca + Contenidos": Incluye el manual de marca, videos y piezas listas para usar (material para el punto de venta y contenido digital), junto con lineamientos para comunicar correctamente.\n- Preguntas frecuentes\n\nAdemás, les adjunto al final del archivo su QR dentro de nuestro marco.\n\nAnte cualquier duda, pueden escribirnos a: afiliadosarg@betwarrior.com\n\nIMPORTANTE:\nUsuario Myaffs: {usuario}\nContraseña: {password}\nWeb: https://login.betwarrioraffiliates.bet/signin.php\nLink de afiliados: {link_afiliados}\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
 };
 
-let cfg={token:'',refresh_token:'',clientId:'',clientSecret:'',sheetId:DEFAULT_SHEET,myEmail:RESUMEN_TO,daysToLoad:30,internalSenders:['piarodriguez@betwarrior.com'],templates:{...DEFAULT_TMPLS}};
+let cfg={token:'',refresh_token:'',clientId:'',clientSecret:'',sheetId:DEFAULT_SHEET,myEmail:RESUMEN_TO,daysToLoad:30,internalSenders:['piarodriguez@betwarrior.com'],templates:{...DEFAULT_TMPLS},drafts:{},confirmedMatches:{},rejectedMatches:{}};
 let dashData=[],allEmails=[],processed={},currentFilter='all',currentProv='',selectedId=null,currentTmpl='Nueva agencia',vipThreshold=0,tokenExpiry=0,starredIds=new Set(),selectedEmails=new Set(),sentAutoIds=new Set(),sentKitIds=new Set(),provOpen=false;
 
 // ============ INIT ============
@@ -400,7 +403,7 @@ window.onload=()=>{
 function loadCfg(){try{const s=localStorage.getItem('bw_v8');if(s){const p=JSON.parse(s);cfg={...cfg,...p};if(p.starred)starredIds=new Set(p.starred);if(p.sentAutoIds)sentAutoIds=new Set(p.sentAutoIds);if(p.sentKitIds)sentKitIds=new Set(p.sentKitIds);}}catch(e){}}
 function saveCfg(){try{localStorage.setItem('bw_v8',JSON.stringify({...cfg,starred:[...starredIds],sentAutoIds:[...sentAutoIds],sentKitIds:[...sentKitIds]}));}catch(e){}}
 function showApp(){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='grid';}
-function logout(){cfg.token='';cfg.refresh_token='';saveCfg();location.reload();}
+function logout(){cfg.token='';cfg.refresh_token='';sentAutoIds.clear();saveCfg();location.reload();}
 
 // ============ DAYS FILTER ============
 function renderDaysFilter(){
@@ -432,14 +435,19 @@ function renderProvFilter(){
   if(toggle)toggle.className='prov-toggle'+(currentProv?' has-active':'');
 }
 function filterByProv(prov){
-  if(currentProv===prov){currentProv='';} else {currentProv=prov;}
-  // Clear state filter when filtering by province
+  if(currentProv===prov){currentProv='';}else{currentProv=prov;}
   currentFilter='all';
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('nav-all')?.classList.add('active');
-  document.getElementById('list-title').textContent=currentProv?`📍 ${currentProv}`:'Bandeja de entrada';
+  const listTitle=document.getElementById('list-title');
+  if(listTitle)listTitle.textContent=currentProv?`📍 ${currentProv}`:'Bandeja de entrada';
   renderProvFilter();
-  if(selectedId){selectedId=null;rebuildMain();}else{renderList();}
+  if(selectedId){
+    selectedId=null;
+    rebuildMain();
+  }else{
+    renderList();
+  }
 }
 
 // ============ AUTH ============
@@ -585,7 +593,7 @@ async function fetchMsg(id){
     const fromEmail=(em?em[1]:fromRaw).toLowerCase().trim();
     const fromName=fixEnc(fromRaw.replace(/<.+>/,'').replace(/"/g,'').trim()||fromEmail);
     const rawBody=fixEnc(extractBody(d.payload));
-    const isInt=cfg.internalSenders.some(s=>fromEmail.includes(s.toLowerCase()));
+    const isInt=cfg.internalSenders.some(s=>fromEmail===s.toLowerCase()||fromEmail.endsWith('@'+s.toLowerCase().split('@')[1]));
     let fwdFrom='',fwdEmail='',body=rawBody;
     if(isInt){const fi=extractFwd(rawBody);if(fi.name){fwdFrom=fi.name;fwdEmail=fi.email;body=fi.body;}}
     return{id,threadId,fromEmail,fromName,isForwarded:isInt&&!!fwdFrom,fwdFrom,fwdEmail,subject,body,rawBody,time:fmtDate(date),rawDate:date,unread:d.labelIds?.includes('UNREAD')};
@@ -613,7 +621,19 @@ function matchEmail(email){
   for(const ag of dashData){
     let score=0,signals=[];
     if(ag.mail&&(fromEmail===ag.mail||emailsInBody.includes(ag.mail))){score+=45;signals.push({l:'email',h:true});}else signals.push({l:'email',h:false});
-    if(ag.titular){const parts=normT(ag.titular).split(/[\s,]+/).filter(p=>p.length>2);const hits=parts.filter(p=>body.includes(p)||fromName.includes(p));if(hits.length>=2){score+=35;signals.push({l:'nombre',h:true});}else if(hits.length===1){score+=15;signals.push({l:'nombre parcial',h:true});}else signals.push({l:'nombre',h:false});}
+    if(ag.titular){
+      const parts=normT(ag.titular).split(/[\s,]+/).filter(p=>p.length>3);
+      if(parts.length>=2){
+        const re=parts.map(p=>new RegExp('\\b'+p+'\\b'));
+        const hits=re.filter(r=>r.test(body)||r.test(fromName));
+        if(hits.length>=2){score+=35;signals.push({l:'nombre',h:true});}
+        else signals.push({l:'nombre',h:false});
+      } else if(parts.length===1){
+        const re=new RegExp('\\b'+parts[0]+'\\b');
+        if(re.test(body)||re.test(fromName)){score+=15;signals.push({l:'nombre parcial',h:true});}
+        else signals.push({l:'nombre',h:false});
+      } else signals.push({l:'nombre',h:false});
+    }
     if(ag.cuil){const cn=normNum(ag.cuil);if(cn.length>=8&&bodyNums.includes(cn)){score+=40;signals.push({l:'CUIL',h:true});}else signals.push({l:'CUIL',h:false});}
     if(!ag.isCABA&&ag.agNum){if(new RegExp('\\b'+ag.agNum+'\\b').test(body)){score+=25;signals.push({l:'nº agencia',h:true});}else signals.push({l:'nº agencia',h:false});}
     if(ag.isCABA&&ag.ctaCte){const ctn=ag.ctaCte;if(ctn.length>=4&&bodyNums.includes(ctn)){score+=45;signals.push({l:'cta. cte.',h:true});}else if(ctn.length>=4&&bodyNums.includes(ctn.slice(-4))){score+=15;signals.push({l:'cta. parcial',h:true});}else signals.push({l:'cta. cte.',h:false});}
@@ -664,7 +684,24 @@ function detectDuplicates(){
 
 function processAll(){
   processed={};
-  allEmails.forEach(e=>{const m=matchEmail(e);processed[e.id]={match:m,cls:classify(e,m)};});
+  allEmails.forEach(e=>{
+    const m=matchEmail(e);
+    const cls=classify(e,m);
+    processed[e.id]={match:m,cls};
+    // Apply saved confirmed matches
+    if(cfg.confirmedMatches?.[e.id]){
+      const ag=dashData.find(a=>a.agencia===cfg.confirmedMatches[e.id]);
+      if(ag){
+        processed[e.id].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado manualmente',h:true}]};
+        processed[e.id].cls=classify(e,processed[e.id].match);
+      }
+    }
+    // Apply saved rejected matches
+    if(cfg.rejectedMatches?.[e.id]){
+      processed[e.id].match={matched:false,confidence:'none',candidates:[]};
+      processed[e.id].cls=classify(e,processed[e.id].match);
+    }
+  });
   detectDuplicates();
   updateMetrics();renderAlerts();renderProvFilter();renderList();
 }
@@ -711,7 +748,7 @@ function filterEmails(f,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(el)el.classList.add('active');
   else{
-    const map={'all':'nav-all','attention':'nav-attention','auto':'nav-auto','unidentified':'nav-unidentified','vip':'nav-vip','followup':'nav-followup','baja':null,'activa':'nav-activa','candidato':'nav-candidato','inscripto':'nav-inscripto','proceso':'nav-proceso','pendiente':'nav-pendiente','suspendida':'nav-suspendida'};
+    const map={'all':'nav-all','attention':'nav-attention','auto':'nav-auto','unidentified':'nav-unidentified','vip':'nav-vip','followup':'nav-followup','baja':'nav-all','activa':'nav-activa','candidato':'nav-candidato','inscripto':'nav-inscripto','proceso':'nav-proceso','pendiente':'nav-pendiente','suspendida':'nav-suspendida'};
     if(map[f])document.getElementById(map[f])?.classList.add('active');
   }
   const titles={'all':'Bandeja de entrada','attention':'Tu atención','auto':'Auto-respondidos','unidentified':'Sin identificar','vip':'VIP','followup':'Seguimiento','baja':'Posibles bajas','activa':'Activas','candidato':'Candidatas','inscripto':'Inscriptas','proceso':'En proceso','pendiente':'Pendientes','suspendida':'Suspendidas'};
@@ -743,7 +780,10 @@ function rebuildMain(){
   </div>
   <div class="alerts-bar" id="alerts-bar" style="display:none"></div>
   <div class="email-list-header">
-    <span style="font-size:13px;color:var(--text2);font-weight:500" id="list-title">Bandeja de entrada</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="select-all-cb" style="width:14px;height:14px;cursor:pointer" onchange="toggleSelectAll(this.checked)" title="Seleccionar todos">
+      <span style="font-size:13px;color:var(--text2);font-weight:500" id="list-title">Bandeja de entrada</span>
+    </div>
     <div class="bulk-actions" id="bulk-actions" style="display:none">
       <select class="conf-filter" id="conf-filter" onchange="renderList()">
         <option value="">Todas las confianzas</option>
@@ -881,6 +921,14 @@ function renderList(q=''){
 
 function toggleStar(ev,id){ev.stopPropagation();if(starredIds.has(id))starredIds.delete(id);else starredIds.add(id);saveCfg();renderList(document.getElementById('search-input')?.value||'');}
 
+function toggleSelectAll(checked){
+  const emails=getFiltered(document.getElementById('search-input')?.value||'');
+  if(checked){emails.forEach(e=>selectedEmails.add(e.id));}
+  else{selectedEmails.clear();}
+  const bc=document.getElementById('bulk-count');if(bc)bc.textContent=selectedEmails.size;
+  renderList(document.getElementById('search-input')?.value||'');
+}
+
 function toggleSelect(id){
   if(selectedEmails.has(id))selectedEmails.delete(id);else selectedEmails.add(id);
   const bc=document.getElementById('bulk-count');if(bc)bc.textContent=selectedEmails.size;
@@ -915,7 +963,9 @@ async function sendGmail(to,subject,body,threadId){
   const t=await getToken();
   try{
     const raw=makeRaw(MY_EMAIL,to,subject,body,threadId);
-    const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify({raw,threadId})});
+    const payload={raw};
+    if(threadId)payload.threadId=threadId;
+    const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d=await r.json();
     return !!d.id;
   }catch(e){console.error('Send error:',e);return false;}
@@ -1036,9 +1086,9 @@ function selectEmail(id){
     const cl=m.confidence==='high'?'Alta':m.confidence==='medium'?'Media':'Baja';
     const sigH=(m.signals||[]).map(s=>`<span class="sig ${s.h?'sig-hit':'sig-miss'}">${s.h?'✓':'-'} ${s.l}</span>`).join('');
     const perf=ag.ngr>0||ag.clicks>0?`<div class="perf-chips"><span class="perf-chip">${ag.clicks} clicks</span><span class="perf-chip">${ag.signups} sign ups</span><span class="perf-chip">${ag.ftds} FTDs</span><span class="perf-chip ${ag.ngr>0?'pos':ag.ngr<0?'neg':''}">${ag.ngr?'$'+ag.ngr.toLocaleString('es-AR'):'$0'} NGR</span></div>`:'';
-    matchHTML=`<div class="match-row ${m.confidence}"><div class="match-info"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="match-agency-name">${ag.agencia} · ${ag.provincia}</div>${isVip(ag)?'<span class="badge b-vip">⭐ VIP</span>':''}<span class="badge b-${c.estadoKey}">${ag.estado}</span><span style="font-size:11px;color:var(--text3)">${ag.tipo}</span><span style="font-size:11px;color:${cc};font-weight:500">Confianza: ${cl}</span></div>${ag.titular?`<div class="match-meta">Titular: ${ag.titular}</div>`:''}<div class="signals">${sigH}</div>${perf}</div></div>`;
+    matchHTML=`<div class="match-row ${m.confidence}"><div class="match-info"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="match-agency-name">${ag.agencia} · ${ag.provincia}</div>${isVip(ag)?'<span class="badge b-vip">⭐ VIP</span>':''}<span class="badge b-${c.estadoKey}">${ag.estado}</span><span style="font-size:11px;color:var(--text3)">${ag.tipo}</span><span style="font-size:11px;color:${cc};font-weight:500">Confianza: ${cl}</span></div>${ag.titular?`<div class="match-meta">Titular: ${ag.titular}</div>`:''}<div class="signals">${sigH}</div>${perf}<div style="display:flex;gap:6px;margin-top:8px">${m.confidence!=='high'||m.signals?.[0]?.l!=='✓ Confirmado manualmente'?`<button onclick="confirmMatch('${id}','${ag.agencia}')" style="font-size:11px;padding:3px 10px;border-radius:8px;background:var(--green-bg);color:var(--green);border:1px solid rgba(19,115,51,.2);cursor:pointer;font-family:var(--font)">✓ Confirmar match</button>`:''}<button onclick="rejectMatch('${id}')" style="font-size:11px;padding:3px 10px;border-radius:8px;background:var(--red-bg);color:var(--red);border:1px solid rgba(197,34,31,.2);cursor:pointer;font-family:var(--font)">✗ No es esta agencia</button></div></div></div>`;
   }else if(!m.matched&&m.candidates?.length){
-    matchHTML=`<div class="match-row low"><div class="match-info"><div class="match-agency-name" style="margin-bottom:8px">No identificada — posibles coincidencias:</div><div class="candidates-list">${m.candidates.slice(0,3).map(cd=>`<div class="cand-row" onclick="confirmMatch('${id}','${cd.ag.agencia}')"><div><div style="font-size:13px;font-weight:500">${cd.ag.agencia} · ${cd.ag.provincia}</div><div style="font-size:12px;color:var(--text3)">${cd.ag.titular||'sin titular'} · ${cd.ag.estado}</div></div><span style="font-size:12px;font-weight:600;color:${cd.score>=40?'var(--green)':cd.score>=25?'var(--amber)':'var(--text3)'}">${cd.score}pts →</span></div>`).join('')}</div><div style="font-size:12px;color:var(--text3);margin-top:8px">Hacé click para confirmar.</div></div></div>`;
+    matchHTML=`<div class="match-row low"><div class="match-info"><div class="match-agency-name" style="margin-bottom:8px">No identificada — posibles coincidencias:</div><div class="candidates-list">${m.candidates.slice(0,3).map(cd=>`<div class="cand-row" onclick="confirmMatch('${id}','${cd.ag.agencia}')"><div><div style="font-size:13px;font-weight:500">${cd.ag.agencia} · ${cd.ag.provincia}</div><div style="font-size:12px;color:var(--text3)">${cd.ag.titular||'sin titular'} · ${cd.ag.estado}</div></div><span style="font-size:12px;font-weight:600;color:${cd.score>=40?'var(--green)':cd.score>=25?'var(--amber)':'var(--text3)'}">${cd.score}pts →</span></div>`).join('')}</div><div style="font-size:12px;color:var(--text3);margin-top:8px">Hacé click para confirmar. Si ninguna es correcta, ignorá.</div></div></div>`;
   }else{
     matchHTML=`<div class="match-row none"><div class="match-info"><div class="match-agency-name">Nueva agencia — no figura en el dash</div><div class="match-meta">Se enviará respuesta automática de bienvenida.</div></div></div>`;
   }
@@ -1061,7 +1111,8 @@ function selectEmail(id){
 
   let replyHTML='';
   if(c.needsAttention){
-    replyHTML=`<div class="reply-box"><div class="rb-header">💬 Tu respuesta personal a <strong>${de}</strong></div><textarea id="reply-${id}" placeholder="Escribí tu respuesta acá..."></textarea><div class="rb-actions"><button class="send-btn" onclick="sendReplySingle('${id}','${de}')">Enviar desde afiliadosarg@betwarrior.com</button><button class="ai-btn" onclick="openClaudeAI('${id}')">✨ Analizar con IA</button></div></div>`;
+    const savedDraft=cfg.drafts?.[id]||'';
+    replyHTML=`<div class="reply-box"><div class="rb-header">💬 Tu respuesta personal a <strong>${de}</strong>${savedDraft?'<span style="font-size:11px;color:var(--amber);margin-left:8px">● Borrador guardado</span>':''}</div><textarea id="reply-${id}" placeholder="Escribí tu respuesta acá..." oninput="saveDraft('${id}',this.value)">${savedDraft}</textarea><div class="rb-actions"><button class="send-btn" onclick="sendReplySingle('${id}','${de}')">Enviar desde afiliadosarg@betwarrior.com</button><button class="ai-btn" onclick="openClaudeAI('${id}')">✨ Analizar con IA</button>${savedDraft?`<button class="ai-btn" style="color:var(--red);border-color:var(--red)" onclick="clearDraft('${id}')">✕ Borrar borrador</button>`:''}</div></div>`;
   }
 
   const related=allEmails.filter(x=>{
@@ -1152,12 +1203,26 @@ function closeDetail(){
   if(map[currentFilter])document.getElementById(map[currentFilter])?.classList.add('active');
 }
 
+function saveDraft(id,val){if(!cfg.drafts)cfg.drafts={};if(val.trim())cfg.drafts[id]=val;else delete cfg.drafts[id];saveCfg();}
+function clearDraft(id){if(cfg.drafts)delete cfg.drafts[id];saveCfg();selectEmail(id);}
+
 function confirmMatch(emailId,agName){
   const ag=dashData.find(a=>a.agencia===agName);if(!ag)return;
   const e=allEmails.find(x=>x.id===emailId);if(!e)return;
-  processed[emailId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'confirmado manualmente',h:true}]};
+  if(!cfg.confirmedMatches)cfg.confirmedMatches={};
+  cfg.confirmedMatches[emailId]=agName;
+  if(cfg.rejectedMatches)delete cfg.rejectedMatches[emailId];
+  processed[emailId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado manualmente',h:true}]};
   processed[emailId].cls=classify(e,processed[emailId].match);
-  updateMetrics();renderAlerts();selectEmail(emailId);
+  saveCfg();updateMetrics();renderAlerts();selectEmail(emailId);
+}
+function rejectMatch(emailId){
+  if(!cfg.rejectedMatches)cfg.rejectedMatches={};
+  const currentAgency=processed[emailId]?.match?.agency?.agencia;
+  if(currentAgency)cfg.rejectedMatches[emailId]=currentAgency;
+  processed[emailId].match={matched:false,confidence:'none',candidates:[]};
+  processed[emailId].cls=classify(allEmails.find(x=>x.id===emailId)||{},processed[emailId].match);
+  saveCfg();updateMetrics();renderAlerts();selectEmail(emailId);
 }
 
 // ============ STATS ============
