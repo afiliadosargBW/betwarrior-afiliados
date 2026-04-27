@@ -717,20 +717,23 @@ function processAll(){
     const cls=classify(e,m);
     processed[e.id]={match:m,cls};
 
-    // 1. Apply confirmed matches by SENDER EMAIL (new — covers all mails from same sender)
-    if(cfg.confirmedMatches?.[senderEmail]){
-      const ag=dashData.find(a=>a.agencia===cfg.confirmedMatches[senderEmail]);
+    // 1. Apply confirmed matches by EMAIL ID (highest priority — overrides sender match)
+    // Check both plain emailId and email|emailId format
+    const singleKey=`${senderEmail}|${e.id}`;
+    const singleMatch=cfg.confirmedMatches?.[e.id]||cfg.confirmedMatches?.[singleKey];
+    if(singleMatch){
+      const ag=dashData.find(a=>a.agencia===singleMatch);
       if(ag){
-        processed[e.id].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado por remitente',h:true}]};
+        processed[e.id].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'📌 Confirmado solo este mail',h:true}]};
         processed[e.id].cls=classify(e,processed[e.id].match);
         return;
       }
     }
-    // 2. Apply confirmed matches by EMAIL ID (legacy — keep for backwards compat)
-    if(cfg.confirmedMatches?.[e.id]){
-      const ag=dashData.find(a=>a.agencia===cfg.confirmedMatches[e.id]);
+    // 2. Apply confirmed matches by SENDER EMAIL
+    if(cfg.confirmedMatches?.[senderEmail]){
+      const ag=dashData.find(a=>a.agencia===cfg.confirmedMatches[senderEmail]);
       if(ag){
-        processed[e.id].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado manualmente',h:true}]};
+        processed[e.id].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado por remitente',h:true}]};
         processed[e.id].cls=classify(e,processed[e.id].match);
         return;
       }
@@ -1187,7 +1190,8 @@ function selectEmail(id){
         ${perf}
         <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
           ${!isConfirmed?`<button onclick="confirmMatch('${id}','${ag.agencia.replace(/'/g,"\\'")}')" style="font-size:11px;padding:4px 12px;border-radius:8px;background:var(--green-bg);color:var(--green);border:1px solid rgba(19,115,51,.2);cursor:pointer;font-family:var(--font);font-weight:500">✓ Confirmar esta agencia</button>`:''}
-          <button onclick="openChangeMatch('${id}')" style="font-size:11px;padding:4px 12px;border-radius:8px;background:var(--accent-bg);color:var(--accent);border:1px solid rgba(26,115,232,.2);cursor:pointer;font-family:var(--font);font-weight:500">🔄 Cambiar a otra agencia</button>
+          <button onclick="openChangeMatch('${id}',false)" style="font-size:11px;padding:4px 12px;border-radius:8px;background:var(--accent-bg);color:var(--accent);border:1px solid rgba(26,115,232,.2);cursor:pointer;font-family:var(--font);font-weight:500">🔄 Cambiar a otra agencia</button>
+          <button onclick="openChangeMatch('${id}',true)" style="font-size:11px;padding:4px 12px;border-radius:8px;background:#f3f0ff;color:var(--purple);border:1px solid rgba(124,58,237,.2);cursor:pointer;font-family:var(--font);font-weight:500">📌 Cambiar solo este mail</button>
           <button onclick="rejectMatch('${id}')" style="font-size:11px;padding:4px 12px;border-radius:8px;background:var(--red-bg);color:var(--red);border:1px solid rgba(197,34,31,.2);cursor:pointer;font-family:var(--font);font-weight:500">✗ Ninguna / No identificar</button>
         </div>
       </div>
@@ -1361,9 +1365,12 @@ async function loadMatchesFromSheets(){
     const d=await r.json();
     if(!d.values||!d.values.length)return;
     if(!cfg.confirmedMatches)cfg.confirmedMatches={};
-    // Load confirmed matches by senderEmail
     d.values.forEach(row=>{
-      if(row[0]&&row[2])cfg.confirmedMatches[row[0]]=row[2];
+      if(row[0]&&row[2]){
+        // Entries with | are single-mail matches (email|emailId format)
+        // Entries without | are sender-level matches
+        cfg.confirmedMatches[row[0]]=row[2];
+      }
     });
     console.log('Loaded',d.values.length,'confirmed matches from Sheets');
   }catch(e){console.error('Sheets read matches error:',e);}
@@ -1418,14 +1425,20 @@ function rejectMatch(emailId){
 }
 
 let changeMatchTargetId=null;
-function openChangeMatch(emailId){
+let changeMatchSingleOnly=false;
+function openChangeMatch(emailId,singleOnly=false){
   changeMatchTargetId=emailId;
+  changeMatchSingleOnly=!!singleOnly;
+  const title=document.querySelector('#change-match-modal .modal-title');
+  if(title)title.textContent=singleOnly?'📌 Cambiar solo este mail':'🔍 Buscar agencia manualmente';
+  const sub=document.querySelector('#change-match-modal .modal-sub');
+  if(sub)sub.textContent=singleOnly?'Esta agencia se asignará solo a este mail, sin afectar otros mails del mismo remitente.':'Escribí el número o nombre para encontrar la agencia.';
   document.getElementById('change-match-search').value='';
   renderChangeMatchResults();
   document.getElementById('change-match-modal').style.display='flex';
   setTimeout(()=>document.getElementById('change-match-search').focus(),100);
 }
-function closeChangeMatchModal(){document.getElementById('change-match-modal').style.display='none';changeMatchTargetId=null;}
+function closeChangeMatchModal(){document.getElementById('change-match-modal').style.display='none';changeMatchTargetId=null;changeMatchSingleOnly=false;}
 
 function renderChangeMatchResults(){
   const q=document.getElementById('change-match-search').value.trim();
@@ -1462,8 +1475,26 @@ function renderChangeMatchResults(){
 function selectChangeMatch(agName){
   if(!changeMatchTargetId)return;
   const emailId=changeMatchTargetId;
+  const singleOnly=changeMatchSingleOnly;
   closeChangeMatchModal();
-  confirmMatch(emailId,agName);
+  if(singleOnly){confirmMatchSingle(emailId,agName);}
+  else{confirmMatch(emailId,agName);}
+}
+
+function confirmMatchSingle(emailId,agName){
+  const resolvedId=selectedId||emailId;
+  const ag=dashData.find(a=>a.agencia===agName);if(!ag)return;
+  const e=allEmails.find(x=>x.id===resolvedId);if(!e)return;
+  if(!cfg.confirmedMatches)cfg.confirmedMatches={};
+  cfg.confirmedMatches[resolvedId]=agName;
+  processed[resolvedId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'📌 Confirmado solo este mail',h:true}]};
+  processed[resolvedId].cls=classify(e,processed[resolvedId].match);
+  saveCfg();
+  // Save to Sheets with emailId as key so it's distinguishable
+  const remitente=e.isForwarded?e.fwdFrom:e.fromName;
+  saveMatchToSheets(`${e.isForwarded?e.fwdEmail:e.fromEmail}|${resolvedId}`,remitente,agName,ag.provincia);
+  updateMetrics();renderAlerts();renderProvFilter();
+  setTimeout(()=>selectEmail(resolvedId),50);
 }
 
 // ============ STATS ============
