@@ -661,7 +661,38 @@ async function fetchMsg(id){
 function fixEnc(s){if(!s)return'';return s.replace(/Ã±/g,'ñ').replace(/Ã¡/g,'á').replace(/Ã©/g,'é').replace(/Ã­/g,'í').replace(/Ã³/g,'ó').replace(/Ãº/g,'ú').replace(/Ã¼/g,'ü').replace(/â€™/g,"'").replace(/â€œ/g,'"').replace(/â€/g,'"').replace(/=C3=B1/g,'ñ').replace(/=C3=A1/g,'á').replace(/=C3=A9/g,'é').replace(/=C3=AD/g,'í').replace(/=C3=B3/g,'ó').replace(/=C3=BA/g,'ú').replace(/=\r?\n/g,'');}
 function extractBody(p){if(!p)return'';if(p.mimeType==='text/plain'&&p.body?.data)return dec64(p.body.data);if(p.parts){for(const x of p.parts){if(x.mimeType==='text/plain'&&x.body?.data)return dec64(x.body.data);}for(const x of p.parts){const t=extractBody(x);if(t)return t;}}if(p.body?.data)return dec64(p.body.data);return'';}
 function dec64(d){try{return decodeURIComponent(escape(atob(d.replace(/-/g,'+').replace(/_/g,'/'))));}catch(e){try{return atob(d.replace(/-/g,'+').replace(/_/g,'/'));}catch(e2){return'';}}}
-function extractFwd(body){const m=body.match(/[-]{3,}\s*Forwarded message\s*[-]{3,}[\s\S]*?(?:De|From):\s*([^\n<]+?)(?:\s*<([^>]+)>)?\s*\n/i)||body.match(/(?:De|From):\s*([^\n<]+?)(?:\s*<([^>]+)>)?\s*\n/i);if(!m)return{name:'',email:'',body};const name=fixEnc(m[1].trim());const email=(m[2]||'').trim().toLowerCase();const start=body.indexOf('\n',body.indexOf(m[0])+m[0].length)+1;const clean=body.slice(start).replace(/^(Date:|Subject:|To:|Para:|Fecha:|Asunto:|Cc:)[^\n]*\n/gim,'').trim();return{name,email,body:clean||body};}
+function extractFwd(body){
+  if(!body)return{name:'',email:'',body};
+  // Try multiple patterns for forwarded message headers
+  const patterns=[
+    // Standard: ---------- Forwarded message ----------\nDe: Name <email>
+    /[-]{3,}\s*Forwarded message\s*[-]{3,}[\s\S]*?(?:De|From):\s*([^\n<]+?)\s*<([^>]+)>\s*\n/i,
+    // Without angle brackets but with email pattern
+    /[-]{3,}\s*Forwarded message\s*[-]{3,}[\s\S]*?(?:De|From):\s*([^\n]+?)\s*\n/i,
+    // Just De:/From: line with email in brackets
+    /(?:De|From):\s*([^\n<]+?)\s*<([^>]+)>\s*\n/i,
+    // De:/From: line without brackets - email might be inline
+    /(?:De|From):\s*([^\n]+?)\s*\n/i,
+  ];
+  let name='',email='',matchStr='';
+  for(const pat of patterns){
+    const m=body.match(pat);
+    if(!m)continue;
+    name=fixEnc((m[1]||'').trim());
+    email=(m[2]||'').trim().toLowerCase();
+    matchStr=m[0];
+    // If no email from group 2, try to extract from group 1
+    if(!email){
+      const emailInName=name.match(/([\w.\-+]+@[\w.\-]+\.\w{2,})/);
+      if(emailInName){email=emailInName[1].toLowerCase();name=name.replace(emailInName[0],'').trim();}
+    }
+    if(name||email)break;
+  }
+  if(!name&&!email)return{name:'',email:'',body};
+  const start=matchStr?body.indexOf('\n',body.indexOf(matchStr)+matchStr.length)+1:0;
+  const clean=body.slice(start).replace(/^(Date:|Subject:|To:|Para:|Fecha:|Asunto:|Cc:|Date:|Sent:)[^\n]*\n/gim,'').trim();
+  return{name,email,body:clean||body};
+}
 function fmtDate(s){try{const d=new Date(s),n=new Date(),diff=n-d;if(diff<86400000)return d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});if(diff<604800000)return d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric'});return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});}catch{return'';}}
 function getDays(ds){try{return(Date.now()-new Date(ds).getTime())/(1000*86400);}catch{return 0;}}
 
@@ -1278,7 +1309,9 @@ function selectEmail(id){
 
   const isSent=sentAutoIds.has(id);
   let autoHTML='';
-  if(c.autoReply){
+  // Don't show auto reply if destination would be an internal sender
+  const isInternalDest=!de||cfg.internalSenders.some(s=>de===s.toLowerCase()||de.endsWith('@'+s.toLowerCase().split('@')[1]));
+  if(c.autoReply&&!isInternalDest){
     const tk=ag?ag.estado==='Candidato'?'Candidata':ag.estado==='Inscripto'?'Inscripta':ag.estado==='En Proceso'?'En proceso':'Nueva agencia':'Nueva agencia';
     const txt=(cfg.templates[tk]||cfg.templates['Nueva agencia']||'').replace(/\{agencia\}/g,ag?ag.agencia:'').replace(/\{nombre\}/g,dn);
     autoHTML=`<div class="auto-reply-box"><div class="arb-title">${isSent?'✓ Respuesta enviada':'✅ Respuesta automática preparada'}</div><div class="arb-body" id="auto-body-${id}">${txt}</div><div class="arb-actions"><button class="ai-btn" onclick="editAuto('${id}')">✏️ Editar</button>${isSent?`<span style="font-size:12px;color:var(--green);padding:8px">✓ Ya enviado</span>`:`<button class="send-btn" style="background:var(--green)" onclick="sendAutoSingle('${id}','${de}')">Enviar desde afiliadosarg@betwarrior.com</button>`}</div></div>`;
@@ -1440,21 +1473,32 @@ function confirmMatch(emailId,agName){
   const e=allEmails.find(x=>x.id===resolvedId);if(!e)return;
   if(!cfg.confirmedMatches)cfg.confirmedMatches={};
   if(!cfg.rejectedMatches)cfg.rejectedMatches={};
-  const senderEmail=e.isForwarded?e.fwdEmail:e.fromEmail;
-  const remitente=e.isForwarded?e.fwdFrom:e.fromName;
-  // Save by sender email — covers all mails from this sender
-  cfg.confirmedMatches[senderEmail]=agName;
-  delete cfg.rejectedMatches[senderEmail];
-  // Also clean up any legacy per-ID entries for this sender
+  // For forwarded emails, always use fwdEmail. If fwdEmail is empty, don't save to Sheets
+  const senderEmail=e.isForwarded?(e.fwdEmail||''):e.fromEmail;
+  const remitente=e.isForwarded?(e.fwdFrom||e.fromName):e.fromName;
+  const isInternal=cfg.internalSenders.some(s=>senderEmail===s.toLowerCase()||senderEmail.endsWith('@'+s.toLowerCase().split('@')[1]));
+  if(senderEmail&&!isInternal){
+    cfg.confirmedMatches[senderEmail]=agName;
+    delete cfg.rejectedMatches[senderEmail];
+  }
+  // Also save by emailId as fallback
+  cfg.confirmedMatches[resolvedId]=agName;
+  delete cfg.rejectedMatches[resolvedId];
+  // Update all emails from this sender
   allEmails.filter(x=>(x.isForwarded?x.fwdEmail:x.fromEmail)===senderEmail).forEach(x=>{
     delete cfg.confirmedMatches[x.id];
     delete cfg.rejectedMatches[x.id];
-    // Update processed immediately for all their mails
     processed[x.id].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado por remitente',h:true}]};
     processed[x.id].cls=classify(x,processed[x.id].match);
   });
+  // Update this specific email
+  processed[resolvedId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:senderEmail&&!isInternal?'✓ Confirmado por remitente':'✓ Confirmado manualmente',h:true}]};
+  processed[resolvedId].cls=classify(e,processed[resolvedId].match);
   saveCfg();
-  saveMatchToSheets(senderEmail,remitente,agName,ag.provincia);
+  // Only save to Sheets if we have a valid non-internal email
+  if(senderEmail&&!isInternal){
+    saveMatchToSheets(senderEmail,remitente,agName,ag.provincia);
+  }
   updateMetrics();renderAlerts();renderProvFilter();
   setTimeout(()=>selectEmail(resolvedId),50);
 }
