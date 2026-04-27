@@ -417,7 +417,7 @@ window.onload=()=>{
 function loadCfg(){try{const s=localStorage.getItem('bw_v8');if(s){const p=JSON.parse(s);cfg={...cfg,...p};if(p.starred)starredIds=new Set(p.starred);if(p.sentAutoIds)sentAutoIds=new Set(p.sentAutoIds);if(p.sentKitIds)sentKitIds=new Set(p.sentKitIds);if(p.readInBwafi)readInBwafi=new Set(p.readInBwafi);if(p.hiddenFromBwafi)hiddenFromBwafi=new Set(p.hiddenFromBwafi);}}catch(e){}}
 function saveCfg(){try{localStorage.setItem('bw_v8',JSON.stringify({...cfg,starred:[...starredIds],sentAutoIds:[...sentAutoIds],sentKitIds:[...sentKitIds],readInBwafi:[...readInBwafi],hiddenFromBwafi:[...hiddenFromBwafi]}));}catch(e){}}
 function showApp(){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='grid';}
-function logout(){cfg.token='';cfg.refresh_token='';sentAutoIds.clear();saveCfg();location.reload();}
+function logout(){cfg.token='';cfg.refresh_token='';saveCfg();location.reload();}
 
 // ============ DAYS FILTER ============
 function renderDaysFilter(){
