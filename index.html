@@ -21,7 +21,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .app{display:grid;grid-template-columns:256px 1fr;grid-template-rows:64px 1fr;height:100dvh;overflow:hidden}
 .topbar{grid-column:1/-1;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
 .sidebar{background:var(--sidebar);overflow-y:auto;padding:8px 0}
-.main{overflow-y:auto;background:var(--white);display:flex;flex-direction:column}
+.main{overflow:hidden;background:var(--white);display:flex;flex-direction:column}
+#email-list{flex:1;overflow-y:auto;min-height:0}
 .logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:500;color:var(--text);min-width:200px}
 .logo-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700}
 .logo span{color:var(--accent)}
@@ -98,7 +99,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .b-vip{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(180,83,9,.2)}
 .b-duplicado{background:#f1f3f4;color:var(--text3);border:1px solid var(--border2)}
 /* DETAIL VIEW */
-.detail-view{padding:16px 24px;max-width:860px}
+.detail-view{padding:16px 24px;max-width:860px;overflow-y:auto;flex:1;min-height:0}
 .detail-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
 .detail-back{display:flex;align-items:center;gap:8px;color:var(--text2);cursor:pointer;font-size:13px;padding:6px 12px;border-radius:20px;transition:background .15s;border:1px solid var(--border);background:var(--white)}
 .detail-back:hover{background:var(--hover-bg)}
@@ -402,7 +403,7 @@ const DEFAULT_TMPLS={
 };
 
 let cfg={token:'',refresh_token:'',clientId:'',clientSecret:'',sheetId:DEFAULT_SHEET,myEmail:RESUMEN_TO,daysToLoad:30,internalSenders:['piarodriguez@betwarrior.com'],templates:{...DEFAULT_TMPLS},drafts:{},confirmedMatches:{},rejectedMatches:{}};
-let dashData=[],allEmails=[],processed={},currentFilter='all',currentProv='',selectedId=null,currentTmpl='Nueva agencia',vipThreshold=0,tokenExpiry=0,starredIds=new Set(),selectedEmails=new Set(),sentAutoIds=new Set(),sentKitIds=new Set(),provOpen=false,readInBwafi=new Set(),hiddenFromBwafi=new Set(),inStatsView=false;
+let dashData=[],allEmails=[],processed={},currentFilter='all',currentProv='',selectedId=null,currentTmpl='Nueva agencia',vipThreshold=0,tokenExpiry=0,starredIds=new Set(),selectedEmails=new Set(),sentAutoIds=new Set(),sentKitIds=new Set(),provOpen=false,readInBwafi=new Set(),hiddenFromBwafi=new Set(),inStatsView=false,repliedIds=new Set();
 
 // ============ INIT ============
 window.onload=()=>{
@@ -414,8 +415,8 @@ window.onload=()=>{
   else if(cfg.token){showApp();syncAll();}
 };
 
-function loadCfg(){try{const s=localStorage.getItem('bw_v8');if(s){const p=JSON.parse(s);cfg={...cfg,...p};if(p.starred)starredIds=new Set(p.starred);if(p.sentAutoIds)sentAutoIds=new Set(p.sentAutoIds);if(p.sentKitIds)sentKitIds=new Set(p.sentKitIds);if(p.readInBwafi)readInBwafi=new Set(p.readInBwafi);if(p.hiddenFromBwafi)hiddenFromBwafi=new Set(p.hiddenFromBwafi);}}catch(e){}}
-function saveCfg(){try{localStorage.setItem('bw_v8',JSON.stringify({...cfg,starred:[...starredIds],sentAutoIds:[...sentAutoIds],sentKitIds:[...sentKitIds],readInBwafi:[...readInBwafi],hiddenFromBwafi:[...hiddenFromBwafi]}));}catch(e){}}
+function loadCfg(){try{const s=localStorage.getItem('bw_v8');if(s){const p=JSON.parse(s);cfg={...cfg,...p};if(p.starred)starredIds=new Set(p.starred);if(p.sentAutoIds)sentAutoIds=new Set(p.sentAutoIds);if(p.sentKitIds)sentKitIds=new Set(p.sentKitIds);if(p.readInBwafi)readInBwafi=new Set(p.readInBwafi);if(p.hiddenFromBwafi)hiddenFromBwafi=new Set(p.hiddenFromBwafi);if(p.repliedIds)repliedIds=new Set(p.repliedIds);}}catch(e){}}
+function saveCfg(){try{localStorage.setItem('bw_v8',JSON.stringify({...cfg,starred:[...starredIds],sentAutoIds:[...sentAutoIds],sentKitIds:[...sentKitIds],readInBwafi:[...readInBwafi],hiddenFromBwafi:[...hiddenFromBwafi],repliedIds:[...repliedIds]}));}catch(e){}}
 function showApp(){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='grid';}
 function logout(){cfg.token='';cfg.refresh_token='';saveCfg();location.reload();}
 
@@ -524,7 +525,7 @@ async function syncAll(){
   const t=await getToken();if(!t){logout();return;}
   const sync=document.getElementById('last-sync');
   if(sync)sync.textContent='Sincronizando...';
-  await Promise.all([loadDash(),loadGmail(),loadMatchesFromSheets()]);
+  await Promise.all([loadDash(),loadGmail(),loadMatchesFromSheets(),loadSentEmails()]);
   if(sync)sync.textContent='Actualizado: '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
   setTimeout(syncAll,5*60*1000);
 }
@@ -593,6 +594,47 @@ async function loadGmail(){
     if(el)el.textContent=`${allEmails.length} correos`;
     processAll();
   }catch(e){console.error('Gmail:',e);}
+}
+
+// Load sent emails to mark threads as replied
+async function loadSentEmails(){
+  const t=await getToken();
+  const days=cfg.daysToLoad||30;
+  const after=Math.floor((Date.now()-days*86400000)/1000);
+  try{
+    const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=200&q=${encodeURIComponent(`in:sent from:${MY_EMAIL} after:${after}`)}`,{headers:{Authorization:'Bearer '+t}});
+    const d=await r.json();
+    if(!d.messages)return;
+    // Get threadIds of sent messages
+    const sentThreadIds=new Set();
+    const sentMsgIds=new Set();
+    // Fetch each sent message to get threadId
+    const batches=[];
+    for(let i=0;i<d.messages.length;i+=10){
+      batches.push(d.messages.slice(i,i+10));
+    }
+    for(const batch of batches){
+      const results=await Promise.all(batch.map(m=>
+        fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=Subject`,{headers:{Authorization:'Bearer '+t}})
+        .then(r=>r.json())
+        .catch(()=>null)
+      ));
+      results.filter(Boolean).forEach(msg=>{
+        if(msg.threadId)sentThreadIds.add(msg.threadId);
+        sentMsgIds.add(msg.id);
+      });
+    }
+    // Mark inbox emails whose threadId has a sent reply
+    allEmails.forEach(e=>{
+      if(sentThreadIds.has(e.threadId)){
+        // Only add to repliedIds if NOT already in sentAutoIds (auto replies)
+        if(!sentAutoIds.has(e.id)){
+          repliedIds.add(e.id);
+        }
+      }
+    });
+    saveCfg();
+  }catch(err){console.error('loadSentEmails:',err);}
 }
 
 async function fetchMsg(id){
@@ -681,7 +723,7 @@ function classify(email,m){
     x.id!==email.id&&
     x.threadId===email.threadId&&
     (x.fromEmail===MY_EMAIL||x.fromEmail.includes('afiliadosarg'))
-  );
+  )||sentAutoIds.has(email.id)||repliedIds.has(email.id);
   const needsFollowup=needsAtt&&daysOld>=FOLLOWUP_DAYS&&!repliedInThread;
   return{estado,estadoKey,needsAttention:needsAtt,autoReply,baja:isBaja,vip,needsFollowup,daysOld};
 }
@@ -927,7 +969,8 @@ function renderList(q=''){
     const bLabel=c.baja?'⚠ Baja':c.vip?`⭐ VIP${prov}`:m.matched?`${c.estado||'—'}${prov}`:'Sin identificar';
     const isStarred=starredIds.has(e.id);
     const isSelected=selectedEmails.has(e.id);
-    const isSent=sentAutoIds.has(e.id);
+    const isSentAuto=sentAutoIds.has(e.id);
+    const isReplied=repliedIds.has(e.id);
     const isReadBwafi=readInBwafi.has(e.id);
     const isReadGmail=!e.unread;
     const preview=(e.body||'').replace(/[\n\r]/g,' ').slice(0,80);
@@ -976,7 +1019,8 @@ function renderList(q=''){
 
     // Right
     const right=mkEl('div',{display:'flex',alignItems:'center',gap:'4px',flexShrink:'0',marginLeft:'8px'});
-    if(isSent){const sent=mkEl('span',null,['badge']);sent.style.background='#e6f4ea';sent.style.color='#137333';sent.textContent='✓ Enviado';right.appendChild(sent);}
+    if(isSentAuto){const sent=mkEl('span',null,['badge']);sent.style.background='#e6f4ea';sent.style.color='#137333';sent.style.border='1px solid rgba(19,115,51,.2)';sent.textContent='✓ Auto';right.appendChild(sent);}
+    if(isReplied&&!isSentAuto){const rep=mkEl('span',null,['badge']);rep.style.background='#e8f0fe';rep.style.color='#1a73e8';rep.style.border='1px solid rgba(26,115,232,.2)';rep.textContent='✓ Reply';right.appendChild(rep);}
     if(r.isDuplicate){const dup=mkEl('span',null,['badge','b-duplicado']);dup.textContent='dup';right.appendChild(dup);}
     // BWAFI read check
     const bwafiCheck=mkEl('span',{fontSize:'10px',padding:'1px 5px',borderRadius:'6px',fontWeight:'500',whiteSpace:'nowrap',background:isReadBwafi?'#e6f4ea':'#f1f3f4',color:isReadBwafi?'#137333':'#c5c8cb',border:'1px solid '+(isReadBwafi?'rgba(19,115,51,.2)':'transparent'),title:'Leído en BWAFI'});
