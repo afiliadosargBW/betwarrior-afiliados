@@ -847,6 +847,7 @@ function renderAlerts(){
 function filterEmails(f,el){
   currentFilter=f;
   currentProv='';
+  lastScrollPos=0;
   renderProvFilter();
   clearSelection();
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -1198,7 +1199,12 @@ async function sendResumen(){
 }
 
 // ============ DETAIL ============
+let lastScrollPos=0;
+
 function selectEmail(id){
+  // Save current scroll position before opening email
+  const emailList=document.getElementById('email-list');
+  if(emailList)lastScrollPos=emailList.scrollTop;
   selectedId=id;
   const e=allEmails.find(x=>x.id===id);if(!e)return;
   e.unread=false;
@@ -1382,6 +1388,11 @@ function closeDetail(){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const map={'all':'nav-all','attention':'nav-attention','auto':'nav-auto','unidentified':'nav-unidentified','vip':'nav-vip','followup':'nav-followup','activa':'nav-activa','candidato':'nav-candidato','inscripto':'nav-inscripto','proceso':'nav-proceso','pendiente':'nav-pendiente','suspendida':'nav-suspendida'};
   if(map[currentFilter])document.getElementById(map[currentFilter])?.classList.add('active');
+  // Restore scroll position
+  setTimeout(()=>{
+    const emailList=document.getElementById('email-list');
+    if(emailList)emailList.scrollTop=lastScrollPos;
+  },50);
 }
 
 async function saveMatchToSheets(senderEmail,remitente,agencia,provincia){
