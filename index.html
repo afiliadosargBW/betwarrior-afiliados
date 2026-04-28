@@ -732,78 +732,61 @@ document.addEventListener('visibilitychange',async()=>{
 });
 
 // ============ TOKEN SHEET (for guest mode) ============
+const GUEST_SHEET_NAME='mail guest';
+
 async function saveTokenToSheets(){
   const t=await getToken();
   if(!t||!cfg.refresh_token)return;
   try{
-    const values=[[
-      'refresh_token',cfg.refresh_token,
-      'client_id',cfg.clientId,
-      'client_secret',cfg.clientSecret,
-      'guest_password',cfg.guestPassword||''
-    ]];
-    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/Config!A1:H1?valueInputOption=RAW`,{
+    // Clear and rewrite row 2 with credentials
+    const values=[[cfg.refresh_token,cfg.clientId,cfg.clientSecret,cfg.guestPassword||'']];
+    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/${encodeURIComponent(GUEST_SHEET_NAME)}!A2:D2?valueInputOption=RAW`,{
       method:'PUT',
       headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
       body:JSON.stringify({values})
     });
-    console.log('Token + credentials saved to Sheets for guest access');
+    const d=await r.json();
+    if(d.error)console.log('saveTokenToSheets error:',d.error.message);
+    else console.log('Credentials saved to mail guest sheet');
   }catch(e){console.log('saveTokenToSheets error:',e);}
 }
 
-async function loadTokenFromSheetsForGuest(){
-  try{
-    const url=`https://docs.google.com/spreadsheets/d/${MATCHES_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Config`;
-    const r=await fetch(url);
-    if(!r.ok){console.log('Config sheet not readable:',r.status);return null;}
-    const text=await r.text();
-    const cells=text.replace(/"/g,'').split(',').map(c=>c.trim());
-    const get=(key)=>{const i=cells.indexOf(key);return i>=0&&i+1<cells.length?cells[i+1]:'';};
-    const result={
-      refresh_token:get('refresh_token'),
-      client_id:get('client_id'),
-      client_secret:get('client_secret'),
-      guest_password:get('guest_password'),
-    };
-    console.log('Loaded creds from Sheets, has password:', !!result.guest_password);
-    return result;
-  }catch(e){console.log('loadTokenFromSheetsForGuest error:',e);return null;}
-}
-
-async function guestLoadToken(){
-  // Step 1: Try existing localStorage token
-  if(cfg.token){const ok=await refreshToken();if(ok)return true;}
-  // Step 2: Try loading from Sheets (requires Config sheet to be public)
-  const creds=await loadTokenFromSheetsForGuest();
-  if(creds?.refresh_token&&creds?.client_id&&creds?.client_secret){
-    cfg.refresh_token=creds.refresh_token;
-    cfg.clientId=creds.client_id;
-    cfg.clientSecret=creds.client_secret;
-    const ok=await refreshToken();
-    if(ok){saveCfg();return true;}
-  }
-  // Step 3: No credentials available
-  alert('Para activar el modo invitado, el dueño debe:\n1. Ir a ⚙️ Configuración\n2. Hacer click en "Habilitar acceso invitado"\n\nEsto comparte las credenciales necesarias.');
-  return false;
-}
 async function enableGuestAccess(){
   if(!cfg.guestPassword){alert('Primero configurá una contraseña de invitado y guardá.');return;}
   const btn=event.target;
   btn.textContent='Guardando...';btn.disabled=true;
-  await saveTokenToSheets();
-  // Make the spreadsheet publicly readable so guest can read the Config sheet
   const t=await getToken();
-  if(t){
-    try{
-      await fetch(`https://www.googleapis.com/drive/v3/files/${MATCHES_SHEET_ID}/permissions`,{
-        method:'POST',
-        headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
-        body:JSON.stringify({role:'reader',type:'anyone'})
-      });
-    }catch(e){console.log('Share error:',e);}
+  if(!t){btn.textContent='❌ Sin token';btn.disabled=false;return;}
+  try{
+    // Write header row
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/${encodeURIComponent(GUEST_SHEET_NAME)}!A1:D1?valueInputOption=RAW`,{
+      method:'PUT',
+      headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
+      body:JSON.stringify({values:[['refresh_token','client_id','client_secret','guest_password']]})
+    });
+    // Write credentials
+    await saveTokenToSheets();
+    // Try to share — if it fails (403) show manual instructions
+    const shareR=await fetch(`https://www.googleapis.com/drive/v3/files/${MATCHES_SHEET_ID}/permissions`,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
+      body:JSON.stringify({role:'reader',type:'anyone'})
+    });
+    const shareD=await shareR.json();
+    if(shareD.error){
+      // Drive API not available — show manual instructions
+      btn.textContent='✅ Credenciales guardadas';
+      setTimeout(()=>{btn.textContent='🔑 Habilitar acceso invitado desde otra PC';btn.disabled=false;},3000);
+      alert('✅ Credenciales guardadas en el Sheets.\n\n⚠️ Para completar el proceso, necesitás compartir manualmente el Sheets de Matches como "Cualquier persona con el enlace puede ver":\n\n1. Abrí el Sheets de Betwarrior Matches\n2. Compartir → Cambiar a "Cualquier persona con el enlace"\n3. Rol: Lector\n4. Guardar\n\nUna vez hecho eso, el modo invitado va a funcionar.');
+    }else{
+      btn.textContent='✅ Listo — tu jefe ya puede entrar';
+      setTimeout(()=>{btn.textContent='🔑 Habilitar acceso invitado desde otra PC';btn.disabled=false;},4000);
+    }
+  }catch(e){
+    console.log('enableGuestAccess error:',e);
+    btn.textContent='❌ Error';
+    setTimeout(()=>{btn.textContent='🔑 Habilitar acceso invitado desde otra PC';btn.disabled=false;},3000);
   }
-  btn.textContent='✅ Listo — tu jefe ya puede entrar desde cualquier PC';
-  setTimeout(()=>{btn.textContent='🔑 Habilitar acceso invitado desde otra PC';btn.disabled=false;},4000);
 }
 
 function showSettings(){document.getElementById('set-sheet').value=cfg.sheetId;document.getElementById('set-email').value=cfg.myEmail||RESUMEN_TO;document.getElementById('set-days').value=cfg.daysToLoad||30;document.getElementById('set-guestpwd').value=cfg.guestPassword||'';renderSenders();document.getElementById('settings-modal').style.display='flex';}
