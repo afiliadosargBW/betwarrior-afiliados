@@ -23,8 +23,30 @@ body.dark{
   --green:#81c995;--green-bg:#1a2f1e;--amber:#fdd663;--amber-bg:#2d2409;
   --red:#f28b82;--red-bg:#2d1b1a;--purple:#c58af9;--purple-bg:#2a1f3d;
   --teal:#4dd0e1;--teal-bg:#0d2a2d;
-  --unread-bg:#2a2d31;--read-bg:#1e2124;--hover-bg:#35383b;
+  --unread-bg:#2a2d31;--read-bg:#202124;--hover-bg:#35383b;
 }
+body.dark .email-row{background:var(--read-bg);color:var(--text)}
+body.dark .email-row.unread{background:var(--unread-bg)}
+body.dark .email-row:hover{background:var(--hover-bg)}
+body.dark .email-row.selected-row{background:var(--accent-bg)}
+body.dark .topbar{background:#1e2124;border-color:var(--border)}
+body.dark .main{background:var(--bg)}
+body.dark .mail-bubble{background:var(--white);border-color:var(--border)}
+body.dark .analysis-panel{background:var(--white);border-color:var(--border)}
+body.dark .match-row{background:var(--bg)}
+body.dark .reply-box{background:var(--white);border-color:var(--border)}
+body.dark textarea{background:var(--white);color:var(--text)}
+body.dark .form-input{background:var(--white);color:var(--text);border-color:var(--border2)}
+body.dark .modal{background:#2a2d31;color:var(--text)}
+body.dark .search-bar{background:#35383b}
+body.dark .search-bar input{color:var(--text)}
+body.dark .summary-strip{background:var(--white);border-color:var(--border)}
+body.dark .email-list-header{background:var(--white);border-color:var(--border)}
+body.dark .alerts-bar{background:var(--white)}
+body.dark .auto-reply-box{background:#1a2f1e;border-color:#2d5a3d}
+body.dark .arb-body{color:#81c995}
+body.dark .stats-panel{background:var(--bg)}
+body.dark .stat-card{background:var(--white);border-color:var(--border)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.4;min-height:100dvh;zoom:0.85}
 .app{display:grid;grid-template-columns:256px 1fr;grid-template-rows:64px 1fr;height:100dvh;overflow:hidden}
@@ -558,10 +580,16 @@ function renderSubFilterChips(type){
       {key:'suspendida',label:'Suspendidas',color:'var(--red)'},
     ];
     const filtered=getFiltered();
-    document.getElementById('estado-chips').innerHTML=estados.map(s=>{
+    const container=document.getElementById('estado-chips');
+    if(!container)return;
+    container.innerHTML=estados.map(s=>{
       const count=filtered.filter(e=>processed[e.id]?.cls?.estadoKey===s.key).length;
       if(!count)return'';
-      return`<div class="subfilter-chip${subFilterEstado===s.key?' active':''}" onclick="setSubFilter('estado','${s.key}')" style="border-color:${s.color};color:${subFilterEstado===s.key?'white':s.color};background:${subFilterEstado===s.key?s.color:'var(--white)'}">${s.label} ${count}</div>`;
+      const isActive=subFilterEstado===s.key;
+      return`<div onclick="setSubFilter('estado','${s.key}')" style="display:flex;align-items:center;justify-content:space-between;padding:5px 12px 5px 16px;border-radius:0 16px 16px 0;cursor:pointer;margin-right:12px;transition:background .15s;background:${isActive?s.color:'transparent'};color:${isActive?'white':s.color}" onmouseover="if(!${isActive})this.style.background='var(--hover-bg)'" onmouseout="if(!${isActive})this.style.background='transparent'">
+        <span style="font-size:13px;font-weight:600">${s.label}</span>
+        <span style="font-size:12px;font-weight:600;margin-left:8px">${count}</span>
+      </div>`;
     }).join('');
   } else {
     const filtered=getFiltered();
@@ -570,9 +598,15 @@ function renderSubFilterChips(type){
       const p=processed[e.id]?.match?.agency?.provincia||'';
       if(p)provs[p]=(provs[p]||0)+1;
     });
-    document.getElementById('provincia-chips').innerHTML=Object.entries(provs).sort(([a],[b])=>a.localeCompare(b)).map(([p,c])=>
-      `<div class="subfilter-chip${subFilterProv===p?' active':''}" onclick="setSubFilter('provincia','${p}')">${p} ${c}</div>`
-    ).join('');
+    const container=document.getElementById('provincia-chips');
+    if(!container)return;
+    container.innerHTML=Object.entries(provs).sort(([a],[b])=>a.localeCompare(b)).map(([p,c])=>{
+      const isActive=subFilterProv===p;
+      return`<div onclick="setSubFilter('provincia','${p}')" style="display:flex;align-items:center;justify-content:space-between;padding:5px 12px 5px 16px;border-radius:0 16px 16px 0;cursor:pointer;margin-right:12px;transition:background .15s;background:${isActive?'var(--accent)':'transparent'};color:${isActive?'white':'var(--text2)'}" onmouseover="if(!${isActive})this.style.background='var(--hover-bg)'" onmouseout="if(!${isActive})this.style.background='transparent'">
+        <span style="font-size:13px;font-weight:600">${p}</span>
+        <span style="font-size:12px;font-weight:600;margin-left:8px;color:${isActive?'white':'var(--text3)'}">${c}</span>
+      </div>`;
+    }).join('');
   }
 }
 
