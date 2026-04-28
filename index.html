@@ -2085,20 +2085,20 @@ function buildStatsResumen(){
         </div>`).join('')}
       </div>
     </div>
-    <div>
-      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Por provincia</div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        ${topProvs.map(([p,n])=>`
-          <div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px">
-              <span style="color:var(--text2)">${p}</span>
-              <span style="font-weight:600;color:var(--text)">${n}</span>
-            </div>
-            <div style="height:6px;background:var(--border);border-radius:3px">
-              <div style="height:6px;background:var(--accent);border-radius:3px;width:${Math.round(n/maxProv*100)}%"></div>
-            </div>
-          </div>`).join('')}
-      </div>
+  </div>
+  <div style="margin-top:16px">
+    <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Distribución por provincia</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      ${topProvs.map(([p,n])=>{
+        const pct=Math.round(n/dashData.length*100);
+        return`<div style="display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:8px 12px;min-width:140px;flex:1">
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:600;color:var(--text)">${p}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:1px">${n} agencias</div>
+          </div>
+          <div style="font-size:18px;font-weight:700;color:var(--accent)">${pct}%</div>
+        </div>`;
+      }).join('')}
     </div>
   </div>`;
 }
@@ -2106,21 +2106,21 @@ function buildStatsResumen(){
 function buildStatsBuscador(){
   return `
   <div style="margin-bottom:14px">
-    <input class="form-input" id="stats-search" placeholder="Buscar por agencia, titular, provincia, estado..." oninput="renderBuscadorResults()" style="font-size:14px">
+    <input class="form-input" id="stats-search" placeholder="Buscar por agencia, titular, provincia, estado, mail..." oninput="renderBuscadorResults()" style="font-size:14px">
   </div>
   <div style="font-size:11px;color:var(--text3);margin-bottom:10px" id="buscador-count">${dashData.length} agencias en total</div>
-  <div style="overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:12px" id="buscador-table">
+  <div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:700px" id="buscador-table">
       <thead>
-        <tr style="border-bottom:2px solid var(--border)">
-          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Agencia</th>
-          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600">Titular</th>
-          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600">Provincia</th>
-          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600">Estado</th>
-          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600">Clicks</th>
-          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600">FTDs</th>
-          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600">NGR</th>
-          <th style="text-align:center;padding:8px 10px;color:var(--text3);font-weight:600">Mails</th>
+        <tr style="border-bottom:2px solid var(--border);background:var(--bg)">
+          <th style="text-align:left;padding:8px 12px;color:var(--text3);font-weight:600;white-space:nowrap;width:110px">Agencia</th>
+          <th style="text-align:left;padding:8px 12px;color:var(--text3);font-weight:600;width:80px">Provincia</th>
+          <th style="text-align:left;padding:8px 12px;color:var(--text3);font-weight:600;width:80px">Estado</th>
+          <th style="text-align:left;padding:8px 12px;color:var(--text3);font-weight:600">Titular</th>
+          <th style="text-align:right;padding:8px 12px;color:var(--text3);font-weight:600;width:60px">Clicks</th>
+          <th style="text-align:right;padding:8px 12px;color:var(--text3);font-weight:600;width:50px">FTDs</th>
+          <th style="text-align:right;padding:8px 12px;color:var(--text3);font-weight:600;width:70px">NGR</th>
+          <th style="text-align:center;padding:8px 12px;color:var(--text3);font-weight:600;width:55px">Mails</th>
         </tr>
       </thead>
       <tbody id="buscador-body"></tbody>
@@ -2151,14 +2151,14 @@ function renderBuscadorResults(){
     const mails=mailsPerAg[a.agencia]||0;
     const estadoKey=a.estado.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso');
     return`<tr style="border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background=''" onclick="statsGoToAgencia('${a.agencia.replace(/'/g,"\\'")}')">
-      <td style="padding:8px 10px;font-weight:500;color:var(--text)">${a.agencia}</td>
-      <td style="padding:8px 10px;color:var(--text2)">${a.titular||'—'}</td>
-      <td style="padding:8px 10px;color:var(--text2)">${a.provincia||'—'}</td>
-      <td style="padding:8px 10px"><span class="badge b-${estadoKey}">${a.estado}</span></td>
-      <td style="padding:8px 10px;text-align:right;color:var(--text2)">${a.clicks||0}</td>
-      <td style="padding:8px 10px;text-align:right;color:var(--text2)">${a.ftds||0}</td>
-      <td style="padding:8px 10px;text-align:right;font-weight:600;color:${a.ngr>0?'var(--green)':'var(--text3)'}">$${(a.ngr||0).toLocaleString('es-AR')}</td>
-      <td style="padding:8px 10px;text-align:center">${mails>0?`<span style="background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:8px;font-weight:600">${mails}</span>`:`<span style="color:var(--text4)">—</span>`}</td>
+      <td style="padding:7px 12px;font-weight:500;color:var(--text);white-space:nowrap">${a.agencia}</td>
+      <td style="padding:7px 12px;color:var(--text2);white-space:nowrap">${a.provincia||'—'}</td>
+      <td style="padding:7px 12px"><span class="badge b-${estadoKey}">${a.estado}</span></td>
+      <td style="padding:7px 12px;color:var(--text2);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.titular||'—'}</td>
+      <td style="padding:7px 12px;text-align:right;color:var(--text2)">${a.clicks||0}</td>
+      <td style="padding:7px 12px;text-align:right;color:var(--text2)">${a.ftds||0}</td>
+      <td style="padding:7px 12px;text-align:right;font-weight:600;color:${a.ngr>0?'var(--green)':'var(--text3)'}">$${(a.ngr||0).toLocaleString('es-AR')}</td>
+      <td style="padding:7px 12px;text-align:center">${mails>0?`<span style="background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:8px;font-weight:600">${mails}</span>`:`<span style="color:var(--text4)">—</span>`}</td>
     </tr>`;
   }).join('');
   // Trigger search render on mount
