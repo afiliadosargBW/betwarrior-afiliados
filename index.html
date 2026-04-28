@@ -828,6 +828,7 @@ async function syncAll(){
   const t=await getToken();if(!t){logout();return;}
   const sync=document.getElementById('last-sync');
   if(sync)sync.textContent='Sincronizando...';
+  allEmails=[];processed={};
   await Promise.all([loadDash(),loadGmail(),loadMatchesFromSheets(),loadSentEmails()]);
   // Save refresh token to Sheets for guest mode access (only when logged in as owner)
   if(!isGuest()&&cfg.refresh_token)saveTokenToSheets();
@@ -855,16 +856,19 @@ function parseDash(rows){
   const iNom=idx('Nombre y Apellido'),iMail=idx('Mail'),iCuil=idx('CUIL');
   const iProv=idx('Provincia'),iNgr=idx('NGR'),iCl=idx('Clicks'),iSu=idx('Sign up'),iFt=idx('FTDs');
   const iUser=idx('Usuario MYAFFS'),iPass=idx('Contraseña'),iLink=idx('Link Afiliados'),iQR=idx('QR');
+  const iFtDep=idx('FTD Deposits'),iDep=idx('Deposits'),iCas=idx('Casino Bet Amount'),iSport=idx('Sportsbook Bet Amount');
+  const iNgrAfil=idx('NGR Afiliatte'),iComis=idx('Comission');
   for(let i=hi+1;i<rows.length;i++){
     const row=rows[i];if(!row[iAg]||!row[iSit])continue;
     const ngr=parseFloat((row[iNgr]||'0').replace(/[$\s,]/g,'').replace(',','.'))||0;
+    const parseNum=v=>parseFloat((v||'0').replace(/[$\s,]/g,'').replace(',','.'))||0;
     const prov=(row[iProv]||'').toLowerCase().trim();
     const isCABA=CABA_PROVS.includes(prov);
     const agNum=row[iAg].replace(/[^0-9]/g,'');
     const ctaCte=isCABA?agNum:null;
     let estado=row[iSit]||'';
     if(estado==='Proceso')estado='En Proceso';
-    dashData.push({agencia:row[iAg]||'',agNum,tipo:row[iTipo]||'Agente',estado,titular:row[iNom]||'',mail:(row[iMail]||'').toLowerCase().trim(),cuil:row[iCuil]||'',provincia:row[iProv]||'',ngr,clicks:parseInt(row[iCl])||0,signups:parseInt(row[iSu])||0,ftds:parseInt(row[iFt])||0,ctaCte,isCABA,usuario:row[iUser]||'',password:row[iPass]||'',linkAfiliados:row[iLink]||'',qrLink:row[iQR]||''});
+    dashData.push({agencia:row[iAg]||'',agNum,tipo:row[iTipo]||'Agente',estado,titular:row[iNom]||'',mail:(row[iMail]||'').toLowerCase().trim(),cuil:row[iCuil]||'',provincia:row[iProv]||'',ngr,clicks:parseInt(row[iCl])||0,signups:parseInt(row[iSu])||0,ftds:parseInt(row[iFt])||0,ftdDeposits:parseNum(row[iFtDep]),deposits:parseNum(row[iDep]),casinoBet:parseNum(row[iCas]),sportsbookBet:parseNum(row[iSport]),ngrAfil:parseNum(row[iNgrAfil]),comision:parseNum(row[iComis]),ctaCte,isCABA,usuario:row[iUser]||'',password:row[iPass]||'',linkAfiliados:row[iLink]||'',qrLink:row[iQR]||''});
   }
   const ngrs=dashData.filter(a=>a.ngr>0).map(a=>a.ngr).sort((a,b)=>a-b);
   vipThreshold=ngrs.length?ngrs[Math.floor(ngrs.length*VIP_PCT)]||50:50;
@@ -1134,28 +1138,36 @@ function processAll(){
 
 function updateMetrics(){
   const v=Object.values(processed);
-  const byState=s=>v.filter(x=>x.cls.estadoKey===s&&!hiddenFromBwafi.has(allEmails.find(e=>processed[e.id]===x)?.id)).length;
+  const visible=e=>!hiddenFromBwafi.has(e.id)&&processed[e.id];
   const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
   const isUnread=e=>e.unread&&!readInBwafi.has(e.id)&&!hiddenFromBwafi.has(e.id);
-  const unreadAll=allEmails.filter(e=>isUnread(e)&&processed[e.id]).length;
-  const unreadAtt=allEmails.filter(e=>isUnread(e)&&processed[e.id]?.cls.needsAttention).length;
-  const unreadAuto=allEmails.filter(e=>isUnread(e)&&processed[e.id]?.cls.autoReply).length;
-  const unreadUid=allEmails.filter(e=>isUnread(e)&&!processed[e.id]?.match.matched).length;
+  const visEmails=allEmails.filter(e=>visible(e));
+  const unreadAll=visEmails.filter(e=>isUnread(e)).length;
+  const unreadAtt=visEmails.filter(e=>isUnread(e)&&processed[e.id]?.cls.needsAttention).length;
+  const unreadAuto=visEmails.filter(e=>isUnread(e)&&processed[e.id]?.cls.autoReply).length;
+  const unreadUid=visEmails.filter(e=>isUnread(e)&&!processed[e.id]?.match.matched).length;
   const setUnread=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val>0?`${val} •`:'';};
   setUnread('nc-all-unread',unreadAll);
   setUnread('nc-att-unread',unreadAtt);
   setUnread('nc-auto-unread',unreadAuto);
   setUnread('nc-uid-unread',unreadUid);
-  set('s-total',allEmails.filter(e=>!hiddenFromBwafi.has(e.id)).length);
-  set('s-id',v.filter(x=>x.match.matched).length);
-  set('s-auto',v.filter(x=>x.cls.autoReply).length);
-  set('s-att',v.filter(x=>x.cls.needsAttention).length);
-  set('nc-all',allEmails.filter(e=>!hiddenFromBwafi.has(e.id)).length);
-  set('nc-att',v.filter(x=>x.cls.needsAttention).length);
-  set('nc-auto',v.filter(x=>x.cls.autoReply).length);
-  set('nc-uid',v.filter(x=>!x.match.matched).length);
-  set('nc-vip',v.filter(x=>x.cls.vip).length);
-  set('nc-fu',v.filter(x=>x.cls.needsFollowup).length);
+  // Use actual filtered counts so sidebar matches list
+  const cAll=visEmails.length;
+  const cAtt=visEmails.filter(e=>processed[e.id]?.cls.needsAttention).length;
+  const cAuto=visEmails.filter(e=>processed[e.id]?.cls.autoReply).length;
+  const cUid=visEmails.filter(e=>!processed[e.id]?.match.matched).length;
+  const cVip=visEmails.filter(e=>processed[e.id]?.cls.vip).length;
+  const cFu=visEmails.filter(e=>processed[e.id]?.cls.needsFollowup).length;
+  set('s-total',cAll);
+  set('s-id',visEmails.filter(e=>processed[e.id]?.match.matched).length);
+  set('s-auto',cAuto);
+  set('s-att',cAtt);
+  set('nc-all',cAll);
+  set('nc-att',cAtt);
+  set('nc-auto',cAuto);
+  set('nc-uid',cUid);
+  set('nc-vip',cVip);
+  set('nc-fu',cFu);
   // Update tab title with unread count
   document.title=unreadAll>0?`(${unreadAll}) Betwarrior Afiliados`:'Betwarrior Afiliados';
   // Refresh sub-filter chips if visible
@@ -1656,10 +1668,12 @@ function selectEmail(id){
         <div class="signals">${sigH}</div>
         ${perf}
         <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+          ${isGuest()?'':`
           ${!isConfirmed?`<button onclick="confirmMatch('${id}','${ag.agencia.replace(/'/g,"\\'")}')" style="font-size:11px;padding:4px 12px;border-radius:8px;background:var(--green-bg);color:var(--green);border:1px solid rgba(19,115,51,.2);cursor:pointer;font-family:var(--font);font-weight:500">✓ Confirmar esta agencia</button>`:''}
           <button onclick="openChangeMatch('${id}',false)" style="font-size:11px;padding:4px 12px;border-radius:8px;background:var(--accent-bg);color:var(--accent);border:1px solid rgba(26,115,232,.2);cursor:pointer;font-family:var(--font);font-weight:500">🔄 Cambiar a otra agencia</button>
           <button onclick="openChangeMatch('${id}',true)" style="font-size:11px;padding:4px 12px;border-radius:8px;background:#f3f0ff;color:var(--purple);border:1px solid rgba(124,58,237,.2);cursor:pointer;font-family:var(--font);font-weight:500">📌 Cambiar solo este mail</button>
           <button onclick="rejectMatch('${id}')" style="font-size:11px;padding:4px 12px;border-radius:8px;background:var(--red-bg);color:var(--red);border:1px solid rgba(197,34,31,.2);cursor:pointer;font-family:var(--font);font-weight:500">✗ Ninguna / No identificar</button>
+          `}
         </div>
       </div>
     </div>`;
@@ -2041,7 +2055,8 @@ function buildStatsResumen(){
   const totalClicks=dashData.reduce((s,a)=>s+a.clicks,0);
   const totalFTDs=dashData.reduce((s,a)=>s+a.ftds,0);
   const activas=dashData.filter(a=>a.estado==='Activa');
-  const ngrProm=activas.length?Math.round(totalNGR/activas.length):0;
+  const activasConNgr=activas.filter(a=>a.ngr>0);
+  const ngrProm=activasConNgr.length?Math.round(totalNGR/activasConNgr.length):0;
   const pctActivas=dashData.length?Math.round(activas.length/dashData.length*100):0;
   const topAgencias=[...dashData].filter(a=>a.ngr>0).sort((a,b)=>b.ngr-a.ngr).slice(0,10);
   const byEstado={Activa:0,Candidato:0,Inscripto:0,'En Proceso':0,Pendiente:0,Suspendida:0};
@@ -2055,12 +2070,12 @@ function buildStatsResumen(){
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
     <div class="stat-card"><div class="stat-card-val" style="color:var(--accent)">${dashData.length}</div><div class="stat-card-label">Agencias totales</div></div>
     <div class="stat-card"><div class="stat-card-val" style="color:var(--green)">$${totalNGR.toLocaleString('es-AR')}</div><div class="stat-card-label">NGR total</div></div>
-    <div class="stat-card"><div class="stat-card-val" style="color:var(--green)">$${ngrProm.toLocaleString('es-AR')}</div><div class="stat-card-label">NGR promedio (activas)</div></div>
+    <div class="stat-card"><div class="stat-card-val" style="color:var(--green)">$${ngrProm.toLocaleString('es-AR')}</div><div class="stat-card-label">NGR promedio (activas c/NGR)</div></div>
     <div class="stat-card"><div class="stat-card-val" style="color:var(--purple)">${totalClicks.toLocaleString('es-AR')}</div><div class="stat-card-label">Clicks totales</div></div>
     <div class="stat-card"><div class="stat-card-val" style="color:var(--amber)">${totalFTDs}</div><div class="stat-card-label">FTDs totales</div></div>
     <div class="stat-card"><div class="stat-card-val" style="color:var(--teal)">${pctActivas}%</div><div class="stat-card-label">% agencias activas</div></div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
     <div>
       <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Top 10 por NGR</div>
       <div class="top-list">${topAgencias.map((a,i)=>`
@@ -2088,7 +2103,7 @@ function buildStatsResumen(){
   </div>
   <div style="margin-top:16px">
     <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Distribución por provincia</div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
       ${topProvs.map(([p,n])=>{
         const pct=Math.round(n/dashData.length*100);
         return`<div style="display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:8px 12px;min-width:140px;flex:1">
@@ -2105,22 +2120,36 @@ function buildStatsResumen(){
 
 function buildStatsBuscador(){
   return `
-  <div style="margin-bottom:14px">
-    <input class="form-input" id="stats-search" placeholder="Buscar por agencia, titular, provincia, estado, mail..." oninput="renderBuscadorResults()" style="font-size:14px">
+  <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center">
+    <input class="form-input" id="stats-search" placeholder="Buscar por agencia, titular, provincia, estado, mail..." oninput="renderBuscadorResults()" style="font-size:14px;flex:1">
+    <select id="stats-sort" class="form-input" style="width:auto;font-size:13px" onchange="renderBuscadorResults()">
+      <option value="agencia">Ordenar: Agencia</option>
+      <option value="ngr">Ordenar: NGR ↓</option>
+      <option value="clicks">Ordenar: Clicks ↓</option>
+      <option value="comision">Ordenar: Comisión ↓</option>
+      <option value="mails">Ordenar: Mails ↓</option>
+    </select>
   </div>
   <div style="font-size:11px;color:var(--text3);margin-bottom:10px" id="buscador-count">${dashData.length} agencias en total</div>
   <div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px">
-    <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:700px" id="buscador-table">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:1100px" id="buscador-table">
       <thead>
         <tr style="border-bottom:2px solid var(--border);background:var(--bg)">
-          <th style="text-align:left;padding:8px 12px;color:var(--text3);font-weight:600;white-space:nowrap;width:110px">Agencia</th>
-          <th style="text-align:left;padding:8px 12px;color:var(--text3);font-weight:600;width:80px">Provincia</th>
-          <th style="text-align:left;padding:8px 12px;color:var(--text3);font-weight:600;width:80px">Estado</th>
-          <th style="text-align:left;padding:8px 12px;color:var(--text3);font-weight:600">Titular</th>
-          <th style="text-align:right;padding:8px 12px;color:var(--text3);font-weight:600;width:60px">Clicks</th>
-          <th style="text-align:right;padding:8px 12px;color:var(--text3);font-weight:600;width:50px">FTDs</th>
-          <th style="text-align:right;padding:8px 12px;color:var(--text3);font-weight:600;width:70px">NGR</th>
-          <th style="text-align:center;padding:8px 12px;color:var(--text3);font-weight:600;width:55px">Mails</th>
+          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Agencia</th>
+          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Provincia</th>
+          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Estado</th>
+          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600">Titular</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Clicks</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Sign up</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">FTDs</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">FTD Dep.</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Deposits</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Casino</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Sports</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">NGR</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">NGR Afil.</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Comisión</th>
+          <th style="text-align:center;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Mails</th>
         </tr>
       </thead>
       <tbody id="buscador-body"></tbody>
@@ -2130,38 +2159,49 @@ function buildStatsBuscador(){
 
 function renderBuscadorResults(){
   const q=(document.getElementById('stats-search')?.value||'').toLowerCase().trim();
+  const sort=document.getElementById('stats-sort')?.value||'agencia';
   const tbody=document.getElementById('buscador-body');
   const countEl=document.getElementById('buscador-count');
   if(!tbody)return;
-  const results=dashData.filter(a=>{
+  let results=dashData.filter(a=>{
     if(!q)return true;
     return(a.agencia||'').toLowerCase().includes(q)||(a.titular||'').toLowerCase().includes(q)||(a.provincia||'').toLowerCase().includes(q)||(a.estado||'').toLowerCase().includes(q)||(a.agNum||'').includes(q)||(a.mail||'').toLowerCase().includes(q);
   });
-  if(countEl)countEl.textContent=`${results.length} agencia${results.length!==1?'s':''}${q?' encontradas':' en total'}`;
   // Count mails per agency
   const mailsPerAg={};
   allEmails.forEach(e=>{
     const r=processed[e.id];
-    if(r?.match?.matched){
-      const ag=r.match.agency?.agencia;
-      if(ag)mailsPerAg[ag]=(mailsPerAg[ag]||0)+1;
-    }
+    if(r?.match?.matched){const ag=r.match.agency?.agencia;if(ag)mailsPerAg[ag]=(mailsPerAg[ag]||0)+1;}
   });
-  tbody.innerHTML=results.slice(0,200).map(a=>{
+  // Sort
+  if(sort==='ngr')results.sort((a,b)=>b.ngr-a.ngr);
+  else if(sort==='clicks')results.sort((a,b)=>b.clicks-a.clicks);
+  else if(sort==='comision')results.sort((a,b)=>b.comision-a.comision);
+  else if(sort==='mails')results.sort((a,b)=>(mailsPerAg[b.agencia]||0)-(mailsPerAg[a.agencia]||0));
+  else results.sort((a,b)=>a.agencia.localeCompare(b.agencia));
+  if(countEl)countEl.textContent=`${results.length} agencia${results.length!==1?'s':''}${q?' encontradas':' en total'}`;
+  const fmt=v=>v?`$${v.toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0})}`:'—';
+  tbody.innerHTML=results.slice(0,300).map(a=>{
     const mails=mailsPerAg[a.agencia]||0;
     const estadoKey=a.estado.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso');
     return`<tr style="border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background=''" onclick="statsGoToAgencia('${a.agencia.replace(/'/g,"\\'")}')">
-      <td style="padding:7px 12px;font-weight:500;color:var(--text);white-space:nowrap">${a.agencia}</td>
-      <td style="padding:7px 12px;color:var(--text2);white-space:nowrap">${a.provincia||'—'}</td>
-      <td style="padding:7px 12px"><span class="badge b-${estadoKey}">${a.estado}</span></td>
-      <td style="padding:7px 12px;color:var(--text2);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.titular||'—'}</td>
-      <td style="padding:7px 12px;text-align:right;color:var(--text2)">${a.clicks||0}</td>
-      <td style="padding:7px 12px;text-align:right;color:var(--text2)">${a.ftds||0}</td>
-      <td style="padding:7px 12px;text-align:right;font-weight:600;color:${a.ngr>0?'var(--green)':'var(--text3)'}">$${(a.ngr||0).toLocaleString('es-AR')}</td>
-      <td style="padding:7px 12px;text-align:center">${mails>0?`<span style="background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:8px;font-weight:600">${mails}</span>`:`<span style="color:var(--text4)">—</span>`}</td>
+      <td style="padding:6px 10px;font-weight:500;color:var(--text);white-space:nowrap">${a.agencia}</td>
+      <td style="padding:6px 10px;color:var(--text2);white-space:nowrap">${a.provincia||'—'}</td>
+      <td style="padding:6px 10px"><span class="badge b-${estadoKey}">${a.estado}</span></td>
+      <td style="padding:6px 10px;color:var(--text2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.titular||''}">${a.titular||'—'}</td>
+      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.clicks||0}</td>
+      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.signups||0}</td>
+      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.ftds||0}</td>
+      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.ftdDeposits?fmt(a.ftdDeposits):'—'}</td>
+      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.deposits?fmt(a.deposits):'—'}</td>
+      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.casinoBet?fmt(a.casinoBet):'—'}</td>
+      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.sportsbookBet?fmt(a.sportsbookBet):'—'}</td>
+      <td style="padding:6px 10px;text-align:right;font-weight:600;color:${a.ngr>0?'var(--green)':a.ngr<0?'var(--red)':'var(--text3)'}">$${(a.ngr||0).toLocaleString('es-AR')}</td>
+      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.ngrAfil?fmt(a.ngrAfil):'—'}</td>
+      <td style="padding:6px 10px;text-align:right;font-weight:600;color:${a.comision>0?'var(--green)':'var(--text3)'}">$${(a.comision||0).toLocaleString('es-AR')}</td>
+      <td style="padding:6px 10px;text-align:center">${mails>0?`<span style="background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:8px;font-weight:600">${mails}</span>`:`<span style="color:var(--text4)">—</span>`}</td>
     </tr>`;
   }).join('');
-  // Trigger search render on mount
 }
 
 function buildStatsEngagement(){
@@ -2176,7 +2216,7 @@ function buildStatsEngagement(){
     if(!ag)return;
     if(!agMails[ag])agMails[ag]={count:0,lastDate:null,lastDateRaw:0};
     agMails[ag].count++;
-    if(e.rawDate>agMails[ag].lastDateRaw){agMails[ag].lastDateRaw=e.rawDate;agMails[ag].lastDate=e.time||e.date;}
+    if(e.rawDate>agMails[ag].lastDateRaw){agMails[ag].lastDateRaw=e.rawDate;agMails[ag].lastDate=e.date||e.time||"";}
   });
   const contactadas=dashData.filter(a=>agMails[a.agencia]);
   const sinContacto=dashData.filter(a=>!agMails[a.agencia]);
@@ -2238,7 +2278,7 @@ function renderEngagement(){
     if(!ag)return;
     if(!agMails[ag])agMails[ag]={count:0,lastDate:'',lastDateRaw:0};
     agMails[ag].count++;
-    if(e.rawDate>agMails[ag].lastDateRaw){agMails[ag].lastDateRaw=e.rawDate;agMails[ag].lastDate=e.time||'';}
+    if(e.rawDate>agMails[ag].lastDateRaw){agMails[ag].lastDateRaw=e.rawDate;agMails[ag].lastDate=e.date||e.time||'';}
   });
   let rows=[];
   if(filter==='todas'){
@@ -2281,53 +2321,116 @@ function buildStatsPipeline(){
     const r=processed[e.id];
     if(r?.match?.matched)agConMails.add(r.match.agency?.agencia);
   });
-  const total=dashData.filter(a=>etapas.map(e=>e.key).includes(a.estado)).length||1;
+  const totalFunnel=dashData.filter(a=>etapas.map(e=>e.key).includes(a.estado)).length||1;
+  const etapasConDatos=etapas.filter(et=>dashData.filter(a=>a.estado===et.key).length>0);
+
+  // Conversion rates between stages
+  const counts=etapas.map(et=>dashData.filter(a=>a.estado===et.key).length);
+
   return `
   <div style="margin-bottom:24px">
-    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Agencias por etapa del programa — click en una etapa para ver sus correos</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Agencias por etapa — click para ver sus correos</div>
     <div style="display:flex;gap:0;align-items:stretch">
-      ${etapas.map((et,i)=>{
+      ${etapasConDatos.map((et,i)=>{
         const ags=dashData.filter(a=>a.estado===et.key);
         const conMail=ags.filter(a=>agConMails.has(a.agencia)).length;
         const sinMail=ags.length-conMail;
-        const pct=Math.round(ags.length/total*100);
-        return`<div onclick="statsFilterByEstado('${et.key}')" style="flex:1;padding:16px;background:var(--white);border:1px solid var(--border);${i===0?'border-radius:12px 0 0 12px':''}${i===etapas.length-1?'border-radius:0 12px 12px 0':''}border-right:${i<etapas.length-1?'none':'1px solid var(--border)'};cursor:pointer;transition:background .15s;position:relative" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background='var(--white)'">
+        const pct=Math.round(ags.length/totalFunnel*100);
+        const pctContacto=ags.length?Math.round(conMail/ags.length*100):0;
+        const isLast=i===etapasConDatos.length-1;
+        const isFirst=i===0;
+        return`<div onclick="statsFilterByEstado('${et.key}')" style="flex:1;padding:16px;background:var(--white);border:1px solid var(--border);${isFirst?'border-radius:12px 0 0 12px':''}${isLast?'border-radius:0 12px 12px 0':''}${!isLast?'border-right:none':''};cursor:pointer;transition:background .15s" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background='var(--white)'">
           <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">${et.icon} ${et.label}</div>
           <div style="font-size:28px;font-weight:700;color:${et.color}">${ags.length}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:4px">${pct}% del total</div>
-          <div style="margin-top:10px;display:flex;flex-direction:column;gap:4px">
-            <div style="display:flex;align-items:center;gap:6px;font-size:11px">
-              <div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
-              <span style="color:var(--text2)">${conMail} con contacto</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;font-size:11px">
-              <div style="width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0"></div>
-              <span style="color:var(--text2)">${sinMail} sin contacto</span>
-            </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${pct}% del total</div>
+          <div style="margin-top:10px;height:4px;background:var(--border);border-radius:2px;margin-bottom:6px">
+            <div style="height:4px;background:${et.color};border-radius:2px;width:${pctContacto}%"></div>
           </div>
-          <div style="margin-top:10px;height:4px;background:var(--border);border-radius:2px">
-            <div style="height:4px;background:${et.color};border-radius:2px;width:${ags.length?Math.round(conMail/ags.length*100):0}%"></div>
-          </div>
-        </div>`;
-      }).join('<div style="width:20px;display:flex;align-items:center;justify-content:center;color:var(--text4);font-size:16px;z-index:1">›</div>')}
+          <div style="font-size:11px;color:var(--text2)">${pctContacto}% te escribieron</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${sinMail} sin contacto</div>
+        </div>${!isLast?`<div style="display:flex;align-items:center;justify-content:center;padding:0 4px;color:var(--text4);font-size:18px">›</div>`:''}`;
+      }).join('')}
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-    ${etapas.map(et=>{
-      const ags=dashData.filter(a=>a.estado===et.key);
-      const kitSendersLocal=new Set([MY_EMAIL,(cfg.myEmail||RESUMEN_TO)]);
-      const agConMailsLocal=new Set();
-      allEmails.forEach(e=>{if(kitSendersLocal.has(e.fromEmail))return;const r=processed[e.id];if(r?.match?.matched)agConMailsLocal.add(r.match.agency?.agencia);});
-      const frias=ags.filter(a=>!agConMailsLocal.has(a.agencia)).slice(0,5);
-      if(!frias.length)return`<div class="stat-card"><div style="font-size:12px;font-weight:600;color:${et.color};margin-bottom:8px">${et.icon} ${et.label} — sin frías</div><div style="font-size:12px;color:var(--text3)">Todas tienen contacto ✓</div></div>`;
-      return`<div class="stat-card">
-        <div style="font-size:12px;font-weight:600;color:${et.color};margin-bottom:10px">${et.icon} ${et.label} — frías (${frias.length}${ags.filter(a=>!agConMailsLocal.has(a.agencia)).length>5?'+':''})</div>
-        ${frias.map(a=>`<div onclick="statsGoToAgencia('${a.agencia.replace(/'/g,"\\'")}') " style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);cursor:pointer;font-size:12px" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color=''">
-          <span style="color:var(--text2)">${a.agencia}</span>
-          <span style="color:var(--text3)">${a.provincia||'—'}</span>
-        </div>`).join('')}
-      </div>`;
-    }).join('')}
+
+  <div style="margin-bottom:20px">
+    <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Tasa de contacto por etapa</div>
+    <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--bg);border-bottom:2px solid var(--border)">
+            <th style="text-align:left;padding:10px 14px;color:var(--text3);font-weight:600">Etapa</th>
+            <th style="text-align:right;padding:10px 14px;color:var(--text3);font-weight:600">Total</th>
+            <th style="text-align:right;padding:10px 14px;color:var(--text3);font-weight:600">Te escribieron</th>
+            <th style="text-align:right;padding:10px 14px;color:var(--text3);font-weight:600">Sin contacto</th>
+            <th style="text-align:right;padding:10px 14px;color:var(--text3);font-weight:600">% contacto</th>
+            <th style="padding:10px 14px;color:var(--text3);font-weight:600">Cobertura</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${etapas.map(et=>{
+            const ags=dashData.filter(a=>a.estado===et.key);
+            if(!ags.length)return'';
+            const conMail=ags.filter(a=>agConMails.has(a.agencia)).length;
+            const sinMail=ags.length-conMail;
+            const pct=ags.length?Math.round(conMail/ags.length*100):0;
+            const barColor=pct>=50?'var(--green)':pct>=20?'var(--amber)':'var(--red)';
+            const estadoKey=et.key.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso');
+            return`<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="statsFilterByEstado('${et.key}')" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background=''">
+              <td style="padding:10px 14px"><span class="badge b-${estadoKey}">${et.label}</span></td>
+              <td style="padding:10px 14px;text-align:right;font-weight:600">${ags.length}</td>
+              <td style="padding:10px 14px;text-align:right;color:var(--green);font-weight:600">${conMail}</td>
+              <td style="padding:10px 14px;text-align:right;color:var(--red)">${sinMail}</td>
+              <td style="padding:10px 14px;text-align:right;font-weight:700;color:${barColor}">${pct}%</td>
+              <td style="padding:10px 14px;min-width:120px">
+                <div style="height:6px;background:var(--border);border-radius:3px">
+                  <div style="height:6px;background:${barColor};border-radius:3px;width:${pct}%"></div>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Distribución por provincia (activas)</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+      ${(()=>{
+        const byProv={};
+        dashData.forEach(a=>{
+          if(!a.provincia)return;
+          if(!byProv[a.provincia])byProv[a.provincia]={total:0,activa:0,inscripto:0,candidato:0};
+          byProv[a.provincia].total++;
+          if(a.estado==='Activa')byProv[a.provincia].activa++;
+          else if(a.estado==='Inscripto')byProv[a.provincia].inscripto++;
+          else if(a.estado==='Candidato')byProv[a.provincia].candidato++;
+        });
+        return Object.entries(byProv).sort((a,b)=>b[1].total-a[1].total).map(([p,d])=>{
+          const pctActiva=Math.round(d.activa/d.total*100);
+          return`<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--text)">${p}</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px">${d.total} agencias</div>
+              </div>
+              <div style="font-size:20px;font-weight:700;color:var(--green)">${pctActiva}%</div>
+            </div>
+            <div style="height:4px;background:var(--border);border-radius:2px;margin-bottom:8px">
+              <div style="height:4px;background:var(--green);border-radius:2px;width:${pctActiva}%"></div>
+            </div>
+            <div style="display:flex;gap:8px;font-size:11px;color:var(--text3)">
+              <span>✅ ${d.activa} activas</span>
+              <span>·</span>
+              <span>${d.inscripto} inscriptas</span>
+              <span>·</span>
+              <span>${d.candidato} candidatas</span>
+            </div>
+          </div>`;
+        }).join('');
+      })()}
+    </div>
   </div>`;
 }
 
