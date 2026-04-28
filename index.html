@@ -226,8 +226,8 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
 .tmpl-textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:var(--font);padding:10px;resize:vertical;height:120px;line-height:1.6;outline:none}
 .tmpl-textarea:focus{border-color:var(--accent)}
 /* LOGIN */
-.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#f8f9fa;gap:20px}
-.login-card{background:var(--white);border-radius:16px;padding:40px;width:440px;max-width:95vw;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.1)}
+.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);gap:20px}
+.login-card{background:var(--white);border-radius:16px;padding:40px;width:440px;max-width:95vw;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.1);color:var(--text)}
 .login-logo{font-size:24px;font-weight:500;color:var(--text);margin-bottom:8px}
 .login-logo span{color:var(--accent)}
 .login-sub{font-size:14px;color:var(--text3);margin-bottom:28px;line-height:1.6}
@@ -276,7 +276,7 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
       <button class="connect-btn" onclick="startOAuth()">Conectar con Google</button>
       <div class="login-or">o ingresá como invitado</div>
       <div class="form-group"><label class="form-label">Contraseña de invitado</label><input class="form-input" id="inp-guest" type="password" placeholder="Contraseña compartida"></div>
-      <button class="connect-btn" style="background:var(--green)" onclick="loginGuest()">Entrar como invitado (solo lectura)</button>
+      <button id="btn-guest-login" class="connect-btn" style="background:var(--green)" onclick="loginGuest()">Entrar como invitado (solo lectura)</button>
       <div class="refresh-info">💡 Con Client ID y Secret, el token se renueva automáticamente.</div>
     </div>
   </div>
@@ -506,20 +506,24 @@ function applyDark(on){
 function loginGuest(){
   const pwd=document.getElementById('inp-guest').value.trim();
   if(!pwd){alert('Ingresá la contraseña de invitado');return;}
-  // Load cfg from localStorage to get the guest password
-  loadCfg();
-  if(!cfg.guestPassword||pwd!==cfg.guestPassword){
-    alert('Contraseña incorrecta');return;
-  }
-  cfg.guestMode=true;
-  saveCfg();
-  // Try to get a valid token using stored credentials
-  guestLoadToken().then(ok=>{
-    if(ok){showApp();syncAll();}
-    else{
-      // Still show app — will show error on sync if no token
-      showApp();syncAll();
-    }
+  const btn=document.getElementById('btn-guest-login');
+  if(btn){btn.textContent='Verificando...';btn.disabled=true;}
+  loadTokenFromSheetsForGuest().then(async creds=>{
+    const reset=()=>{if(btn){btn.textContent='Entrar como invitado (solo lectura)';btn.disabled=false;}};
+    if(!creds||!creds.guest_password){reset();alert('No se encontraron credenciales. El dueño debe hacer click en "🔑 Habilitar acceso invitado" primero.');return;}
+    if(pwd!==creds.guest_password){reset();alert('Contraseña incorrecta.');return;}
+    cfg.refresh_token=creds.refresh_token;
+    cfg.clientId=creds.client_id;
+    cfg.clientSecret=creds.client_secret;
+    cfg.guestMode=true;
+    saveCfg();
+    const ok=await refreshToken();
+    reset();
+    if(ok||cfg.token){showApp();syncAll();}
+    else{alert('No se pudo obtener acceso. Pedile al dueño que habilite el acceso invitado nuevamente.');}
+  }).catch(e=>{
+    const reset=()=>{if(btn){btn.textContent='Entrar como invitado (solo lectura)';btn.disabled=false;}};
+    reset();alert('Error: '+e.message);
   });
 }
 
@@ -732,46 +736,38 @@ async function saveTokenToSheets(){
   const t=await getToken();
   if(!t||!cfg.refresh_token)return;
   try{
-    // Save credentials needed for guest access to Config sheet
     const values=[[
       'refresh_token',cfg.refresh_token,
       'client_id',cfg.clientId,
-      'client_secret',cfg.clientSecret
+      'client_secret',cfg.clientSecret,
+      'guest_password',cfg.guestPassword||''
     ]];
-    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/Config!A1:F1?valueInputOption=RAW`,{
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/Config!A1:H1?valueInputOption=RAW`,{
       method:'PUT',
       headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
       body:JSON.stringify({values})
     });
-    console.log('Token saved to Sheets for guest access');
+    console.log('Token + credentials saved to Sheets for guest access');
   }catch(e){console.log('saveTokenToSheets error:',e);}
 }
 
 async function loadTokenFromSheetsForGuest(){
-  // Read credentials from the Config sheet using no-auth (needs sheet to be readable)
-  // Since the sheet is private, we use a different approach:
-  // The owner's sync saves the token, and we read it via the Sheets API
-  // We need SOME credential to read — use a Google API key (public read)
-  // For now: store in a publicly readable cell
-  // BETTER APPROACH: save to a gist or public endpoint
-  // SIMPLEST: share just the Config sheet as view-only
   try{
-    // Try reading with no auth using the sheet's public URL
     const url=`https://docs.google.com/spreadsheets/d/${MATCHES_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Config`;
     const r=await fetch(url);
-    if(!r.ok)return null;
+    if(!r.ok){console.log('Config sheet not readable:',r.status);return null;}
     const text=await r.text();
-    const cells=text.replace(/"/g,'').split(',');
-    // Format: refresh_token, VALUE, client_id, VALUE, client_secret, VALUE
-    const rtIdx=cells.indexOf('refresh_token');
-    const cidIdx=cells.indexOf('client_id');
-    const csIdx=cells.indexOf('client_secret');
-    return{
-      refresh_token:rtIdx>=0?cells[rtIdx+1]:'',
-      client_id:cidIdx>=0?cells[cidIdx+1]:'',
-      client_secret:csIdx>=0?cells[csIdx+1]:'',
+    const cells=text.replace(/"/g,'').split(',').map(c=>c.trim());
+    const get=(key)=>{const i=cells.indexOf(key);return i>=0&&i+1<cells.length?cells[i+1]:'';};
+    const result={
+      refresh_token:get('refresh_token'),
+      client_id:get('client_id'),
+      client_secret:get('client_secret'),
+      guest_password:get('guest_password'),
     };
-  }catch(e){return null;}
+    console.log('Loaded creds from Sheets, has password:', !!result.guest_password);
+    return result;
+  }catch(e){console.log('loadTokenFromSheetsForGuest error:',e);return null;}
 }
 
 async function guestLoadToken(){
