@@ -269,15 +269,10 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
       <svg width="20" height="20" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.3z"/></svg>
       Iniciar sesión con Google
     </button>
-    <div class="login-or">o ingresá manualmente</div>
+    <div class="login-or">o ingresá como invitado</div>
     <div class="login-fields">
-      <div class="form-group"><label class="form-label">Client ID</label><input class="form-input" id="inp-cid" placeholder="869458962253-...apps.googleusercontent.com"></div>
-      <div class="form-group"><label class="form-label">Client Secret</label><input class="form-input" id="inp-cs" type="password" placeholder="GOCSPX-..."></div>
-      <button class="connect-btn" onclick="startOAuth()">Conectar con Google</button>
-      <div class="login-or">o ingresá como invitado</div>
       <div class="form-group"><label class="form-label">Contraseña de invitado</label><input class="form-input" id="inp-guest" type="password" placeholder="Contraseña compartida"></div>
       <button id="btn-guest-login" class="connect-btn" style="background:var(--green)" onclick="loginGuest()">Entrar como invitado (solo lectura)</button>
-      <div class="refresh-info">💡 Con Client ID y Secret, el token se renueva automáticamente.</div>
     </div>
   </div>
 </div>
@@ -487,7 +482,18 @@ window.onload=()=>{
 
 function loadCfg(){try{const s=localStorage.getItem('bw_v8');if(s){const p=JSON.parse(s);cfg={...cfg,...p};if(p.starred)starredIds=new Set(p.starred);if(p.sentAutoIds)sentAutoIds=new Set(p.sentAutoIds);if(p.sentKitIds)sentKitIds=new Set(p.sentKitIds);if(p.readInBwafi)readInBwafi=new Set(p.readInBwafi);if(p.hiddenFromBwafi)hiddenFromBwafi=new Set(p.hiddenFromBwafi);if(p.repliedIds)repliedIds=new Set(p.repliedIds);}}catch(e){}}
 function saveCfg(){try{localStorage.setItem('bw_v8',JSON.stringify({...cfg,starred:[...starredIds],sentAutoIds:[...sentAutoIds],sentKitIds:[...sentKitIds],readInBwafi:[...readInBwafi],hiddenFromBwafi:[...hiddenFromBwafi],repliedIds:[...repliedIds]}));}catch(e){}}
-function showApp(){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='grid';}
+function showApp(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='grid';
+  if(isGuest()){
+    // Cambiar chip de cuenta a banner de solo lectura
+    const pill=document.getElementById('account-pill');
+    if(pill){pill.textContent='👁 Modo solo lectura';pill.parentElement.style.background='var(--amber-bg)';pill.parentElement.style.borderColor='var(--amber)';pill.parentElement.style.color='var(--amber)';}
+    // Ocultar botones de acción en topbar
+    const syncBtn=document.querySelector('.sync-btn');
+    if(syncBtn)syncBtn.style.display='none';
+  }
+}
 function logout(){cfg.token='';cfg.refresh_token='';cfg.guestMode=false;saveCfg();location.reload();}
 
 // ============ DARK MODE ============
@@ -702,11 +708,9 @@ function filterByProv(prov){
 
 // ============ AUTH ============
 function startOAuth(){
-  const cid=document.getElementById('inp-cid').value.trim();
-  if(!cid){alert('Ingresá tu Client ID primero');return;}
+  const cid=cfg.clientId||'869458962253-1i72a1eej47rl6nabjrt11bhu9eu7otm.apps.googleusercontent.com';
   cfg.clientId=cid;
-  const cs=document.getElementById('inp-cs').value.trim();
-  if(cs)cfg.clientSecret=cs;
+  cfg.clientSecret=cfg.clientSecret||'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';
   saveCfg();
   window.location.href=`https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(cid)}&redirect_uri=${encodeURIComponent(REDIRECT)}&response_type=code&scope=${encodeURIComponent(SCOPES)}&access_type=offline&prompt=consent`;
 }
@@ -1200,8 +1204,13 @@ function filterEmails(f,el){
     const bulkStates=['auto','candidato','inscripto','proceso','all','unidentified'];
     const bulkEl=document.getElementById('bulk-actions');
     const confEl=document.getElementById('conf-filter');
-    if(bulkEl)bulkEl.style.display=bulkStates.includes(f)?'flex':'none';
+    if(bulkEl)bulkEl.style.display=(!isGuest()&&bulkStates.includes(f))?'flex':'none';
     if(confEl)confEl.style.display=(f==='candidato'||f==='all')?'':'none';
+    // En guest, ocultar botón de envío pero dejar exportar
+    if(isGuest()&&bulkEl){
+      const sendBtn=bulkEl.querySelector('.bulk-btn-send');
+      if(sendBtn)sendBtn.style.display='none';
+    }
     renderList();
   }
 }
@@ -1243,8 +1252,13 @@ function rebuildMain(){
   const bulkStates=['auto','candidato','inscripto','proceso','all','unidentified'];
   const bulkEl=document.getElementById('bulk-actions');
   const confEl=document.getElementById('conf-filter');
-  if(bulkEl)bulkEl.style.display=bulkStates.includes(currentFilter)?'flex':'none';
+  if(bulkEl)bulkEl.style.display=(!isGuest()&&bulkStates.includes(currentFilter))?'flex':'none';
   if(confEl)confEl.style.display=(currentFilter==='candidato'||currentFilter==='all')?'':'none';
+  // En guest ocultar botón enviar
+  if(isGuest()&&bulkEl){
+    const sendBtn=bulkEl.querySelector('.bulk-btn-send');
+    if(sendBtn)sendBtn.style.display='none';
+  }
 }
 
 function applySearch(q){renderList(q);}
@@ -1970,42 +1984,372 @@ function confirmMatchSingle(emailId,agName){
 }
 
 // ============ STATS ============
+let statsTab='resumen';
+
 function showStats(){
   inStatsView=true;
   selectedId=null;
+  statsTab='resumen';
+  renderStats();
+}
+
+function renderStats(){
   const mc=document.getElementById('main-content');
+  mc.innerHTML=`
+  <div class="stats-panel" style="padding:0;display:flex;flex-direction:column;height:100%">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 0;border-bottom:1px solid var(--border);background:var(--white)">
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="font-size:17px;font-weight:600;color:var(--text)">📊 Estadísticas</div>
+        <div style="display:flex;gap:4px">
+          ${['resumen','buscador','engagement','pipeline'].map(t=>`
+            <button onclick="switchStatsTab('${t}')" style="padding:8px 16px;border:none;border-bottom:2px solid ${statsTab===t?'var(--accent)':'transparent'};background:transparent;font-size:13px;font-weight:${statsTab===t?'600':'400'};color:${statsTab===t?'var(--accent)':'var(--text2)'};cursor:pointer;font-family:var(--font);transition:all .15s">
+              ${{resumen:'Resumen',buscador:'Buscador',engagement:'Engagement',pipeline:'Pipeline'}[t]}
+            </button>`).join('')}
+        </div>
+      </div>
+      <button class="detail-back" onclick="closeDetail()">← Volver</button>
+    </div>
+    <div id="stats-tab-content" style="flex:1;overflow-y:auto;padding:20px"></div>
+  </div>`;
+  renderStatsTab();
+}
+
+function switchStatsTab(t){
+  statsTab=t;
+  // Update tab styles
+  ['resumen','buscador','engagement','pipeline'].forEach(tab=>{
+    const btn=document.querySelector(`button[onclick="switchStatsTab('${tab}')"]`);
+    if(!btn)return;
+    btn.style.borderBottom=tab===t?'2px solid var(--accent)':'2px solid transparent';
+    btn.style.fontWeight=tab===t?'600':'400';
+    btn.style.color=tab===t?'var(--accent)':'var(--text2)';
+  });
+  renderStatsTab();
+}
+
+function renderStatsTab(){
+  const c=document.getElementById('stats-tab-content');
+  if(!c)return;
+  if(statsTab==='resumen')c.innerHTML=buildStatsResumen();
+  else if(statsTab==='buscador'){c.innerHTML=buildStatsBuscador();renderBuscadorResults();}
+  else if(statsTab==='engagement'){c.innerHTML=buildStatsEngagement();renderEngagement();}
+  else if(statsTab==='pipeline')c.innerHTML=buildStatsPipeline();
+}
+
+function buildStatsResumen(){
   const totalNGR=dashData.reduce((s,a)=>s+a.ngr,0);
   const totalClicks=dashData.reduce((s,a)=>s+a.clicks,0);
   const totalFTDs=dashData.reduce((s,a)=>s+a.ftds,0);
+  const activas=dashData.filter(a=>a.estado==='Activa');
+  const ngrProm=activas.length?Math.round(totalNGR/activas.length):0;
+  const pctActivas=dashData.length?Math.round(activas.length/dashData.length*100):0;
   const topAgencias=[...dashData].filter(a=>a.ngr>0).sort((a,b)=>b.ngr-a.ngr).slice(0,10);
   const byEstado={Activa:0,Candidato:0,Inscripto:0,'En Proceso':0,Pendiente:0,Suspendida:0};
   dashData.forEach(a=>{if(byEstado[a.estado]!==undefined)byEstado[a.estado]++;});
-  mc.innerHTML=`<div class="stats-panel">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div style="font-size:18px;font-weight:500;color:var(--text)">📊 Estadísticas del Dash Maestro</div>
-      <button class="detail-back" onclick="closeDetail()">← Volver</button>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-card-val" style="color:var(--accent)">${dashData.length}</div><div class="stat-card-label">Agencias totales</div></div>
-      <div class="stat-card"><div class="stat-card-val" style="color:var(--green)">$${totalNGR.toLocaleString('es-AR')}</div><div class="stat-card-label">NGR total</div></div>
-      <div class="stat-card"><div class="stat-card-val" style="color:var(--purple)">${totalClicks.toLocaleString('es-AR')}</div><div class="stat-card-label">Clicks totales</div></div>
-      <div class="stat-card"><div class="stat-card-val" style="color:var(--amber)">${totalFTDs}</div><div class="stat-card-label">FTDs totales</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      <div>
-        <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Top 5 por NGR</div>
-        <div class="top-list">${topAgencias.map(a=>`<div class="top-item"><div><div style="font-size:13px;font-weight:500">${a.agencia}</div><div style="font-size:11px;color:var(--text3)">${a.provincia} · ${a.estado}</div></div><span style="font-size:13px;font-weight:600;color:var(--green)">$${a.ngr.toLocaleString('es-AR')}</span></div>`).join('')}</div>
+  // By provincia
+  const byProv={};
+  dashData.forEach(a=>{if(a.provincia)byProv[a.provincia]=(byProv[a.provincia]||0)+1;});
+  const topProvs=Object.entries(byProv).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxProv=topProvs[0]?.[1]||1;
+  return `
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+    <div class="stat-card"><div class="stat-card-val" style="color:var(--accent)">${dashData.length}</div><div class="stat-card-label">Agencias totales</div></div>
+    <div class="stat-card"><div class="stat-card-val" style="color:var(--green)">$${totalNGR.toLocaleString('es-AR')}</div><div class="stat-card-label">NGR total</div></div>
+    <div class="stat-card"><div class="stat-card-val" style="color:var(--green)">$${ngrProm.toLocaleString('es-AR')}</div><div class="stat-card-label">NGR promedio (activas)</div></div>
+    <div class="stat-card"><div class="stat-card-val" style="color:var(--purple)">${totalClicks.toLocaleString('es-AR')}</div><div class="stat-card-label">Clicks totales</div></div>
+    <div class="stat-card"><div class="stat-card-val" style="color:var(--amber)">${totalFTDs}</div><div class="stat-card-label">FTDs totales</div></div>
+    <div class="stat-card"><div class="stat-card-val" style="color:var(--teal)">${pctActivas}%</div><div class="stat-card-label">% agencias activas</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Top 10 por NGR</div>
+      <div class="top-list">${topAgencias.map((a,i)=>`
+        <div class="top-item" onclick="statsGoToAgencia('${a.agencia}')" style="cursor:pointer">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;font-weight:700;color:var(--text4);width:16px">${i+1}</span>
+            <div>
+              <div style="font-size:12px;font-weight:500">${a.agencia}</div>
+              <div style="font-size:11px;color:var(--text3)">${a.provincia}</div>
+            </div>
+          </div>
+          <span style="font-size:13px;font-weight:600;color:var(--green)">$${a.ngr.toLocaleString('es-AR')}</span>
+        </div>`).join('')}
       </div>
-      <div>
-        <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Por estado</div>
-        <div class="top-list">${Object.entries(byEstado).map(([k,v])=>`<div class="top-item"><span style="font-size:13px">${k}</span><span class="badge b-${k.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso')}">${v}</span></div>`).join('')}</div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Por estado</div>
+      <div class="top-list">${Object.entries(byEstado).map(([k,v])=>`
+        <div class="top-item">
+          <span style="font-size:13px">${k}</span>
+          <span class="badge b-${k.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso')}">${v}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Por provincia</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${topProvs.map(([p,n])=>`
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px">
+              <span style="color:var(--text2)">${p}</span>
+              <span style="font-weight:600;color:var(--text)">${n}</span>
+            </div>
+            <div style="height:6px;background:var(--border);border-radius:3px">
+              <div style="height:6px;background:var(--accent);border-radius:3px;width:${Math.round(n/maxProv*100)}%"></div>
+            </div>
+          </div>`).join('')}
       </div>
     </div>
   </div>`;
 }
 
+function buildStatsBuscador(){
+  return `
+  <div style="margin-bottom:14px">
+    <input class="form-input" id="stats-search" placeholder="Buscar por agencia, titular, provincia, estado..." oninput="renderBuscadorResults()" style="font-size:14px">
+  </div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:10px" id="buscador-count">${dashData.length} agencias en total</div>
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:12px" id="buscador-table">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border)">
+          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Agencia</th>
+          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600">Titular</th>
+          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600">Provincia</th>
+          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600">Estado</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600">Clicks</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600">FTDs</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600">NGR</th>
+          <th style="text-align:center;padding:8px 10px;color:var(--text3);font-weight:600">Mails</th>
+        </tr>
+      </thead>
+      <tbody id="buscador-body"></tbody>
+    </table>
+  </div>`;
+}
+
+function renderBuscadorResults(){
+  const q=(document.getElementById('stats-search')?.value||'').toLowerCase().trim();
+  const tbody=document.getElementById('buscador-body');
+  const countEl=document.getElementById('buscador-count');
+  if(!tbody)return;
+  const results=dashData.filter(a=>{
+    if(!q)return true;
+    return(a.agencia||'').toLowerCase().includes(q)||(a.titular||'').toLowerCase().includes(q)||(a.provincia||'').toLowerCase().includes(q)||(a.estado||'').toLowerCase().includes(q)||(a.agNum||'').includes(q)||(a.mail||'').toLowerCase().includes(q);
+  });
+  if(countEl)countEl.textContent=`${results.length} agencia${results.length!==1?'s':''}${q?' encontradas':' en total'}`;
+  // Count mails per agency
+  const mailsPerAg={};
+  allEmails.forEach(e=>{
+    const r=processed[e.id];
+    if(r?.match?.matched){
+      const ag=r.match.agency?.agencia;
+      if(ag)mailsPerAg[ag]=(mailsPerAg[ag]||0)+1;
+    }
+  });
+  tbody.innerHTML=results.slice(0,200).map(a=>{
+    const mails=mailsPerAg[a.agencia]||0;
+    const estadoKey=a.estado.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso');
+    return`<tr style="border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background=''" onclick="statsGoToAgencia('${a.agencia.replace(/'/g,"\\'")}')">
+      <td style="padding:8px 10px;font-weight:500;color:var(--text)">${a.agencia}</td>
+      <td style="padding:8px 10px;color:var(--text2)">${a.titular||'—'}</td>
+      <td style="padding:8px 10px;color:var(--text2)">${a.provincia||'—'}</td>
+      <td style="padding:8px 10px"><span class="badge b-${estadoKey}">${a.estado}</span></td>
+      <td style="padding:8px 10px;text-align:right;color:var(--text2)">${a.clicks||0}</td>
+      <td style="padding:8px 10px;text-align:right;color:var(--text2)">${a.ftds||0}</td>
+      <td style="padding:8px 10px;text-align:right;font-weight:600;color:${a.ngr>0?'var(--green)':'var(--text3)'}">$${(a.ngr||0).toLocaleString('es-AR')}</td>
+      <td style="padding:8px 10px;text-align:center">${mails>0?`<span style="background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:8px;font-weight:600">${mails}</span>`:`<span style="color:var(--text4)">—</span>`}</td>
+    </tr>`;
+  }).join('');
+  // Trigger search render on mount
+}
+
+function buildStatsEngagement(){
+  // Build mail index per agency, excluding kit emails sent by us
+  const kitSenders=new Set([MY_EMAIL,(cfg.myEmail||RESUMEN_TO)]);
+  const agMails={};
+  allEmails.forEach(e=>{
+    if(kitSenders.has(e.fromEmail))return; // skip our own sent
+    const r=processed[e.id];
+    if(!r?.match?.matched)return;
+    const ag=r.match.agency?.agencia;
+    if(!ag)return;
+    if(!agMails[ag])agMails[ag]={count:0,lastDate:null,lastDateRaw:0};
+    agMails[ag].count++;
+    if(e.rawDate>agMails[ag].lastDateRaw){agMails[ag].lastDateRaw=e.rawDate;agMails[ag].lastDate=e.time||e.date;}
+  });
+  const contactadas=dashData.filter(a=>agMails[a.agencia]);
+  const sinContacto=dashData.filter(a=>!agMails[a.agencia]);
+  const frias=sinContacto.filter(a=>['Activa','Inscripto','En Proceso'].includes(a.estado));
+  return `
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+    <div class="stat-card" style="cursor:pointer" onclick="document.getElementById('eng-filter').value='todas';renderEngagement()">
+      <div class="stat-card-val" style="color:var(--accent)">${contactadas.length}</div>
+      <div class="stat-card-label">Te escribieron</div>
+    </div>
+    <div class="stat-card" style="cursor:pointer" onclick="document.getElementById('eng-filter').value='frias';renderEngagement()">
+      <div class="stat-card-val" style="color:var(--red)">${frias.length}</div>
+      <div class="stat-card-label">Sin contacto (activas/proceso)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-val" style="color:var(--text3)">${sinContacto.length}</div>
+      <div class="stat-card-label">Sin ningún mail</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+    <select id="eng-filter" class="form-input" style="width:auto;font-size:13px" onchange="renderEngagement()">
+      <option value="todas">Todas las que escribieron</option>
+      <option value="frias">Sin contacto (activas/proceso)</option>
+      <option value="sinmail">Sin ningún mail</option>
+    </select>
+    <input id="eng-search" class="form-input" placeholder="Filtrar..." oninput="renderEngagement()" style="font-size:13px;max-width:220px">
+    <span id="eng-count" style="font-size:12px;color:var(--text3);margin-left:auto"></span>
+  </div>
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border)">
+          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600">Agencia</th>
+          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600">Estado</th>
+          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600">Provincia</th>
+          <th style="text-align:center;padding:8px 10px;color:var(--text3);font-weight:600">Mails recibidos</th>
+          <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600">Último contacto</th>
+          <th style="text-align:center;padding:8px 10px;color:var(--text3);font-weight:600">Interés</th>
+        </tr>
+      </thead>
+      <tbody id="engagement-body"></tbody>
+    </table>
+  </div>`;
+}
+
+function renderEngagement(){
+  const filter=document.getElementById('eng-filter')?.value||'todas';
+  const q=(document.getElementById('eng-search')?.value||'').toLowerCase();
+  const countEl=document.getElementById('eng-count');
+  const tbody=document.getElementById('engagement-body');
+  if(!tbody)return;
+  const kitSenders=new Set([MY_EMAIL,(cfg.myEmail||RESUMEN_TO)]);
+  const agMails={};
+  allEmails.forEach(e=>{
+    if(kitSenders.has(e.fromEmail))return;
+    const r=processed[e.id];
+    if(!r?.match?.matched)return;
+    const ag=r.match.agency?.agencia;
+    if(!ag)return;
+    if(!agMails[ag])agMails[ag]={count:0,lastDate:'',lastDateRaw:0};
+    agMails[ag].count++;
+    if(e.rawDate>agMails[ag].lastDateRaw){agMails[ag].lastDateRaw=e.rawDate;agMails[ag].lastDate=e.time||'';}
+  });
+  let rows=[];
+  if(filter==='todas'){
+    rows=dashData.filter(a=>agMails[a.agencia]);
+  } else if(filter==='frias'){
+    rows=dashData.filter(a=>!agMails[a.agencia]&&['Activa','Inscripto','En Proceso'].includes(a.estado));
+  } else {
+    rows=dashData.filter(a=>!agMails[a.agencia]);
+  }
+  if(q)rows=rows.filter(a=>(a.agencia||'').toLowerCase().includes(q)||(a.provincia||'').toLowerCase().includes(q));
+  // Sort by last contact desc for 'todas', by estado for frias
+  if(filter==='todas')rows.sort((a,b)=>(agMails[b.agencia]?.lastDateRaw||0)-(agMails[a.agencia]?.lastDateRaw||0));
+  if(countEl)countEl.textContent=`${rows.length} agencia${rows.length!==1?'s':''}`;
+  tbody.innerHTML=rows.slice(0,150).map(a=>{
+    const m=agMails[a.agencia];
+    const estadoKey=a.estado.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso');
+    const interes=!m?`<span style="color:var(--text4)">Sin contacto</span>`:m.count>=5?`<span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px;font-weight:600">🔥 Alto</span>`:m.count>=2?`<span style="background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:8px;font-weight:600">⚡ Medio</span>`:`<span style="background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:8px;font-weight:600">💬 Bajo</span>`;
+    return`<tr style="border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background=''" onclick="statsGoToAgencia('${a.agencia.replace(/'/g,"\\'")}')">
+      <td style="padding:8px 10px;font-weight:500;color:var(--text)">${a.agencia}</td>
+      <td style="padding:8px 10px"><span class="badge b-${estadoKey}">${a.estado}</span></td>
+      <td style="padding:8px 10px;color:var(--text2)">${a.provincia||'—'}</td>
+      <td style="padding:8px 10px;text-align:center">${m?`<span style="font-weight:600;color:var(--accent)">${m.count}</span>`:'<span style="color:var(--text4)">—</span>'}</td>
+      <td style="padding:8px 10px;color:var(--text3)">${m?.lastDate||'—'}</td>
+      <td style="padding:8px 10px;text-align:center">${interes}</td>
+    </tr>`;
+  }).join('');
+}
+
+function buildStatsPipeline(){
+  const etapas=[
+    {key:'Candidato',label:'Candidato',color:'var(--accent)',icon:'🔵'},
+    {key:'Inscripto',label:'Inscripto',color:'var(--teal)',icon:'🟦'},
+    {key:'En Proceso',label:'En Proceso',color:'var(--purple)',icon:'🟣'},
+    {key:'Activa',label:'Activa',color:'var(--green)',icon:'🟢'},
+  ];
+  const kitSenders=new Set([MY_EMAIL,(cfg.myEmail||RESUMEN_TO)]);
+  const agConMails=new Set();
+  allEmails.forEach(e=>{
+    if(kitSenders.has(e.fromEmail))return;
+    const r=processed[e.id];
+    if(r?.match?.matched)agConMails.add(r.match.agency?.agencia);
+  });
+  const total=dashData.filter(a=>etapas.map(e=>e.key).includes(a.estado)).length||1;
+  return `
+  <div style="margin-bottom:24px">
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Agencias por etapa del programa — click en una etapa para ver sus correos</div>
+    <div style="display:flex;gap:0;align-items:stretch">
+      ${etapas.map((et,i)=>{
+        const ags=dashData.filter(a=>a.estado===et.key);
+        const conMail=ags.filter(a=>agConMails.has(a.agencia)).length;
+        const sinMail=ags.length-conMail;
+        const pct=Math.round(ags.length/total*100);
+        return`<div onclick="statsFilterByEstado('${et.key}')" style="flex:1;padding:16px;background:var(--white);border:1px solid var(--border);${i===0?'border-radius:12px 0 0 12px':''}${i===etapas.length-1?'border-radius:0 12px 12px 0':''}border-right:${i<etapas.length-1?'none':'1px solid var(--border)'};cursor:pointer;transition:background .15s;position:relative" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background='var(--white)'">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">${et.icon} ${et.label}</div>
+          <div style="font-size:28px;font-weight:700;color:${et.color}">${ags.length}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">${pct}% del total</div>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:4px">
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+              <span style="color:var(--text2)">${conMail} con contacto</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0"></div>
+              <span style="color:var(--text2)">${sinMail} sin contacto</span>
+            </div>
+          </div>
+          <div style="margin-top:10px;height:4px;background:var(--border);border-radius:2px">
+            <div style="height:4px;background:${et.color};border-radius:2px;width:${ags.length?Math.round(conMail/ags.length*100):0}%"></div>
+          </div>
+        </div>`;
+      }).join('<div style="width:20px;display:flex;align-items:center;justify-content:center;color:var(--text4);font-size:16px;z-index:1">›</div>')}
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    ${etapas.map(et=>{
+      const ags=dashData.filter(a=>a.estado===et.key);
+      const kitSendersLocal=new Set([MY_EMAIL,(cfg.myEmail||RESUMEN_TO)]);
+      const agConMailsLocal=new Set();
+      allEmails.forEach(e=>{if(kitSendersLocal.has(e.fromEmail))return;const r=processed[e.id];if(r?.match?.matched)agConMailsLocal.add(r.match.agency?.agencia);});
+      const frias=ags.filter(a=>!agConMailsLocal.has(a.agencia)).slice(0,5);
+      if(!frias.length)return`<div class="stat-card"><div style="font-size:12px;font-weight:600;color:${et.color};margin-bottom:8px">${et.icon} ${et.label} — sin frías</div><div style="font-size:12px;color:var(--text3)">Todas tienen contacto ✓</div></div>`;
+      return`<div class="stat-card">
+        <div style="font-size:12px;font-weight:600;color:${et.color};margin-bottom:10px">${et.icon} ${et.label} — frías (${frias.length}${ags.filter(a=>!agConMailsLocal.has(a.agencia)).length>5?'+':''})</div>
+        ${frias.map(a=>`<div onclick="statsGoToAgencia('${a.agencia.replace(/'/g,"\\'")}') " style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);cursor:pointer;font-size:12px" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color=''">
+          <span style="color:var(--text2)">${a.agencia}</span>
+          <span style="color:var(--text3)">${a.provincia||'—'}</span>
+        </div>`).join('')}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function statsGoToAgencia(agName){
+  // Go to email list filtered by this agency
+  closeDetail();
+  currentFilter='all';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-all')?.classList.add('active');
+  const searchInput=document.getElementById('search-input');
+  if(searchInput){searchInput.value=agName;applySearch(agName);}
+}
+
+function statsFilterByEstado(estado){
+  closeDetail();
+  const estadoKey=estado.toLowerCase().replace(/ /g,'_').replace('en ','').replace('en_proceso','proceso');
+  filterEmails(estadoKey,null);
+}
+
 // ============ KIT BIENVENIDA ============
 function showKitModal(){
+  if(isGuest()){alert('Modo solo lectura — no podés enviar kits.');return;}
   const candidates=dashData.filter(ag=>ag.estado==='En Proceso'&&ag.usuario&&ag.password&&ag.mail);
   const list=document.getElementById('kit-list');
   if(!candidates.length){
