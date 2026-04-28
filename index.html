@@ -529,6 +529,21 @@ function loginGuest(){
 
 function isGuest(){return cfg.guestMode===true;}
 
+// ============ GUEST TOKEN LOADER ============
+async function loadTokenFromSheetsForGuest(){
+  const SHEETS_API_KEY='AIzaSyAg66wvqCl3_bb7JdX9wyKrKytnlK0OAEc';
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/${encodeURIComponent(GUEST_SHEET_NAME)}!A1:D2?key=${SHEETS_API_KEY}`;
+  const r=await fetch(url);
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message);
+  if(!d.values||d.values.length<2)throw new Error('No hay credenciales guardadas. El administrador debe habilitar el acceso invitado primero.');
+  const headers=d.values[0];
+  const row=d.values[1];
+  const obj={};
+  headers.forEach((h,i)=>{obj[h.trim()]=row[i]||'';});
+  return obj;
+}
+
 // ============ KEYBOARD SHORTCUTS ============
 function handleKeyboard(e){
   // Don't fire when typing in inputs/textareas
