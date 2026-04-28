@@ -289,6 +289,7 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
     <div class="topbar-right">
       <span id="last-sync" style="font-size:11px;color:var(--text3)"></span>
       <div class="account-chip"><div class="status-dot"></div><span id="account-pill">afiliadosarg@betwarrior.com</span></div>
+      <button class="icon-btn" onclick="showCalc()" title="Calculadora de fees">🧮</button>
       <button class="icon-btn" onclick="showStats()" title="Estadísticas Afiliados">📊</button>
       <button class="icon-btn" onclick="showResumenModal()" title="Resumen del día">📧</button>
       <button class="icon-btn" id="dark-toggle" onclick="toggleDark()" title="Modo oscuro">🌙</button>
@@ -438,6 +439,123 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
     <div class="modal-actions">
       <button class="modal-btn modal-btn-cancel" onclick="closeKitModal()">Cancelar</button>
       <button class="modal-btn modal-btn-save" onclick="sendKitSelected()" id="kit-send-btn">Enviar seleccionados</button>
+    </div>
+  </div>
+</div>
+
+<!-- CALCULADORA MODAL -->
+<div class="modal-overlay" id="calc-modal" style="display:none">
+  <div class="modal" style="width:760px;max-width:98vw">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div class="modal-title" style="margin:0">🧮 Simulador de Fee de Afiliados</div>
+      <button onclick="document.getElementById('calc-modal').style.display='none'" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text3)">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Ingresá GGR o NGR, elegí provincia y fee para simular el desglose completo</div>
+
+    <!-- INPUTS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Datos de entrada</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">Provincia</label>
+            <select id="calc-prov" class="form-input" style="font-size:13px" onchange="calcUpdateProv()">
+              <option value="mendoza">Mendoza</option>
+              <option value="salta">Salta</option>
+              <option value="caba">CABA</option>
+              <option value="pba">PBA</option>
+              <option value="larioja">La Rioja</option>
+              <option value="custom">Personalizado</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">GGR ($)</label>
+              <input id="calc-ggr" type="number" class="form-input" style="font-size:13px" placeholder="ej: 1000000" oninput="calcRun('ggr')">
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">NGR ($)</label>
+              <input id="calc-ngr" type="number" class="form-input" style="font-size:13px" placeholder="ej: 920000" oninput="calcRun('ngr')">
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">Fee RevShare (%)</label>
+            <input id="calc-fee" type="number" class="form-input" style="font-size:13px" placeholder="ej: 15" min="0" max="100" step="0.5" oninput="calcRun()">
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Parámetros de provincia</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">Bonos (%)</label>
+            <input id="calc-bonos" type="number" class="form-input" style="font-size:12px" step="0.1" oninput="calcRun()">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">IIBB (%)</label>
+            <input id="calc-iibb" type="number" class="form-input" style="font-size:12px" step="0.1" oninput="calcRun()">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">Canon (%)</label>
+            <input id="calc-canon" type="number" class="form-input" style="font-size:12px" step="0.1" oninput="calcRun()">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">Imp. Juego (%)</label>
+            <input id="calc-impjuego" type="number" class="form-input" style="font-size:12px" step="0.1" oninput="calcRun()">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">Gastos Op. (%)</label>
+            <input id="calc-gastos" type="number" class="form-input" style="font-size:12px" step="0.1" value="0" oninput="calcRun()">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">Margen directo (%)</label>
+            <input id="calc-margen" type="number" class="form-input" style="font-size:12px" step="0.1" oninput="calcRun()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTADO -->
+    <div id="calc-result" style="display:none">
+      <!-- Desglose paso a paso + indicadores -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Paso a paso del cálculo</div>
+          <div id="calc-steps" style="display:flex;flex-direction:column;gap:4px;font-size:13px"></div>
+        </div>
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Indicadores clave</div>
+          <div id="calc-kpis" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+      </div>
+
+      <!-- 3 escenarios RevShare -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Comparativa 3 escenarios RevShare</div>
+        <div id="calc-scenarios" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div>
+      </div>
+
+      <!-- Tabla comparativa por provincia -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Impacto del fee por provincia (con RevShare actual)</div>
+        <div id="calc-provtable"></div>
+      </div>
+
+      <!-- Escenarios impacto del programa -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Impacto del programa de afiliados sobre el NGR general</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Si el programa genera el 2%, 5% o 10% del NGR general de la empresa...</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <label style="font-size:12px;color:var(--text2);white-space:nowrap">NGR general de la empresa ($)</label>
+          <input id="calc-ngr-total" type="number" class="form-input" style="font-size:13px;max-width:200px" placeholder="ej: 800000000" value="800000000" oninput="calcRun()">
+        </div>
+        <div id="calc-programa"></div>
+      </div>
+    </div>
+
+    <div id="calc-empty" style="text-align:center;padding:32px;color:var(--text3);font-size:13px">
+      Ingresá GGR o NGR para ver el cálculo
     </div>
   </div>
 </div>
@@ -860,8 +978,18 @@ function parseDash(rows){
   const iNgrAfil=idx('NGR Afiliatte'),iComis=idx('Comission');
   for(let i=hi+1;i<rows.length;i++){
     const row=rows[i];if(!row[iAg]||!row[iSit])continue;
-    const ngr=parseFloat((row[iNgr]||'0').replace(/[$\s,]/g,'').replace(',','.'))||0;
-    const parseNum=v=>parseFloat((v||'0').replace(/[$\s,]/g,'').replace(',','.'))||0;
+    const ngr=parseFloat((row[iNgr]||'0').replace(/[$\s]/g,'').replace(/\./g,'').replace(',','.'))||0;
+    // parseNum handles both formats: 1.400 (AR thousands) and 1,400 (EN thousands)
+    const parseNum=v=>{
+      if(!v||v==='')return 0;
+      const s=String(v).replace(/[$\s]/g,'');
+      // If has both dot and comma: 1.400,50 → AR format
+      if(s.includes(',')&&s.includes('.'))return parseFloat(s.replace(/\./g,'').replace(',','.'))||0;
+      // If only dot and it's a thousands separator (more than 2 digits after): 1.400 → 1400
+      if(s.includes('.')&&!s.includes(',')&&s.split('.').pop().length===3)return parseFloat(s.replace(/\./g,''))||0;
+      // Otherwise treat as decimal
+      return parseFloat(s.replace(',','.'))||0;
+    };
     const prov=(row[iProv]||'').toLowerCase().trim();
     const isCABA=CABA_PROVS.includes(prov);
     const agNum=row[iAg].replace(/[^0-9]/g,'');
@@ -1652,7 +1780,9 @@ function selectEmail(id){
     const cc=m.confidence==='high'?'var(--green)':m.confidence==='medium'?'var(--amber)':'var(--red)';
     const cl=m.confidence==='high'?'Alta':m.confidence==='medium'?'Media':'Baja';
     const sigH=(m.signals||[]).map(s=>`<span class="sig ${s.h?'sig-hit':'sig-miss'}">${s.h?'✓':'-'} ${s.l}</span>`).join('');
-    const perf=ag.ngr>0||ag.clicks>0?`<div class="perf-chips"><span class="perf-chip">${ag.clicks} clicks</span><span class="perf-chip">${ag.signups} sign ups</span><span class="perf-chip">${ag.ftds} FTDs</span><span class="perf-chip ${ag.ngr>0?'pos':ag.ngr<0?'neg':''}">${ag.ngr?'$'+ag.ngr.toLocaleString('es-AR'):'$0'} NGR</span></div>`:'';
+    const provKey=ag.provincia?Object.keys(CALC_PROVS).find(k=>CALC_PROVS[k].label.toLowerCase()===ag.provincia.toLowerCase())||'custom':'custom';
+    const calcBtn=ag.ngr>0?`<button onclick="showCalc(${ag.ngr},'${provKey}')" style="font-size:11px;padding:3px 10px;border-radius:8px;background:var(--purple-bg);color:var(--purple);border:1px solid rgba(124,58,237,.2);cursor:pointer;font-family:var(--font)">🧮 Calcular fee</button>`:'';
+    const perf=ag.ngr>0||ag.clicks>0?`<div class="perf-chips"><span class="perf-chip">${ag.clicks} clicks</span><span class="perf-chip">${ag.signups} sign ups</span><span class="perf-chip">${ag.ftds} FTDs</span><span class="perf-chip ${ag.ngr>0?'pos':ag.ngr<0?'neg':''}">${ag.ngr?'$'+ag.ngr.toLocaleString('es-AR'):'$0'} NGR</span></div>${calcBtn}`:'';
     const confirmedBadge=isConfirmed?'<span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px;font-weight:500">✓ Confirmado</span>':'';
     matchHTML=`<div class="match-row ${m.confidence}">
       <div class="match-info">
@@ -2103,15 +2233,15 @@ function buildStatsResumen(){
   </div>
   <div style="margin-top:16px">
     <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Distribución por provincia</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
+    <div style="display:flex;flex-direction:column;gap:8px;max-width:420px">
       ${topProvs.map(([p,n])=>{
         const pct=Math.round(n/dashData.length*100);
-        return`<div style="display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:8px 12px;min-width:140px;flex:1">
+        return`<div style="display:flex;align-items:center;gap:12px;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
           <div style="flex:1">
-            <div style="font-size:12px;font-weight:600;color:var(--text)">${p}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">${p}</div>
             <div style="font-size:11px;color:var(--text3);margin-top:1px">${n} agencias</div>
           </div>
-          <div style="font-size:18px;font-weight:700;color:var(--accent)">${pct}%</div>
+          <div style="font-size:20px;font-weight:700;color:var(--accent)">${pct}%</div>
         </div>`;
       }).join('')}
     </div>
@@ -2119,11 +2249,22 @@ function buildStatsResumen(){
 }
 
 function buildStatsBuscador(){
+  // Build province and estado options
+  const provs=[...new Set(dashData.map(a=>a.provincia).filter(Boolean))].sort();
+  const estados=['Activa','Candidato','Inscripto','En Proceso','Pendiente','Suspendida'];
   return `
-  <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center">
-    <input class="form-input" id="stats-search" placeholder="Buscar por agencia, titular, provincia, estado, mail..." oninput="renderBuscadorResults()" style="font-size:14px;flex:1">
+  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+    <input class="form-input" id="stats-search" placeholder="Buscar por agencia, titular, mail..." oninput="renderBuscadorResults()" style="font-size:13px;flex:1;min-width:200px">
+    <select id="stats-prov" class="form-input" style="width:auto;font-size:13px" onchange="renderBuscadorResults()">
+      <option value="">Todas las provincias</option>
+      ${provs.map(p=>`<option value="${p}">${p}</option>`).join('')}
+    </select>
+    <select id="stats-estado" class="form-input" style="width:auto;font-size:13px" onchange="renderBuscadorResults()">
+      <option value="">Todos los estados</option>
+      ${estados.map(e=>`<option value="${e}">${e}</option>`).join('')}
+    </select>
     <select id="stats-sort" class="form-input" style="width:auto;font-size:13px" onchange="renderBuscadorResults()">
-      <option value="agencia">Ordenar: Agencia</option>
+      <option value="agencia">Ordenar: Agencia A-Z</option>
       <option value="ngr">Ordenar: NGR ↓</option>
       <option value="clicks">Ordenar: Clicks ↓</option>
       <option value="comision">Ordenar: Comisión ↓</option>
@@ -2159,50 +2300,55 @@ function buildStatsBuscador(){
 
 function renderBuscadorResults(){
   const q=(document.getElementById('stats-search')?.value||'').toLowerCase().trim();
+  const provFilter=document.getElementById('stats-prov')?.value||'';
+  const estadoFilter=document.getElementById('stats-estado')?.value||'';
   const sort=document.getElementById('stats-sort')?.value||'agencia';
   const tbody=document.getElementById('buscador-body');
   const countEl=document.getElementById('buscador-count');
   if(!tbody)return;
   let results=dashData.filter(a=>{
+    if(provFilter&&a.provincia!==provFilter)return false;
+    if(estadoFilter&&a.estado!==estadoFilter)return false;
     if(!q)return true;
-    return(a.agencia||'').toLowerCase().includes(q)||(a.titular||'').toLowerCase().includes(q)||(a.provincia||'').toLowerCase().includes(q)||(a.estado||'').toLowerCase().includes(q)||(a.agNum||'').includes(q)||(a.mail||'').toLowerCase().includes(q);
+    return(a.agencia||'').toLowerCase().includes(q)||(a.titular||'').toLowerCase().includes(q)||(a.agNum||'').includes(q)||(a.mail||'').toLowerCase().includes(q);
   });
-  // Count mails per agency
   const mailsPerAg={};
   allEmails.forEach(e=>{
     const r=processed[e.id];
     if(r?.match?.matched){const ag=r.match.agency?.agencia;if(ag)mailsPerAg[ag]=(mailsPerAg[ag]||0)+1;}
   });
-  // Sort
-  if(sort==='ngr')results.sort((a,b)=>b.ngr-a.ngr);
-  else if(sort==='clicks')results.sort((a,b)=>b.clicks-a.clicks);
-  else if(sort==='comision')results.sort((a,b)=>b.comision-a.comision);
-  else if(sort==='mails')results.sort((a,b)=>(mailsPerAg[b.agencia]||0)-(mailsPerAg[a.agencia]||0));
-  else results.sort((a,b)=>a.agencia.localeCompare(b.agencia));
-  if(countEl)countEl.textContent=`${results.length} agencia${results.length!==1?'s':''}${q?' encontradas':' en total'}`;
-  const fmt=v=>v?`$${v.toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0})}`:'—';
+  const agSort=(a,b)=>parseInt(a.agNum||'0')-parseInt(b.agNum||'0')||a.agencia.localeCompare(b.agencia);
+  if(sort==='ngr')results.sort((a,b)=>b.ngr-a.ngr||agSort(a,b));
+  else if(sort==='clicks')results.sort((a,b)=>b.clicks-a.clicks||agSort(a,b));
+  else if(sort==='comision')results.sort((a,b)=>b.comision-a.comision||agSort(a,b));
+  else if(sort==='mails')results.sort((a,b)=>(mailsPerAg[b.agencia]||0)-(mailsPerAg[a.agencia]||0)||agSort(a,b));
+  else results.sort(agSort);
+  const active=provFilter||estadoFilter||q;
+  if(countEl)countEl.textContent=results.length+' agencia'+(results.length!==1?'s':'')+(active?' encontradas':' en total');
+  const fmt=v=>v?'$'+v.toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0}):'—';
   tbody.innerHTML=results.slice(0,300).map(a=>{
     const mails=mailsPerAg[a.agencia]||0;
     const estadoKey=a.estado.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso');
-    return`<tr style="border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background=''" onclick="statsGoToAgencia('${a.agencia.replace(/'/g,"\\'")}')">
-      <td style="padding:6px 10px;font-weight:500;color:var(--text);white-space:nowrap">${a.agencia}</td>
-      <td style="padding:6px 10px;color:var(--text2);white-space:nowrap">${a.provincia||'—'}</td>
-      <td style="padding:6px 10px"><span class="badge b-${estadoKey}">${a.estado}</span></td>
-      <td style="padding:6px 10px;color:var(--text2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.titular||''}">${a.titular||'—'}</td>
-      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.clicks||0}</td>
-      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.signups||0}</td>
-      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.ftds||0}</td>
-      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.ftdDeposits?fmt(a.ftdDeposits):'—'}</td>
-      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.deposits?fmt(a.deposits):'—'}</td>
-      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.casinoBet?fmt(a.casinoBet):'—'}</td>
-      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.sportsbookBet?fmt(a.sportsbookBet):'—'}</td>
-      <td style="padding:6px 10px;text-align:right;font-weight:600;color:${a.ngr>0?'var(--green)':a.ngr<0?'var(--red)':'var(--text3)'}">$${(a.ngr||0).toLocaleString('es-AR')}</td>
-      <td style="padding:6px 10px;text-align:right;color:var(--text2)">${a.ngrAfil?fmt(a.ngrAfil):'—'}</td>
-      <td style="padding:6px 10px;text-align:right;font-weight:600;color:${a.comision>0?'var(--green)':'var(--text3)'}">$${(a.comision||0).toLocaleString('es-AR')}</td>
-      <td style="padding:6px 10px;text-align:center">${mails>0?`<span style="background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:8px;font-weight:600">${mails}</span>`:`<span style="color:var(--text4)">—</span>`}</td>
-    </tr>`;
+    return '<tr style="border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s" onmouseover="this.style.background='+"'var(--hover-bg)'"+'" onmouseout="this.style.background='+"''"+'" onclick="statsGoToAgencia('+"'"+(a.agencia.replace(/'/g,"\'"))+"'"+')">'+
+      '<td style="padding:6px 10px;font-weight:500;color:var(--text);white-space:nowrap">'+a.agencia+'</td>'+
+      '<td style="padding:6px 10px;color:var(--text2);white-space:nowrap">'+( a.provincia||'—')+'</td>'+
+      '<td style="padding:6px 10px"><span class="badge b-'+estadoKey+'">'+a.estado+'</span></td>'+
+      '<td style="padding:6px 10px;color:var(--text2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(a.titular||'')+'">'+(a.titular||'—')+'</td>'+
+      '<td style="padding:6px 10px;text-align:right;color:var(--text2)">'+(a.clicks||0)+'</td>'+
+      '<td style="padding:6px 10px;text-align:right;color:var(--text2)">'+(a.signups||0)+'</td>'+
+      '<td style="padding:6px 10px;text-align:right;color:var(--text2)">'+(a.ftds||0)+'</td>'+
+      '<td style="padding:6px 10px;text-align:right;color:var(--text2)">'+(a.ftdDeposits?fmt(a.ftdDeposits):'—')+'</td>'+
+      '<td style="padding:6px 10px;text-align:right;color:var(--text2)">'+(a.deposits?fmt(a.deposits):'—')+'</td>'+
+      '<td style="padding:6px 10px;text-align:right;color:var(--text2)">'+(a.casinoBet?fmt(a.casinoBet):'—')+'</td>'+
+      '<td style="padding:6px 10px;text-align:right;color:var(--text2)">'+(a.sportsbookBet?fmt(a.sportsbookBet):'—')+'</td>'+
+      '<td style="padding:6px 10px;text-align:right;font-weight:600;color:'+(a.ngr>0?'var(--green)':a.ngr<0?'var(--red)':'var(--text3)')+'">$'+(a.ngr||0).toLocaleString('es-AR')+'</td>'+
+      '<td style="padding:6px 10px;text-align:right;color:var(--text2)">'+(a.ngrAfil?fmt(a.ngrAfil):'—')+'</td>'+
+      '<td style="padding:6px 10px;text-align:right;font-weight:600;color:'+(a.comision>0?'var(--green)':'var(--text3)')+'">$'+(a.comision||0).toLocaleString('es-AR')+'</td>'+
+      '<td style="padding:6px 10px;text-align:center">'+(mails>0?'<span style="background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:8px;font-weight:600">'+mails+'</span>':'<span style="color:var(--text4)">—</span>')+'</td>'+
+    '</tr>';
   }).join('');
 }
+
 
 function buildStatsEngagement(){
   // Build mail index per agency, excluding kit emails sent by us
@@ -2448,6 +2594,223 @@ function statsFilterByEstado(estado){
   closeDetail();
   const estadoKey=estado.toLowerCase().replace(/ /g,'_').replace('en ','').replace('en_proceso','proceso');
   filterEmails(estadoKey,null);
+}
+
+// ============ CALCULADORA DE FEES ============
+const CALC_PROVS={
+  mendoza:  {iibb:12,  canon:10, impjuego:7,  bonos:8, margen:38, label:'Mendoza'},
+  salta:    {iibb:6,   canon:12, impjuego:7,  bonos:8, margen:38, label:'Salta'},
+  caba:     {iibb:6,   canon:10, impjuego:7,  bonos:8, margen:40, label:'CABA'},
+  pba:      {iibb:15,  canon:10, impjuego:7,  bonos:8, margen:35, label:'PBA'},
+  larioja:  {iibb:7,   canon:15, impjuego:7,  bonos:8, margen:38, label:'La Rioja'},
+  custom:   {iibb:0,   canon:0,  impjuego:0,  bonos:8, margen:35, label:'Personalizado'},
+};
+
+function showCalc(ngr, provKey){
+  document.getElementById('calc-modal').style.display='flex';
+  if(ngr)document.getElementById('calc-ngr').value=ngr;
+  const prov=provKey||'salta';
+  document.getElementById('calc-prov').value=prov;
+  calcUpdateProv();
+  if(ngr)calcRun('ngr');
+}
+
+function calcUpdateProv(){
+  const key=document.getElementById('calc-prov').value;
+  const p=CALC_PROVS[key]||CALC_PROVS.custom;
+  const setVal=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  setVal('calc-bonos',p.bonos);
+  setVal('calc-iibb',p.iibb);
+  setVal('calc-canon',p.canon);
+  setVal('calc-impjuego',p.impjuego);
+  setVal('calc-margen',p.margen);
+  calcRun();
+}
+
+function calcRun(trigger){
+  const ggrEl=document.getElementById('calc-ggr');
+  const ngrEl=document.getElementById('calc-ngr');
+  const getN=id=>parseFloat(document.getElementById(id)?.value)||0;
+  const bonos=getN('calc-bonos')/100;
+  const iibb=getN('calc-iibb')/100;
+  const canon=getN('calc-canon')/100;
+  const impjuego=getN('calc-impjuego')/100;
+  const gastos=getN('calc-gastos')/100;
+  const margenDir=getN('calc-margen')/100;
+  const fee=getN('calc-fee')/100;
+
+  let ggr=parseFloat(ggrEl?.value)||0;
+  let ngr=parseFloat(ngrEl?.value)||0;
+
+  if(!ggr&&!ngr){
+    document.getElementById('calc-result').style.display='none';
+    document.getElementById('calc-empty').style.display='block';
+    return;
+  }
+
+  // Derive missing value
+  if(trigger==='ggr'&&ggr&&!ngr){ngr=ggr*(1-bonos);if(ngrEl)ngrEl.value=Math.round(ngr);}
+  if(trigger==='ngr'&&ngr&&!ggr){ggr=ngr/(1-bonos);if(ggrEl)ggrEl.value=Math.round(ggr);}
+  if(!ggr&&ngr){ggr=ngr/(1-bonos);}
+  if(!ngr&&ggr){ngr=ggr*(1-bonos);}
+
+  const ngrAfil=ngr*(1-iibb-canon-impjuego);
+  const feeAmount=fee>0?ngrAfil*fee:0;
+  const ngrPostFee=ngrAfil-feeAmount;
+  const margenPreFee=margenDir-gastos;
+  const margenPostFee=margenPreFee-(fee>0?(feeAmount/ggr):0);
+  const MARGEN_ALERTA=0.20;
+
+  document.getElementById('calc-result').style.display='block';
+  document.getElementById('calc-empty').style.display='none';
+
+  const fmt=n=>'$'+Math.round(n).toLocaleString('es-AR');
+  const pct=n=>(n*100).toFixed(2)+'%';
+
+  // Steps
+  const steps=[
+    {label:'GGR',val:fmt(ggr),bold:true},
+    {label:'(-) Bonos',val:fmt(-ggr*bonos),neg:true},
+    {label:'NGR',val:fmt(ngr),bold:true},
+    {label:'(-) IIBB',val:fmt(-ngr*iibb),neg:true},
+    {label:'(-) Canon',val:fmt(-ngr*canon),neg:true},
+    {label:'(-) Imp. Juego',val:fmt(-ngr*impjuego),neg:true},
+    {label:'NGR Afiliado',val:fmt(ngrAfil),bold:true,accent:true},
+    ...(fee>0?[
+      {label:'(-) Fee Afiliado',val:fmt(-feeAmount),neg:true},
+      {label:'NGR post-fee',val:fmt(ngrPostFee),bold:true,green:true},
+    ]:[]),
+  ];
+  document.getElementById('calc-steps').innerHTML=steps.map(s=>`
+    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);${s.bold?'font-weight:600':''}">
+      <span style="color:${s.neg?'var(--red)':s.accent?'var(--purple)':s.green?'var(--green)':'var(--text2)'}">${s.label}</span>
+      <span style="color:${s.neg?'var(--red)':s.accent?'var(--purple)':s.green?'var(--green)':'var(--text)'}">${s.val}</span>
+    </div>`).join('');
+
+  // KPIs
+  const margenColor=margenPostFee<MARGEN_ALERTA?'var(--red)':margenPostFee<0.25?'var(--amber)':'var(--green)';
+  const kpis=[
+    {label:'Fee / GGR',val:pct(feeAmount/ggr)},
+    {label:'Fee / NGR',val:pct(fee>0?feeAmount/ngr:0)},
+    {label:'Margen directo',val:pct(margenDir)},
+    {label:'(-) Gastos op.',val:pct(gastos)},
+    {label:'Margen pre-fee',val:pct(margenPreFee)},
+    {label:'(-) Fee s/NGR',val:pct(fee>0?feeAmount/ngr:0)},
+    {label:'MARGEN POST-FEE',val:pct(margenPostFee),bold:true,color:margenColor,
+      alert:margenPostFee<MARGEN_ALERTA?'⚠️ Por debajo del umbral mínimo (20%)':null},
+  ];
+  document.getElementById('calc-kpis').innerHTML=kpis.map(k=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:12px;${k.bold?'font-weight:700':''};color:${k.color||'var(--text2)'}">
+        ${k.label}${k.alert?`<div style="font-size:10px;color:var(--red);margin-top:1px">${k.alert}</div>`:''}
+      </span>
+      <span style="font-size:13px;font-weight:600;color:${k.color||'var(--text)'}">${k.val}</span>
+    </div>`).join('');
+
+  // 3 scenarios
+  const scenFees=[15,18,20];
+  document.getElementById('calc-scenarios').innerHTML=scenFees.map(sf=>{
+    const sfDec=sf/100;
+    const sfAmount=ngrAfil*sfDec;
+    const sfPostFee=margenPreFee-(sfAmount/ggr);
+    const sfColor=sfPostFee<MARGEN_ALERTA?'var(--red)':sfPostFee<0.25?'var(--amber)':'var(--green)';
+    const isActive=Math.abs(fee*100-sf)<0.01;
+    return`<div style="border:${isActive?'2px solid var(--accent)':'1px solid var(--border)'};border-radius:10px;padding:12px;background:${isActive?'var(--accent-bg)':'var(--bg)'}">
+      <div style="font-size:12px;font-weight:700;color:${isActive?'var(--accent)':'var(--text3)'};margin-bottom:8px">RevShare ${sf}%${isActive?' ◀':''}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Fee: <b style="color:var(--text)">${fmt(sfAmount)}</b></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Fee/GGR: <b>${pct(sfAmount/ggr)}</b></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Fee/NGR: <b>${pct(sfAmount/ngr)}</b></div>
+      <div style="font-size:13px;font-weight:700;color:${sfColor}">Margen: ${pct(sfPostFee)}</div>
+      ${sfPostFee<MARGEN_ALERTA?'<div style="font-size:10px;color:var(--red);margin-top:2px">⚠️ Bajo mínimo</div>':''}
+    </div>`;
+  }).join('');
+
+  // Province comparison table
+  const provKeys=Object.keys(CALC_PROVS).filter(k=>k!=='custom');
+  const currentFee=fee>0?fee:0.15;
+  document.getElementById('calc-provtable').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="text-align:left;padding:6px 8px;color:var(--text3);font-weight:600">Provincia</th>
+        <th style="text-align:right;padding:6px 8px;color:var(--text3);font-weight:600">IIBB</th>
+        <th style="text-align:right;padding:6px 8px;color:var(--text3);font-weight:600">Canon</th>
+        <th style="text-align:right;padding:6px 8px;color:var(--text3);font-weight:600">Base fee</th>
+        <th style="text-align:right;padding:6px 8px;color:var(--text3);font-weight:600">Fee/GGR</th>
+        <th style="text-align:right;padding:6px 8px;color:var(--text3);font-weight:600">Fee/NGR</th>
+        <th style="text-align:right;padding:6px 8px;color:var(--text3);font-weight:600">Margen post-fee</th>
+      </tr></thead>
+      <tbody>${provKeys.map(k=>{
+        const p=CALC_PROVS[k];
+        const pIibb=p.iibb/100,pCanon=p.canon/100,pImp=p.impjuego/100,pBon=p.bonos/100;
+        const baseFee=1-pIibb-pCanon-pImp;
+        const pFeeGGR=currentFee*baseFee*(1-pBon);
+        const pFeeNGR=currentFee*baseFee;
+        const pMargen=(p.margen/100)-(p.gastos||0)-(pFeeGGR);
+        const isCurrent=document.getElementById('calc-prov').value===k;
+        const mc=pMargen<MARGEN_ALERTA?'var(--red)':pMargen<0.25?'var(--amber)':'var(--green)';
+        return`<tr style="border-bottom:1px solid var(--border);background:${isCurrent?'var(--accent-bg)':''}">
+          <td style="padding:6px 8px;font-weight:${isCurrent?'700':'400'};color:${isCurrent?'var(--accent)':'var(--text)'}">${p.label}${isCurrent?' ◀':''}</td>
+          <td style="padding:6px 8px;text-align:right;color:var(--text3)">${p.iibb}%</td>
+          <td style="padding:6px 8px;text-align:right;color:var(--text3)">${p.canon}%</td>
+          <td style="padding:6px 8px;text-align:right">${(baseFee*100).toFixed(0)}%</td>
+          <td style="padding:6px 8px;text-align:right">${(pFeeGGR*100).toFixed(2)}%</td>
+          <td style="padding:6px 8px;text-align:right">${(pFeeNGR*100).toFixed(2)}%</td>
+          <td style="padding:6px 8px;text-align:right;font-weight:600;color:${mc}">${(pMargen*100).toFixed(2)}%</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+
+  // Impacto del programa sobre NGR general
+  const ngrTotal=parseFloat(document.getElementById('calc-ngr-total')?.value)||800000000;
+  const escPcts=[0.02,0.05,0.10];
+  const escLabels=['2%','5%','10%'];
+  const pNgrAfil=ngrAfil/ngr; // ratio NGR afil / NGR
+  document.getElementById('calc-programa').innerHTML=`
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:560px">
+      <thead><tr style="border-bottom:2px solid var(--border);background:var(--bg)">
+        <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:600">Concepto</th>
+        ${escLabels.map((l,i)=>`<th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600">Esc. ${l}</th>`).join('')}
+      </tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 10px;color:var(--text3)">% del NGR general</td>
+          ${escPcts.map(p=>`<td style="padding:7px 10px;text-align:right;color:var(--text2)">${(p*100).toFixed(0)}%</td>`).join('')}
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 10px;color:var(--text2)">NGR del programa</td>
+          ${escPcts.map(p=>`<td style="padding:7px 10px;text-align:right;font-weight:500">${fmt(ngrTotal*p)}</td>`).join('')}
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 10px;color:var(--text2)">NGR Afiliado (post deducciones)</td>
+          ${escPcts.map(p=>`<td style="padding:7px 10px;text-align:right;color:var(--purple);font-weight:500">${fmt(ngrTotal*p*pNgrAfil)}</td>`).join('')}
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 10px;color:var(--text2)">Fee total del programa</td>
+          ${escPcts.map(p=>`<td style="padding:7px 10px;text-align:right;color:var(--green);font-weight:600">${fmt(ngrTotal*p*pNgrAfil*fee)}</td>`).join('')}
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 10px;color:var(--text2)">Fee / NGR general</td>
+          ${escPcts.map(p=>`<td style="padding:7px 10px;text-align:right;color:var(--text2)">${(p*pNgrAfil*fee*100).toFixed(3)}%</td>`).join('')}
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 10px;color:var(--text2)">Fee / NGR del programa</td>
+          ${escPcts.map(p=>`<td style="padding:7px 10px;text-align:right;color:var(--text2)">${pct(pNgrAfil*fee)}</td>`).join('')}
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 10px;color:var(--text2)">Margen pre-fee</td>
+          ${escPcts.map(p=>`<td style="padding:7px 10px;text-align:right;color:var(--text2)">${pct(margenPreFee)}</td>`).join('')}
+        </tr>
+        <tr>
+          <td style="padding:7px 10px;font-weight:700">Margen post-fee</td>
+          ${escPcts.map(p=>{
+            const mc=margenPostFee<MARGEN_ALERTA?'var(--red)':margenPostFee<0.25?'var(--amber)':'var(--green)';
+            return`<td style="padding:7px 10px;text-align:right;font-weight:700;color:${mc}">${pct(margenPostFee)}</td>`;
+          }).join('')}
+        </tr>
+      </tbody>
+    </table>
+    </div>`;
 }
 
 // ============ KIT BIENVENIDA ============
