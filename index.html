@@ -326,6 +326,7 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
     <!-- Notes per agency -->
     <div class="sidebar-divider"></div>
     <div class="nav-item" onclick="showStats()" style="font-size:13px"><div class="ni-left">📊 Estadísticas Afiliados</div></div>
+    <div class="nav-item" onclick="showCalc()" style="font-size:13px"><div class="ni-left">🧮 Calculadora Afiliados</div></div>
   </div>
 
   <div class="main" id="main-content">
@@ -1475,6 +1476,7 @@ function renderList(q=''){
     const cbWrap=mkEl('div',{width:'20px',flexShrink:'0',display:'flex',alignItems:'center',justifyContent:'center',marginRight:'4px'});
     const cb=document.createElement('input');cb.type='checkbox';cb.checked=isSelected;cb.style.cursor='pointer';cb.style.width='14px';cb.style.height='14px';
     cb.addEventListener('click',ev=>{ev.stopPropagation();toggleSelect(e.id);});
+    cbWrap.addEventListener('click',ev=>{ev.stopPropagation();toggleSelect(e.id);});
     cbWrap.appendChild(cb);row.appendChild(cbWrap);
 
     // Unread dot — only show if not read in BWAFI and not read in Gmail
@@ -1948,6 +1950,8 @@ function hideFromBwafi(id){
 function closeDetail(){
   selectedId=null;
   inStatsView=false;
+  const si=document.getElementById('search-input');
+  if(si)si.value='';
   rebuildMain();
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const map={'all':'nav-all','attention':'nav-attention','auto':'nav-auto','unidentified':'nav-unidentified','vip':'nav-vip','followup':'nav-followup','activa':'nav-activa','candidato':'nav-candidato','inscripto':'nav-inscripto','proceso':'nav-proceso','pendiente':'nav-pendiente','suspendida':'nav-suspendida'};
