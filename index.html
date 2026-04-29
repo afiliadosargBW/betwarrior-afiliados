@@ -304,10 +304,12 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
     <div class="days-filter" id="days-filter"></div>
     <div class="nav-item active" id="nav-all" onclick="filterEmails('all',this)"><div class="ni-left">📥 Todos</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-all-unread"></span><span class="nav-count" id="nc-all">0</span></div></div>
     <div class="nav-item" id="nav-attention" onclick="filterEmails('attention',this)"><div class="ni-left">⚠️ Tu atención</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-att-unread"></span><span class="nav-count hot" id="nc-att">0</span></div></div>
-    <div class="nav-item" id="nav-auto" onclick="filterEmails('auto',this)"><div class="ni-left">✅ Auto-respondidos</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-auto-unread"></span><span class="nav-count" id="nc-auto">0</span></div></div>
+    <div class="nav-item" id="nav-problema" onclick="filterEmails('problema',this)"><div class="ni-left">🔴 Problema</div><span class="nav-count hot" id="nc-problema">0</span></div>
+    <div class="nav-item" id="nav-sumarse" onclick="filterEmails('sumarse',this)"><div class="ni-left">📋 Quiere sumarse</div><span class="nav-count" id="nc-sumarse" style="background:var(--orange-bg);color:var(--orange)">0</span></div>
+    <div class="nav-item" id="nav-candidato" onclick="filterEmails('candidato',this)"><div class="ni-left">📬 Candidatos</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-auto-unread"></span><span class="nav-count" id="nc-auto">0</span></div></div>
+    <div class="nav-item" id="nav-followup" onclick="filterEmails('followup',this)"><div class="ni-left">🕐 Seguimiento</div><span class="nav-count" id="nc-fu">0</span></div>
     <div class="nav-item" id="nav-unidentified" onclick="filterEmails('unidentified',this)"><div class="ni-left">❓ Sin identificar</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-uid-unread"></span><span class="nav-count" id="nc-uid">0</span></div></div>
     <div class="nav-item" id="nav-vip" onclick="filterEmails('vip',this)"><div class="ni-left">⭐ VIP</div><span class="nav-count vip" id="nc-vip">0</span></div>
-    <div class="nav-item" id="nav-followup" onclick="filterEmails('followup',this)"><div class="ni-left">🕐 Seguimiento</div><span class="nav-count" id="nc-fu">0</span></div>
     <div class="sidebar-divider"></div>
     <!-- Sub-filter: Estado -->
     <div class="nav-item" onclick="toggleSubFilter('estado')" style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px;cursor:pointer">
@@ -333,7 +335,7 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
     <div class="summary-strip">
       <div class="sum-item" onclick="filterEmails('all',document.getElementById('nav-all'))"><div class="sum-val blue" id="s-total">0</div><div class="sum-label">total</div></div>
       <div class="sum-item" onclick="filterEmails('unidentified',document.getElementById('nav-unidentified'))"><div class="sum-val green" id="s-id">0</div><div class="sum-label">identificados</div></div>
-      <div class="sum-item" onclick="filterEmails('auto',document.getElementById('nav-auto'))"><div class="sum-val amber" id="s-auto">0</div><div class="sum-label">auto-respondidos</div></div>
+      <div class="sum-item" onclick="filterEmails('candidato',document.getElementById('nav-candidato'))"><div class="sum-val amber" id="s-auto">0</div><div class="sum-label">candidatos</div></div>
       <div class="sum-item" onclick="filterEmails('attention',document.getElementById('nav-attention'))"><div class="sum-val red" id="s-att">0</div><div class="sum-label">tu atención</div></div>
       <div class="sum-item"><div class="sum-val" id="s-date" style="font-size:12px;color:var(--text3)"></div><div class="sum-label">hoy</div></div>
     </div>
@@ -563,8 +565,14 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
 
 <script>
 const DEFAULT_SHEET='1YmeOp8Jg5ffXBeTNoZkhjUZsc7_VBZK9R1JKYVJ9H0Y';
-const FOLLOWUP_DAYS=3;
+const FOLLOWUP_DAYS=7; // days without reply from them before showing in seguimiento
 const VIP_PCT=0.9;
+
+// ============ KEYWORD DETECTION ============
+const KEYWORDS_BAJA=/\bba[jg]a\b|no quiero continuar|no me interesa|cancelar|darme de baja|desvincula|quiero salir|no quiero seguir|me quiero ir|cerrar cuenta|no quiero renovar/i;
+const KEYWORDS_PROBLEMA=/problema|error|no funciona|no puedo|no me aparece|no veo|bloqueado|ca[íi]do|urgente|necesito ayuda|no impactan|sin visualizar|no se ve|no recib[íi]|cobro|comisi[oó]n|transferencia|liquidaci[oó]n|no cobr[eé]|no me pag|falla|demora|reclamo|queja|no carga|no abre|no ingresa/i;
+const KEYWORDS_SUMARSE=/quiero sumarme|quiero entrar|me interesa|c[oó]mo me uno|c[oó]mo funciona|quiero ser afiliado|me gustar[íi]a participar|te env[íi]o mis datos|adjunto mis datos|n[uú]mero de cuenta|env[íi]o informaci[oó]n|informaci[oó]n del programa|quiero adherirme|quiero afiliarme|datos del titular|cuit|cuil|quiero inscribirme|quiero unirme/i;
+const KEYWORDS_CONTEXTO=/betwarrior|afiliado|afiliados|omnicanal|omnicanalidad|programa de afiliados/i;
 const REDIRECT=window.location.origin+window.location.pathname;
 const SCOPES='https://mail.google.com/ https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly';
 const MATCHES_SHEET_ID='1BJVs__gLAMR-mFjM7-u5ofn5WRu6BKkvFLP9JPecWpU';
@@ -1179,24 +1187,63 @@ function classify(email,m){
   const bl=(email.body||'').toLowerCase();
   const subj=(email.subject||'').toLowerCase();
   const fullText=subj+' '+bl;
-  const hasBajaWord=/\bba[jg]a\b|no quiero continuar|no me interesa|cancelar|darme de baja|desvincula|quiero salir/.test(fullText);
-  const hasContext=/betwarrior|afiliado|afiliados|omnicanal|omnicanalidad|programa de afiliados/.test(fullText);
-  const isBaja=hasBajaWord&&hasContext;
+
   const ag=m.matched?m.agency:null;
   const estado=ag?ag.estado:'desconocido';
   const estadoKey=estado.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso');
   const vip=isVip(ag);
-  const needsAtt=ag&&(estado==='Activa'||estado==='En Proceso'||estado==='Pendiente'||estado==='Suspendida');
   const daysOld=getDays(email.rawDate);
-  const autoReply=!needsAtt;
-  // Followup: needs attention AND no reply from us in same thread
+
+  // Keyword detection
+  const hasContext=KEYWORDS_CONTEXTO.test(fullText);
+  const isBaja=KEYWORDS_BAJA.test(fullText)&&hasContext;
+  const isProblema=KEYWORDS_PROBLEMA.test(fullText)&&hasContext;
+  const isSumarse=KEYWORDS_SUMARSE.test(fullText);
+
+  // Check if we replied in this thread
   const repliedInThread=allEmails.some(x=>
     x.id!==email.id&&
     x.threadId===email.threadId&&
     (x.fromEmail===MY_EMAIL||x.fromEmail.includes('afiliadosarg'))
   )||sentAutoIds.has(email.id)||repliedIds.has(email.id);
-  const needsFollowup=needsAtt&&daysOld>=FOLLOWUP_DAYS&&!repliedInThread;
-  return{estado,estadoKey,needsAttention:needsAtt,autoReply,baja:isBaja,vip,needsFollowup,daysOld};
+
+  // Check who sent the LAST message in this thread
+  const threadEmails=allEmails.filter(x=>x.threadId===email.threadId);
+  const lastInThread=threadEmails.sort((a,b)=>b.rawDate-a.rawDate)[0];
+  const lastIsFromThem=lastInThread&&lastInThread.fromEmail!==MY_EMAIL&&!lastInThread.fromEmail.includes('afiliadosarg');
+
+  // Tu atención: Activas/Inscriptas/En Proceso where last message is from them
+  const needsAttention=ag&&
+    ['Activa','Inscripto','En Proceso'].includes(estado)&&
+    lastIsFromThem;
+
+  // Candidatos: any mail from a Candidato agency
+  const isCandidato=ag&&estado==='Candidato';
+
+  // Seguimiento: WE sent last, no reply from them in FOLLOWUP_DAYS days
+  const needsFollowup=ag&&
+    ['Activa','Inscripto','En Proceso','Candidato'].includes(estado)&&
+    repliedInThread&&
+    !lastIsFromThem&&
+    daysOld>=FOLLOWUP_DAYS;
+
+  // autoReply kept for backward compat — true when not needing attention
+  const autoReply=!needsAttention&&!isProblema&&!isSumarse;
+
+  return{
+    estado,estadoKey,
+    needsAttention,
+    autoReply,
+    isCandidato,
+    isProblema,
+    isSumarse,
+    baja:isBaja,
+    vip,
+    needsFollowup,
+    daysOld,
+    repliedInThread,
+    lastIsFromThem
+  };
 }
 
 function detectDuplicates(){
@@ -1268,40 +1315,38 @@ function processAll(){
 }
 
 function updateMetrics(){
-  const v=Object.values(processed);
   const visible=e=>!hiddenFromBwafi.has(e.id)&&processed[e.id];
   const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
   const isUnread=e=>e.unread&&!readInBwafi.has(e.id)&&!hiddenFromBwafi.has(e.id);
   const visEmails=allEmails.filter(e=>visible(e));
   const unreadAll=visEmails.filter(e=>isUnread(e)).length;
   const unreadAtt=visEmails.filter(e=>isUnread(e)&&processed[e.id]?.cls.needsAttention).length;
-  const unreadAuto=visEmails.filter(e=>isUnread(e)&&processed[e.id]?.cls.autoReply).length;
   const unreadUid=visEmails.filter(e=>isUnread(e)&&!processed[e.id]?.match.matched).length;
   const setUnread=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val>0?`${val} •`:'';};
   setUnread('nc-all-unread',unreadAll);
   setUnread('nc-att-unread',unreadAtt);
-  setUnread('nc-auto-unread',unreadAuto);
   setUnread('nc-uid-unread',unreadUid);
-  // Use actual filtered counts so sidebar matches list
   const cAll=visEmails.length;
   const cAtt=visEmails.filter(e=>processed[e.id]?.cls.needsAttention).length;
-  const cAuto=visEmails.filter(e=>processed[e.id]?.cls.autoReply).length;
+  const cProblema=visEmails.filter(e=>processed[e.id]?.cls.isProblema).length;
+  const cSumarse=visEmails.filter(e=>processed[e.id]?.cls.isSumarse&&!processed[e.id]?.cls.isProblema).length;
+  const cCandidato=visEmails.filter(e=>processed[e.id]?.cls.isCandidato).length;
   const cUid=visEmails.filter(e=>!processed[e.id]?.match.matched).length;
   const cVip=visEmails.filter(e=>processed[e.id]?.cls.vip).length;
   const cFu=visEmails.filter(e=>processed[e.id]?.cls.needsFollowup).length;
   set('s-total',cAll);
   set('s-id',visEmails.filter(e=>processed[e.id]?.match.matched).length);
-  set('s-auto',cAuto);
+  set('s-auto',cCandidato);
   set('s-att',cAtt);
   set('nc-all',cAll);
   set('nc-att',cAtt);
-  set('nc-auto',cAuto);
+  set('nc-problema',cProblema);
+  set('nc-sumarse',cSumarse);
+  set('nc-auto',cCandidato);
   set('nc-uid',cUid);
   set('nc-vip',cVip);
   set('nc-fu',cFu);
-  // Update tab title with unread count
   document.title=unreadAll>0?`(${unreadAll}) Betwarrior Afiliados`:'Betwarrior Afiliados';
-  // Only refresh sub-filter chips if visible AND we're not reading a mail
   if(!selectedId&&!inStatsView){
     if(document.getElementById('subfilter-estado')?.style.display!=='none')renderSubFilterChips('estado');
     if(document.getElementById('subfilter-provincia')?.style.display!=='none')renderSubFilterChips('provincia');
@@ -1335,10 +1380,10 @@ function filterEmails(f,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(el)el.classList.add('active');
   else{
-    const map={'all':'nav-all','attention':'nav-attention','auto':'nav-auto','unidentified':'nav-unidentified','vip':'nav-vip','followup':'nav-followup','baja':'nav-all','activa':'nav-activa','candidato':'nav-candidato','inscripto':'nav-inscripto','proceso':'nav-proceso','pendiente':'nav-pendiente','suspendida':'nav-suspendida'};
+    const map={'all':'nav-all','attention':'nav-attention','problema':'nav-problema','sumarse':'nav-sumarse','auto':'nav-candidato','candidato':'nav-candidato','unidentified':'nav-unidentified','vip':'nav-vip','followup':'nav-followup','baja':'nav-all','activa':'nav-activa','inscripto':'nav-inscripto','proceso':'nav-proceso','pendiente':'nav-pendiente','suspendida':'nav-suspendida'};
     if(map[f])document.getElementById(map[f])?.classList.add('active');
   }
-  const titles={'all':'Bandeja de entrada','attention':'Tu atención','auto':'Auto-respondidos','unidentified':'Sin identificar','vip':'VIP','followup':'Seguimiento','baja':'Posibles bajas','activa':'Activas','candidato':'Candidatas','inscripto':'Inscriptas','proceso':'En proceso','pendiente':'Pendientes','suspendida':'Suspendidas'};
+  const titles={'all':'Bandeja de entrada','attention':'Tu atención','problema':'Problema','sumarse':'Quiere sumarse','auto':'Candidatos','candidato':'Candidatos','unidentified':'Sin identificar','vip':'VIP','followup':'Seguimiento','baja':'Posibles bajas','activa':'Activas','inscripto':'Inscriptas','proceso':'En proceso','pendiente':'Pendientes','suspendida':'Suspendidas'};
   // Always rebuild if in detail view OR stats view
   if(selectedId||inStatsView){
     rebuildMain();
@@ -1346,7 +1391,7 @@ function filterEmails(f,el){
     // Update title and bulk actions inline
     const listTitle=document.getElementById('list-title');
     if(listTitle)listTitle.textContent=titles[f]||'Correos';
-    const bulkStates=['auto','candidato','inscripto','proceso','all','unidentified'];
+    const bulkStates=['candidato','inscripto','proceso','all','unidentified'];
     const bulkEl=document.getElementById('bulk-actions');
     const confEl=document.getElementById('conf-filter');
     if(bulkEl)bulkEl.style.display=(!isGuest()&&bulkStates.includes(f))?'flex':'none';
@@ -1367,7 +1412,7 @@ function rebuildMain(){
   mc.innerHTML=`<div class="summary-strip">
     <div class="sum-item" onclick="filterEmails('all',document.getElementById('nav-all'))"><div class="sum-val blue" id="s-total">0</div><div class="sum-label">total</div></div>
     <div class="sum-item" onclick="filterEmails('unidentified',document.getElementById('nav-unidentified'))"><div class="sum-val green" id="s-id">0</div><div class="sum-label">identificados</div></div>
-    <div class="sum-item" onclick="filterEmails('auto',document.getElementById('nav-auto'))"><div class="sum-val amber" id="s-auto">0</div><div class="sum-label">auto-respondidos</div></div>
+    <div class="sum-item" onclick="filterEmails('candidato',document.getElementById('nav-candidato'))"><div class="sum-val amber" id="s-auto">0</div><div class="sum-label">candidatos</div></div>
     <div class="sum-item" onclick="filterEmails('attention',document.getElementById('nav-attention'))"><div class="sum-val red" id="s-att">0</div><div class="sum-label">tu atención</div></div>
     <div class="sum-item"><div class="sum-val" id="s-date" style="font-size:12px;color:var(--text3)"></div><div class="sum-label">hoy</div></div>
   </div>
@@ -1394,7 +1439,7 @@ function rebuildMain(){
   document.getElementById('s-date').textContent=new Date().toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
   updateMetrics();renderAlerts();renderList();
   // Restore bulk actions visibility based on current filter
-  const bulkStates=['auto','candidato','inscripto','proceso','all','unidentified'];
+  const bulkStates=['candidato','inscripto','proceso','all','unidentified'];
   const bulkEl=document.getElementById('bulk-actions');
   const confEl=document.getElementById('conf-filter');
   if(bulkEl)bulkEl.style.display=(!isGuest()&&bulkStates.includes(currentFilter))?'flex':'none';
@@ -1413,7 +1458,17 @@ function getFiltered(q=''){
   return allEmails.filter(e=>{
     if(hiddenFromBwafi.has(e.id))return false;
     const r=processed[e.id];if(!r)return false;
-    const pass=currentFilter==='all'||(currentFilter==='attention'&&r.cls.needsAttention)||(currentFilter==='auto'&&r.cls.autoReply)||(currentFilter==='unidentified'&&!r.match.matched)||(currentFilter==='vip'&&r.cls.vip)||(currentFilter==='followup'&&r.cls.needsFollowup)||(currentFilter==='baja'&&r.cls.baja)||r.cls.estadoKey===currentFilter;
+    const pass=currentFilter==='all'
+      ||(currentFilter==='attention'&&r.cls.needsAttention)
+      ||(currentFilter==='problema'&&r.cls.isProblema)
+      ||(currentFilter==='sumarse'&&r.cls.isSumarse&&!r.cls.isProblema)
+      ||(currentFilter==='candidato'&&r.cls.isCandidato)
+      ||(currentFilter==='auto'&&r.cls.isCandidato) // backward compat
+      ||(currentFilter==='unidentified'&&!r.match.matched)
+      ||(currentFilter==='vip'&&r.cls.vip)
+      ||(currentFilter==='followup'&&r.cls.needsFollowup)
+      ||(currentFilter==='baja'&&r.cls.baja)
+      ||r.cls.estadoKey===currentFilter;
     if(!pass)return false;
     if(confF&&r.match.confidence!==confF)return false;
     if(currentProv&&r.match?.agency?.provincia!==currentProv)return false;
@@ -2027,7 +2082,7 @@ function closeDetail(){
   if(si)si.value='';
   rebuildMain();
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  const map={'all':'nav-all','attention':'nav-attention','auto':'nav-auto','unidentified':'nav-unidentified','vip':'nav-vip','followup':'nav-followup','activa':'nav-activa','candidato':'nav-candidato','inscripto':'nav-inscripto','proceso':'nav-proceso','pendiente':'nav-pendiente','suspendida':'nav-suspendida'};
+  const map={'all':'nav-all','attention':'nav-attention','problema':'nav-problema','sumarse':'nav-sumarse','auto':'nav-candidato','candidato':'nav-candidato','unidentified':'nav-unidentified','vip':'nav-vip','followup':'nav-followup','activa':'nav-activa','inscripto':'nav-inscripto','proceso':'nav-proceso','pendiente':'nav-pendiente','suspendida':'nav-suspendida'};
   if(map[currentFilter])document.getElementById(map[currentFilter])?.classList.add('active');
   // Restore scroll position
   setTimeout(()=>{
