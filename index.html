@@ -77,7 +77,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .nav-item.active{background:var(--accent-bg);color:var(--accent);font-weight:700}
 .nav-item .ni-left{display:flex;align-items:center;gap:12px}
 /* Sub-filters */
-.subfilter-bar{padding:4px 16px 4px 26px;display:flex;flex-wrap:wrap;gap:4px}
+.subfilter-bar{padding:4px 0;display:flex;flex-direction:column;gap:2px}
 .subfilter-chip{font-size:11px;padding:2px 10px;border-radius:12px;cursor:pointer;border:1px solid var(--border2);color:var(--text3);background:var(--white);transition:all .15s;font-weight:500}
 .subfilter-chip:hover{border-color:var(--accent);color:var(--accent)}
 .subfilter-chip.active{background:var(--accent);color:white;border-color:var(--accent)}
@@ -1200,31 +1200,29 @@ function classify(email,m){
   const isProblema=KEYWORDS_PROBLEMA.test(fullText)&&hasContext;
   const isSumarse=KEYWORDS_SUMARSE.test(fullText);
 
-  // Check if we replied in this thread
-  const repliedInThread=allEmails.some(x=>
-    x.id!==email.id&&
-    x.threadId===email.threadId&&
-    (x.fromEmail===MY_EMAIL||x.fromEmail.includes('afiliadosarg'))
-  )||sentAutoIds.has(email.id)||repliedIds.has(email.id);
+  // Check if we replied in this thread (use sentAutoIds, repliedIds, and sent emails in allEmails)
+  const repliedInThread=sentAutoIds.has(email.id)||repliedIds.has(email.id)||
+    allEmails.some(x=>
+      x.id!==email.id&&
+      x.threadId===email.threadId&&
+      (x.fromEmail===MY_EMAIL||x.fromEmail.includes('afiliadosarg'))
+    );
 
-  // Check who sent the LAST message in this thread
-  const threadEmails=allEmails.filter(x=>x.threadId===email.threadId);
-  const lastInThread=threadEmails.sort((a,b)=>b.rawDate-a.rawDate)[0];
-  const lastIsFromThem=lastInThread&&lastInThread.fromEmail!==MY_EMAIL&&!lastInThread.fromEmail.includes('afiliadosarg');
-
-  // Tu atención: Activas/Inscriptas/En Proceso where last message is from them
+  // Tu atención: Activas/Inscriptas/En Proceso that haven't been replied to yet
+  // Since we can't reliably check lastIsFromThem (no sent mails in allEmails),
+  // use repliedInThread as the signal: not replied = needs attention
   const needsAttention=ag&&
     ['Activa','Inscripto','En Proceso'].includes(estado)&&
-    lastIsFromThem;
+    !repliedInThread;
 
   // Candidatos: any mail from a Candidato agency
   const isCandidato=ag&&estado==='Candidato';
 
-  // Seguimiento: WE sent last, no reply from them in FOLLOWUP_DAYS days
+  // Seguimiento: we replied, but no new response from them in FOLLOWUP_DAYS
+  // Only count if the email itself is older than FOLLOWUP_DAYS
   const needsFollowup=ag&&
-    ['Activa','Inscripto','En Proceso','Candidato'].includes(estado)&&
+    ['Activa','Inscripto','En Proceso'].includes(estado)&&
     repliedInThread&&
-    !lastIsFromThem&&
     daysOld>=FOLLOWUP_DAYS;
 
   // autoReply kept for backward compat — true when not needing attention
