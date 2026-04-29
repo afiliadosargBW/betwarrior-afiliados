@@ -957,12 +957,15 @@ async function syncAll(){
   if(sync)sync.textContent='Sincronizando...';
   allEmails=[];processed={};
   await Promise.all([loadDash(),loadGmail(),loadMatchesFromSheets(),loadSentEmails()]);
-  // Save refresh token to Sheets for guest mode access (only when logged in as owner)
   if(!isGuest()&&cfg.refresh_token)saveTokenToSheets();
   if(sync)sync.textContent='Actualizado: '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  // Only rebuild UI if user is NOT reading a mail - avoid interrupting navigation
-  if(!selectedId&&!inStatsView)rebuildMain();
-  setTimeout(syncAll,10*60*1000); // 10 min instead of 5
+  // Always rebuild — if user is reading a mail, rebuildMain only updates sidebar counts
+  if(selectedId||inStatsView){
+    updateMetrics();renderAlerts();
+  } else {
+    rebuildMain();
+  }
+  setTimeout(syncAll,10*60*1000);
 }
 
 // ============ DASH ============
@@ -1239,8 +1242,7 @@ function classify(email,m){
     vip,
     needsFollowup,
     daysOld,
-    repliedInThread,
-    lastIsFromThem
+    repliedInThread
   };
 }
 
@@ -1309,7 +1311,10 @@ function processAll(){
     }
   });
   detectDuplicates();
-  updateMetrics();renderAlerts();renderProvFilter();renderList();
+  // Only update metrics/alerts here - syncAll will call rebuildMain after all loads complete
+  updateMetrics();renderAlerts();renderProvFilter();
+  // But if the list is already visible, update it
+  if(document.getElementById('email-list'))renderList();
 }
 
 function updateMetrics(){
@@ -1392,7 +1397,7 @@ function filterEmails(f,el){
     const bulkStates=['candidato','inscripto','proceso','all','unidentified'];
     const bulkEl=document.getElementById('bulk-actions');
     const confEl=document.getElementById('conf-filter');
-    if(bulkEl)bulkEl.style.display=(!isGuest()&&bulkStates.includes(f))?'flex':'none';
+    if(bulkEl)bulkEl.style.display=(!isGuest()&&bulkStates.includes(f)&&allEmails.length>0)?'flex':'none';
     if(confEl)confEl.style.display=(f==='candidato'||f==='all')?'':'none';
     // En guest, ocultar botón de envío pero dejar exportar
     if(isGuest()&&bulkEl){
@@ -1440,7 +1445,7 @@ function rebuildMain(){
   const bulkStates=['candidato','inscripto','proceso','all','unidentified'];
   const bulkEl=document.getElementById('bulk-actions');
   const confEl=document.getElementById('conf-filter');
-  if(bulkEl)bulkEl.style.display=(!isGuest()&&bulkStates.includes(currentFilter))?'flex':'none';
+  if(bulkEl)bulkEl.style.display=(!isGuest()&&bulkStates.includes(currentFilter)&&allEmails.length>0)?'flex':'none';
   if(confEl)confEl.style.display=(currentFilter==='candidato'||currentFilter==='all')?'':'none';
   // En guest ocultar botón enviar
   if(isGuest()&&bulkEl){
