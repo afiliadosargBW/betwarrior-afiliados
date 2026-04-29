@@ -952,7 +952,9 @@ async function syncAll(){
   // Save refresh token to Sheets for guest mode access (only when logged in as owner)
   if(!isGuest()&&cfg.refresh_token)saveTokenToSheets();
   if(sync)sync.textContent='Actualizado: '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  setTimeout(syncAll,5*60*1000);
+  // Only rebuild UI if user is NOT reading a mail - avoid interrupting navigation
+  if(!selectedId&&!inStatsView)rebuildMain();
+  setTimeout(syncAll,10*60*1000); // 10 min instead of 5
 }
 
 // ============ DASH ============
@@ -1299,9 +1301,11 @@ function updateMetrics(){
   set('nc-fu',cFu);
   // Update tab title with unread count
   document.title=unreadAll>0?`(${unreadAll}) Betwarrior Afiliados`:'Betwarrior Afiliados';
-  // Refresh sub-filter chips if visible
-  if(document.getElementById('subfilter-estado')?.style.display!=='none')renderSubFilterChips('estado');
-  if(document.getElementById('subfilter-provincia')?.style.display!=='none')renderSubFilterChips('provincia');
+  // Only refresh sub-filter chips if visible AND we're not reading a mail
+  if(!selectedId&&!inStatsView){
+    if(document.getElementById('subfilter-estado')?.style.display!=='none')renderSubFilterChips('estado');
+    if(document.getElementById('subfilter-provincia')?.style.display!=='none')renderSubFilterChips('provincia');
+  }
 }
 
 function renderAlerts(){
@@ -1468,6 +1472,8 @@ function renderList(q=''){
 
     const rowH=cfg.compactView?'36px':'52px';
     const row=mkEl('div',{display:'flex',alignItems:'center',padding:'0 16px',height:rowH,minHeight:rowH,maxHeight:rowH,borderBottom:'1px solid var(--border)',cursor:'pointer',overflow:'hidden',flexWrap:'nowrap',width:'100%'});
+    row.className='email-row';
+    row.dataset.id=e.id;
     const isEffectivelyUnread=e.unread&&!isReadBwafi;
     row.className=['email-row',isEffectivelyUnread?'unread':'read',isSelected?'selected-row':''].filter(Boolean).join(' ');
     row.addEventListener('click',()=>selectEmail(e.id));
@@ -1556,9 +1562,11 @@ function toggleSelectAll(checked){
 function toggleSelect(id){
   if(selectedEmails.has(id))selectedEmails.delete(id);else selectedEmails.add(id);
   const bc=document.getElementById('bulk-count');if(bc)bc.textContent=selectedEmails.size;
-  renderList(document.getElementById('search-input')?.value||'');
+  // Only update this row's checkbox, not the whole list
+  const row=document.querySelector(`[data-id="${id}"]`);
+  if(row){const cb=row.querySelector('input[type="checkbox"]');if(cb)cb.checked=selectedEmails.has(id);row.classList.toggle('selected',selectedEmails.has(id));}
 }
-function clearSelection(){selectedEmails.clear();const bc=document.getElementById('bulk-count');if(bc)bc.textContent=0;renderList(document.getElementById('search-input')?.value||'');}
+function clearSelection(){selectedEmails.clear();const bc=document.getElementById('bulk-count');if(bc)bc.textContent=0;document.querySelectorAll('.email-row.selected').forEach(r=>{r.classList.remove('selected');const cb=r.querySelector('input[type="checkbox"]');if(cb)cb.checked=false;});}
 
 // ============ BULK SEND ============
 async function sendBulkAuto(){
