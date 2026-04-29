@@ -305,9 +305,8 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
     <div class="nav-item active" id="nav-all" onclick="filterEmails('all',this)"><div class="ni-left">📥 Todos</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-all-unread"></span><span class="nav-count" id="nc-all">0</span></div></div>
     <div class="nav-item" id="nav-attention" onclick="filterEmails('attention',this)"><div class="ni-left">⚠️ Tu atención</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-att-unread"></span><span class="nav-count" id="nc-att">0</span></div></div>
     <div class="nav-item" id="nav-problema" onclick="filterEmails('problema',this)"><div class="ni-left">🔴 Problema</div><span class="nav-count" id="nc-problema">0</span></div>
-    <div class="nav-item" id="nav-sumarse" onclick="filterEmails('sumarse',this)"><div class="ni-left">📋 Quiere sumarse</div><span class="nav-count" id="nc-sumarse">0</span></div>
-    <div class="nav-item" id="nav-candidato" onclick="filterEmails('candidato',this)"><div class="ni-left">📬 Candidatos</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-auto-unread"></span><span class="nav-count" id="nc-auto">0</span></div></div>
-    <div class="nav-item" id="nav-followup" onclick="filterEmails('followup',this)"><div class="ni-left">🕐 Seguimiento</div><span class="nav-count" id="nc-fu">0</span></div>
+    <div class="nav-item" id="nav-candidato" onclick="filterEmails('candidato',this)"><div class="ni-left">📋 Quieren sumarse</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-auto-unread"></span><span class="nav-count" id="nc-auto">0</span></div></div>
+    <div class="nav-item" id="nav-followup" onclick="filterEmails('followup',this)"><div class="ni-left">🕐 Sin respuesta</div><span class="nav-count" id="nc-fu">0</span></div>
     <div class="nav-item" id="nav-unidentified" onclick="filterEmails('unidentified',this)"><div class="ni-left">❓ Sin identificar</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-uid-unread"></span><span class="nav-count" id="nc-uid">0</span></div></div>
     <div class="nav-item" id="nav-vip" onclick="filterEmails('vip',this)"><div class="ni-left">⭐ VIP</div><span class="nav-count" id="nc-vip">0</span></div>
     <div class="sidebar-divider"></div>
@@ -1219,15 +1218,13 @@ function classify(email,m){
     ['Activa','Inscripto','En Proceso'].includes(estado)&&
     !repliedInThread;
 
-  // Candidatos: any mail from a Candidato agency
-  const isCandidato=ag&&estado==='Candidato';
+  // Quieren sumarse: Candidatos OR anyone with sumarse keywords
+  const isCandidato=(ag&&estado==='Candidato')||isSumarse;
 
-  // Seguimiento: manually replied, but old enough - NOT auto-replied
-  // Auto-replied means we sent the standard response, no need for follow-up
+  // Sin respuesta: identified agency, no reply at all, older than FOLLOWUP_DAYS
   const needsFollowup=ag&&
-    ['Activa','Inscripto','En Proceso'].includes(estado)&&
-    repliedManually&&
-    !sentAutoIds.has(email.id)&&
+    ['Activa','Inscripto','En Proceso','Candidato'].includes(estado)&&
+    !repliedInThread&&
     daysOld>=FOLLOWUP_DAYS;
 
   // autoReply kept for backward compat — true when not needing attention
@@ -1334,7 +1331,6 @@ function updateMetrics(){
   const cAll=visEmails.length;
   const cAtt=visEmails.filter(e=>processed[e.id]?.cls.needsAttention).length;
   const cProblema=visEmails.filter(e=>processed[e.id]?.cls.isProblema).length;
-  const cSumarse=visEmails.filter(e=>processed[e.id]?.cls.isSumarse&&!processed[e.id]?.cls.isProblema).length;
   const cCandidato=visEmails.filter(e=>processed[e.id]?.cls.isCandidato).length;
   const cUid=visEmails.filter(e=>!processed[e.id]?.match.matched).length;
   const cVip=visEmails.filter(e=>processed[e.id]?.cls.vip).length;
@@ -1346,7 +1342,6 @@ function updateMetrics(){
   set('nc-all',cAll);
   set('nc-att',cAtt);
   set('nc-problema',cProblema);
-  set('nc-sumarse',cSumarse);
   set('nc-auto',cCandidato);
   set('nc-uid',cUid);
   set('nc-vip',cVip);
@@ -1388,7 +1383,7 @@ function filterEmails(f,el){
     const map={'all':'nav-all','attention':'nav-attention','problema':'nav-problema','sumarse':'nav-sumarse','auto':'nav-candidato','candidato':'nav-candidato','unidentified':'nav-unidentified','vip':'nav-vip','followup':'nav-followup','baja':'nav-all','activa':'nav-activa','inscripto':'nav-inscripto','proceso':'nav-proceso','pendiente':'nav-pendiente','suspendida':'nav-suspendida'};
     if(map[f])document.getElementById(map[f])?.classList.add('active');
   }
-  const titles={'all':'Bandeja de entrada','attention':'Tu atención','problema':'Problema','sumarse':'Quiere sumarse','auto':'Candidatos','candidato':'Candidatos','unidentified':'Sin identificar','vip':'VIP','followup':'Seguimiento','baja':'Posibles bajas','activa':'Activas','inscripto':'Inscriptas','proceso':'En proceso','pendiente':'Pendientes','suspendida':'Suspendidas'};
+  const titles={'all':'Bandeja de entrada','attention':'Tu atención','problema':'Problema','sumarse':'Quieren sumarse','auto':'Quieren sumarse','candidato':'Quieren sumarse','unidentified':'Sin identificar','vip':'VIP','followup':'Sin respuesta','baja':'Posibles bajas','activa':'Activas','inscripto':'Inscriptas','proceso':'En proceso','pendiente':'Pendientes','suspendida':'Suspendidas'};
   // Always rebuild if in detail view OR stats view
   if(selectedId||inStatsView){
     rebuildMain();
