@@ -303,13 +303,13 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
     <button class="compose-btn" onclick="showTemplates()">✏️ Plantillas de respuesta</button>
     <div class="days-filter" id="days-filter"></div>
     <div class="nav-item active" id="nav-all" onclick="filterEmails('all',this)"><div class="ni-left">📥 Todos</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-all-unread"></span><span class="nav-count" id="nc-all">0</span></div></div>
-    <div class="nav-item" id="nav-attention" onclick="filterEmails('attention',this)"><div class="ni-left">⚠️ Tu atención</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-att-unread"></span><span class="nav-count hot" id="nc-att">0</span></div></div>
-    <div class="nav-item" id="nav-problema" onclick="filterEmails('problema',this)"><div class="ni-left">🔴 Problema</div><span class="nav-count hot" id="nc-problema">0</span></div>
-    <div class="nav-item" id="nav-sumarse" onclick="filterEmails('sumarse',this)"><div class="ni-left">📋 Quiere sumarse</div><span class="nav-count" id="nc-sumarse" style="background:var(--orange-bg);color:var(--orange)">0</span></div>
+    <div class="nav-item" id="nav-attention" onclick="filterEmails('attention',this)"><div class="ni-left">⚠️ Tu atención</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-att-unread"></span><span class="nav-count" id="nc-att">0</span></div></div>
+    <div class="nav-item" id="nav-problema" onclick="filterEmails('problema',this)"><div class="ni-left">🔴 Problema</div><span class="nav-count" id="nc-problema">0</span></div>
+    <div class="nav-item" id="nav-sumarse" onclick="filterEmails('sumarse',this)"><div class="ni-left">📋 Quiere sumarse</div><span class="nav-count" id="nc-sumarse">0</span></div>
     <div class="nav-item" id="nav-candidato" onclick="filterEmails('candidato',this)"><div class="ni-left">📬 Candidatos</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-auto-unread"></span><span class="nav-count" id="nc-auto">0</span></div></div>
     <div class="nav-item" id="nav-followup" onclick="filterEmails('followup',this)"><div class="ni-left">🕐 Seguimiento</div><span class="nav-count" id="nc-fu">0</span></div>
     <div class="nav-item" id="nav-unidentified" onclick="filterEmails('unidentified',this)"><div class="ni-left">❓ Sin identificar</div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--accent);font-weight:600" id="nc-uid-unread"></span><span class="nav-count" id="nc-uid">0</span></div></div>
-    <div class="nav-item" id="nav-vip" onclick="filterEmails('vip',this)"><div class="ni-left">⭐ VIP</div><span class="nav-count vip" id="nc-vip">0</span></div>
+    <div class="nav-item" id="nav-vip" onclick="filterEmails('vip',this)"><div class="ni-left">⭐ VIP</div><span class="nav-count" id="nc-vip">0</span></div>
     <div class="sidebar-divider"></div>
     <!-- Sub-filter: Estado -->
     <div class="nav-item" onclick="toggleSubFilter('estado')" style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px;cursor:pointer">
@@ -1203,17 +1203,18 @@ function classify(email,m){
   const isProblema=KEYWORDS_PROBLEMA.test(fullText)&&hasContext;
   const isSumarse=KEYWORDS_SUMARSE.test(fullText);
 
-  // Check if we replied in this thread (use sentAutoIds, repliedIds, and sent emails in allEmails)
-  const repliedInThread=sentAutoIds.has(email.id)||repliedIds.has(email.id)||
+  // Check if we replied MANUALLY in this thread (not auto-reply)
+  const repliedManually=repliedIds.has(email.id)||
     allEmails.some(x=>
       x.id!==email.id&&
       x.threadId===email.threadId&&
       (x.fromEmail===MY_EMAIL||x.fromEmail.includes('afiliadosarg'))
     );
 
-  // Tu atención: Activas/Inscriptas/En Proceso that haven't been replied to yet
-  // Since we can't reliably check lastIsFromThem (no sent mails in allEmails),
-  // use repliedInThread as the signal: not replied = needs attention
+  // repliedInThread includes both auto and manual replies
+  const repliedInThread=sentAutoIds.has(email.id)||repliedManually;
+
+  // Tu atención: Activas/Inscriptas/En Proceso not yet replied to
   const needsAttention=ag&&
     ['Activa','Inscripto','En Proceso'].includes(estado)&&
     !repliedInThread;
@@ -1221,11 +1222,12 @@ function classify(email,m){
   // Candidatos: any mail from a Candidato agency
   const isCandidato=ag&&estado==='Candidato';
 
-  // Seguimiento: we replied, but no new response from them in FOLLOWUP_DAYS
-  // Only count if the email itself is older than FOLLOWUP_DAYS
+  // Seguimiento: manually replied, but old enough - NOT auto-replied
+  // Auto-replied means we sent the standard response, no need for follow-up
   const needsFollowup=ag&&
     ['Activa','Inscripto','En Proceso'].includes(estado)&&
-    repliedInThread&&
+    repliedManually&&
+    !sentAutoIds.has(email.id)&&
     daysOld>=FOLLOWUP_DAYS;
 
   // autoReply kept for backward compat — true when not needing attention
