@@ -997,7 +997,7 @@ function parseDash(rows){
     const ctaCte=isCABA?agNum:null;
     let estado=row[iSit]||'';
     if(estado==='Proceso')estado='En Proceso';
-    dashData.push({agencia:row[iAg]||'',agNum,tipo:row[iTipo]||'Agente',estado,titular:row[iNom]||'',mail:(row[iMail]||'').toLowerCase().trim(),cuil:row[iCuil]||'',provincia:row[iProv]||'',ngr,clicks:parseInt(row[iCl])||0,signups:parseInt(row[iSu])||0,ftds:parseInt(row[iFt])||0,ftdDeposits:parseNum(row[iFtDep]),deposits:parseNum(row[iDep]),casinoBet:parseNum(row[iCas]),sportsbookBet:parseNum(row[iSport]),ngrAfil:parseNum(row[iNgrAfil]),comision:parseNum(row[iComis]),ctaCte,isCABA,usuario:row[iUser]||'',password:row[iPass]||'',linkAfiliados:row[iLink]||'',qrLink:row[iQR]||''});
+    dashData.push({agencia:row[iAg]||'',agNum,tipo:row[iTipo]||'Agente',estado,titular:row[iNom]||'',mail:(row[iMail]||'').toLowerCase().trim(),cuil:row[iCuil]||'',provincia:row[iProv]||'',ngr,clicks:parseInt(row[iCl])||0,signups:parseInt(row[iSu])||0,ftds:parseInt(row[iFt])||0,ftdDeposits:parseNum(row[iFtDep]),deposits:parseNum(row[iDep]),casinoBet:parseNum(row[iCas]),sportsbookBet:parseNum(row[iSport]),ngrAfil:parseNum(row[iNgrAfil]),comision:parseNum(row[iComis]),ctaCte,isCABA,usuario:row[iUser]||'',password:row[iPass]||'',linkAfiliados:row[iLink]||'',qrLink:row[iQR]||'',sheetRow:i+1,sheetColSit:iSit});
   }
   const ngrs=dashData.filter(a=>a.ngr>0).map(a=>a.ngr).sort((a,b)=>a-b);
   vipThreshold=ngrs.length?ngrs[Math.floor(ngrs.length*VIP_PCT)]||50:50;
@@ -1757,6 +1757,61 @@ async function sendResumen(){
   else alert('❌ Error al enviar el resumen.');
 }
 
+// ============ ACTUALIZAR ESTADO EN DATA MAESTRO ============
+async function saveEstadoToSheet(agName, emailId){
+  const statusEl=document.getElementById(`estado-save-status-${emailId}`);
+  const sel=document.getElementById(`estado-sel-${emailId}`);
+  if(!sel)return;
+  const nuevoEstado=sel.value;
+  const ag=dashData.find(a=>a.agencia===agName);
+  if(!ag){if(statusEl)statusEl.textContent='❌ Agencia no encontrada';return;}
+  if(isGuest()){if(statusEl)statusEl.textContent='❌ Modo solo lectura';return;}
+
+  if(statusEl){statusEl.textContent='Guardando...';statusEl.style.color='var(--text3)';}
+
+  const t=await getToken();
+  if(!t){if(statusEl)statusEl.textContent='❌ Sin token';return;}
+
+  // Convert display estado back to sheet value
+  const sheetVal=nuevoEstado==='En Proceso'?'Proceso':nuevoEstado;
+
+  // Column letter from 0-indexed column number
+  const colLetter=n=>{
+    let s='';let x=n;
+    do{s=String.fromCharCode(65+(x%26))+s;x=Math.floor(x/26)-1;}while(x>=0);
+    return s;
+  };
+
+  const sheetName='Data Maestro';
+  const col=colLetter(ag.sheetColSit);
+  const range=`${sheetName}!${col}${ag.sheetRow+1}`; // +1 because rows are 1-indexed in Sheets
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+
+  try{
+    const r=await fetch(url,{
+      method:'PUT',
+      headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
+      body:JSON.stringify({range,majorDimension:'ROWS',values:[[sheetVal]]})
+    });
+    const d=await r.json();
+    if(d.error){
+      if(statusEl){statusEl.textContent='❌ '+d.error.message;statusEl.style.color='var(--red)';}
+      return;
+    }
+    // Update local data too
+    ag.estado=nuevoEstado;
+    // Update the badge in the UI
+    const badge=document.querySelector(`.match-row .badge[class*="b-"]`);
+    if(badge){const estadoKey=nuevoEstado.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso');badge.className=`badge b-${estadoKey}`;badge.textContent=nuevoEstado;}
+    if(statusEl){statusEl.textContent=`✅ Guardado — ${ag.agencia} ahora es ${nuevoEstado}`;statusEl.style.color='var(--green)';}
+    // Re-process this email to update filters
+    if(processed[emailId])processed[emailId].cls.estadoKey=nuevoEstado.toLowerCase().replace(/ /g,'_').replace('en_proceso','proceso');
+    updateMetrics();
+  }catch(e){
+    if(statusEl){statusEl.textContent='❌ Error: '+e.message;statusEl.style.color='var(--red)';}
+  }
+}
+
 // ============ DETAIL ============
 let lastScrollPos=0;
 
@@ -1799,6 +1854,15 @@ function selectEmail(id){
         ${ag.titular?`<div class="match-meta">Titular: ${ag.titular}</div>`:''}
         <div class="signals">${sigH}</div>
         ${perf}
+        ${!isGuest()&&ag.sheetRow?`
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;flex-wrap:wrap">
+          <span style="font-size:12px;color:var(--text2);font-weight:500">Cambiar estado:</span>
+          <select id="estado-sel-${id}" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--white);color:var(--text);font-family:var(--font);cursor:pointer">
+            ${['Candidato','Inscripto','En Proceso','Activa','Pendiente','Suspendida'].map(s=>`<option value="${s}" ${ag.estado===s||ag.estado==='En Proceso'&&s==='En Proceso'?'selected':''}>${s}</option>`).join('')}
+          </select>
+          <button onclick="saveEstadoToSheet('${ag.agencia.replace(/'/g,"\\'")}','${id}')" style="font-size:12px;padding:4px 14px;border-radius:8px;background:var(--green);color:white;border:none;cursor:pointer;font-family:var(--font);font-weight:600">💾 Guardar en Data Maestro</button>
+          <span id="estado-save-status-${id}" style="font-size:11px;color:var(--text3)"></span>
+        </div>`:''}
         <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
           ${isGuest()?'':`
           ${!isConfirmed?`<button onclick="confirmMatch('${id}','${ag.agencia.replace(/'/g,"\\'")}')" style="font-size:11px;padding:4px 12px;border-radius:8px;background:var(--green-bg);color:var(--green);border:1px solid rgba(19,115,51,.2);cursor:pointer;font-family:var(--font);font-weight:500">✓ Confirmar esta agencia</button>`:''}
