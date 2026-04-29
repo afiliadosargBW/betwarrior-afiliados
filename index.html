@@ -1784,7 +1784,8 @@ async function saveEstadoToSheet(agName, emailId){
 
   const sheetName='Data Maestro';
   const col=colLetter(ag.sheetColSit);
-  const range=`${sheetName}!${col}${ag.sheetRow+1}`; // +1 because rows are 1-indexed in Sheets
+  const range=`${sheetName}!${col}${ag.sheetRow}`;
+  console.log(`[BWAFI] Escribiendo estado "${sheetVal}" en rango ${range} (fila ${ag.sheetRow}, col ${ag.sheetColSit}→${col})`);
   const url=`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
 
   try{
