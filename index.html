@@ -1938,11 +1938,8 @@ function genPassword(len=10){
 function showMACreator(agName, emailId){
   const ag=dashData.find(a=>a.agencia===agName);
   if(!ag){alert('Agencia no encontrada');return;}
-  const provCode=getProvCode(ag.provincia);
-  const agNum=ag.agNum||ag.agencia.replace(/[^0-9]/g,'');
-  const username=`Agencia${agNum}_${provCode||'ARG'}`;
+  if(!ag.usuario){alert('Esta agencia no tiene usuario en el Data Maestro (columna P). Verificá el sheet.');return;}
   const password=genPassword(10);
-  // Split titular into first/last name
   const parts=(ag.titular||'').trim().split(' ');
   const firstName=parts[0]||'';
   const lastName=parts.slice(1).join(' ')||'-';
@@ -1952,7 +1949,7 @@ function showMACreator(agName, emailId){
       <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Datos a cargar</div>
       <span id="ma-agname" style="display:none">${ag.agencia}</span>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
-        <div><span style="color:var(--text3)">Usuario:</span> <b id="ma-username">${username}</b></div>
+        <div><span style="color:var(--text3)">Usuario:</span> <b id="ma-username">${ag.usuario}</b></div>
         <div><span style="color:var(--text3)">Contraseña:</span> <b id="ma-password">${password}</b> <button onclick="document.getElementById('ma-password').textContent=genPassword(10)" style="font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid var(--border);background:var(--bg);cursor:pointer">↻</button></div>
         <div><span style="color:var(--text3)">Email:</span> <b>${ag.mail||'—'}</b></div>
         <div><span style="color:var(--text3)">Provincia:</span> <b>${ag.provincia||'—'}</b></div>
@@ -1977,9 +1974,9 @@ function maLog(msg, color){
 }
 
 function copyMAForClaude(){
-  const username=document.getElementById('ma-username')?.textContent;
-  const password=document.getElementById('ma-password')?.textContent;
-  const agName=document.getElementById('ma-agname')?.textContent;
+  const username=document.getElementById('ma-username')?.textContent?.trim();
+  const password=document.getElementById('ma-password')?.textContent?.trim();
+  const agName=document.getElementById('ma-agname')?.textContent?.trim();
   const ag=dashData.find(a=>a.agencia===agName);
   if(!ag){alert('Error: agencia no encontrada');return;}
   const parts=(ag.titular||'').trim().split(' ');
@@ -1992,9 +1989,11 @@ function copyMAForClaude(){
     lastName:parts.slice(1).join(' ')||'-',
     provincia:ag.provincia,
     provCode:getProvCode(ag.provincia),
+    agNum:ag.agNum||'',
     sheetRow:ag.sheetRow,
+    sheetColSit:ag.sheetColSit,
     sheetId:cfg.sheetId
-  })}`;
+  },null,0)}`;
   navigator.clipboard.writeText(msg).then(()=>{
     const btn=document.getElementById('ma-copy-btn');
     if(btn){btn.textContent='✅ Copiado — pegalo en el chat de Claude';btn.style.background='var(--green)';}
