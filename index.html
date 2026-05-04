@@ -135,7 +135,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .b-vip{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(180,83,9,.2)}
 .b-duplicado{background:#f1f3f4;color:var(--text3);border:1px solid var(--border2)}
 /* DETAIL VIEW */
-.detail-view{padding:16px 24px;max-width:860px;overflow-y:auto;flex:1;min-height:0}
+.detail-view{padding:16px 24px;overflow-y:auto;flex:1;min-height:0}
 .detail-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
 .detail-back{display:flex;align-items:center;gap:8px;color:var(--text2);cursor:pointer;font-size:13px;padding:6px 12px;border-radius:20px;transition:background .15s;border:1px solid var(--border);background:var(--white)}
 .detail-back:hover{background:var(--hover-bg)}
@@ -2190,9 +2190,10 @@ function selectEmail(id){
           <button onclick="saveEstadoToSheet('${ag.agencia.replace(/'/g,"\\'")}','${id}')" style="font-size:12px;padding:4px 14px;border-radius:8px;background:var(--green);color:white;border:none;cursor:pointer;font-family:var(--font);font-weight:600">💾 Guardar en Data Maestro</button>
           <span id="estado-save-status-${id}" style="font-size:11px;color:var(--text3)"></span>
         </div>`:''}
-        ${!isGuest()&&['Inscripto','En Proceso'].includes(ag.estado)&&!ag.usuario?`
+        ${!isGuest()&&['Inscripto','En Proceso'].includes(ag.estado)?`
         <div style="margin-top:10px;padding:10px 12px;background:var(--accent-bg);border:1px solid rgba(26,115,232,.2);border-radius:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span style="font-size:13px">🚀 Esta agencia no tiene cuenta en MyAffiliates todavía</span>
+          <span style="font-size:13px">🚀 MyAffiliates</span>
+          ${ag.usuario?`<span style="font-size:12px;color:var(--text2)">Usuario: <b>${ag.usuario}</b></span>`:''}
           <button onclick="showMACreator('${ag.agencia.replace(/'/g,"\\'")}','${id}')" style="font-size:12px;padding:6px 16px;border-radius:8px;background:var(--accent);color:white;border:none;cursor:pointer;font-family:var(--font);font-weight:600">Crear cuenta en MyAffiliates</button>
         </div>`:''}
         <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
