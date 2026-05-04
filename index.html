@@ -1950,6 +1950,7 @@ function showMACreator(agName, emailId){
   content.innerHTML=`
     <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Datos a cargar</div>
+      <span id="ma-agname" style="display:none">${ag.agencia}</span>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
         <div><span style="color:var(--text3)">Usuario:</span> <b id="ma-username">${username}</b></div>
         <div><span style="color:var(--text3)">Contraseña:</span> <b id="ma-password">${password}</b> <button onclick="document.getElementById('ma-password').textContent=genPassword(10)" style="font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid var(--border);background:var(--bg);cursor:pointer">↻</button></div>
@@ -1962,7 +1963,7 @@ function showMACreator(agName, emailId){
     <div id="ma-log" style="background:var(--bg);border-radius:10px;padding:12px;min-height:60px;font-size:12px;color:var(--text2);margin-bottom:14px;display:none"></div>
     <div style="display:flex;gap:10px;justify-content:flex-end">
       <button onclick="document.getElementById('ma-modal').style.display='none'" class="modal-btn">Cancelar</button>
-      <button onclick="runMACreator('${agName}','${emailId}')" id="ma-run-btn" class="modal-btn modal-btn-save" style="background:var(--accent)">🚀 Crear cuenta automáticamente</button>
+      <button onclick="copyMAForClaude()" id="ma-copy-btn" class="modal-btn modal-btn-save" style="background:var(--purple)">📋 Copiar mensaje para Claude</button>
     </div>`;
   document.getElementById('ma-modal').style.display='flex';
 }
@@ -1975,170 +1976,29 @@ function maLog(msg, color){
   log.scrollTop=log.scrollHeight;
 }
 
-async function runMACreator(agName, emailId){
-  const ag=dashData.find(a=>a.agencia===agName);
-  if(!ag){maLog('❌ Agencia no encontrada','var(--red)');return;}
-  const btn=document.getElementById('ma-run-btn');
-  if(btn){btn.disabled=true;btn.textContent='Creando...';}
+function copyMAForClaude(){
   const username=document.getElementById('ma-username')?.textContent;
   const password=document.getElementById('ma-password')?.textContent;
-  const provCode=getProvCode(ag.provincia);
+  const agName=document.getElementById('ma-agname')?.textContent;
+  const ag=dashData.find(a=>a.agencia===agName);
+  if(!ag){alert('Error: agencia no encontrada');return;}
   const parts=(ag.titular||'').trim().split(' ');
-  const firstName=parts[0]||'-';
-  const lastName=parts.slice(1).join(' ')||'-';
-  maLog('🔍 Verificando acceso a MyAffiliates...');
-
-  // Step 1: Fill create form
-  try{
-    maLog('📝 Paso 1: Completando formulario...');
-    const createUrl=`${MA_URL}/create_webmaster.php?account_type=full`;
-    // We use fetch to submit the form directly
-    const t=await getToken();
-    // Instead, navigate the browser to the create page and fill it
-    const result=await fillMAForm({username,password,email:ag.mail,firstName,lastName,agencia:ag.agencia,provincia:ag.provincia,provCode});
-    if(!result.ok){maLog('❌ '+result.error,'var(--red)');if(btn){btn.disabled=false;btn.textContent='Reintentar';}return;}
-    maLog('✅ Cuenta creada — ID: '+result.affiliateId,'var(--green)');
-
-    // Step 2: Approve
-    maLog('✅ Paso 2: Aprobando cuenta...');
-    await approveMAAffiliate(result.affiliateId);
-    maLog('✅ Aprobada','var(--green)');
-
-    // Step 3: Create RevShare fee & campaign
-    maLog('💰 Paso 3: Configurando RevShare 15%...');
-    await setMAFee(result.affiliateId);
-    maLog('✅ Fee configurado','var(--green)');
-
-    maLog('📢 Paso 4: Creando campaña...');
-    await createMACampaign(result.affiliateId, username);
-    maLog('✅ Campaña creada','var(--green)');
-
-    // Step 5: Save to Data Maestro
-    maLog('💾 Paso 5: Guardando en Data Maestro...');
-    await saveMAToSheet(ag, username, password);
-    maLog('✅ Guardado en Data Maestro','var(--green)');
-
-    maLog(`\n🎉 ¡Listo! Usuario: <b>${username}</b> | Pass: <b>${password}</b>`,'var(--accent)');
-    maLog('⚠️ Último paso: Pegá el link de tráfico manualmente en MyAffiliates','var(--amber)');
-    if(btn){btn.textContent='✅ Completado';btn.style.background='var(--green)';}
-    // Update local data
-    ag.usuario=username;ag.password=password;
-    // Update estado to Activa
-    const selEl=document.getElementById(`estado-sel-${emailId}`);
-    if(selEl)selEl.value='Activa';
-  }catch(e){
-    maLog('❌ Error: '+e.message,'var(--red)');
-    if(btn){btn.disabled=false;btn.textContent='Reintentar';}
-  }
-}
-
-async function fillMAForm({username,password,email,firstName,lastName,agencia,provincia,provCode}){
-  // Submit via fetch POST to create_webmaster.php
-  // First get the ftoken
-  const pageRes=await fetch(`${MA_URL}/create_webmaster.php?account_type=full`,{credentials:'include'});
-  if(!pageRes.ok)return{ok:false,error:'No se puede acceder a MyAffiliates. ¿Estás logueado?'};
-  const html=await pageRes.text();
-  const ftokenMatch=html.match(/name="__ftoken_create_webmaster__"[^>]*value="([^"]+)"/);
-  if(!ftokenMatch)return{ok:false,error:'No se encontró el token de seguridad. Verificá que estés logueado en MyAffiliates.'};
-  const ftoken=ftokenMatch[1];
-  const params=new URLSearchParams({
-    task:'create',account_type:'full',
-    __ftoken_create_webmaster__:ftoken,
-    username,email,
-    join_date:new Date().toISOString().split('T')[0],
-    language:'2', // Spanish
-    country:'AR',
-    'plans[]':'3', // BetWarrior Argentina
-    first_name:firstName,last_name:lastName,
-    phone:'00000000',company_name:agencia,
-    skype:'Noaplica',marketing:'other',
-    website:`${MA_URL}`,
-    'termsagreement[]':'1',
-    password,password2:password
+  const msg=`CREAR_MA ${JSON.stringify({
+    agencia:ag.agencia,
+    usuario:username,
+    password:password,
+    email:ag.mail,
+    firstName:parts[0]||'-',
+    lastName:parts.slice(1).join(' ')||'-',
+    provincia:ag.provincia,
+    provCode:getProvCode(ag.provincia),
+    sheetRow:ag.sheetRow,
+    sheetId:cfg.sheetId
+  })}`;
+  navigator.clipboard.writeText(msg).then(()=>{
+    const btn=document.getElementById('ma-copy-btn');
+    if(btn){btn.textContent='✅ Copiado — pegalo en el chat de Claude';btn.style.background='var(--green)';}
   });
-  const res=await fetch(`${MA_URL}/create_webmaster.php?account_type=full`,{
-    method:'POST',credentials:'include',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:params.toString()
-  });
-  const resHtml=await res.text();
-  // Check for success and get affiliate ID
-  const idMatch=resHtml.match(/affiliate_summary\.php\?id=(\d+)/)||resHtml.match(/webmaster_id=(\d+)/);
-  if(!idMatch){
-    const errMatch=resHtml.match(/class="errors?"[^>]*>([\s\S]*?)<\/[ul]/i);
-    const errText=errMatch?errMatch[1].replace(/<[^>]+>/g,' ').trim():'Error desconocido al crear la cuenta';
-    return{ok:false,error:errText};
-  }
-  return{ok:true,affiliateId:idMatch[1]};
-}
-
-async function approveMAAffiliate(affiliateId){
-  // Approve the affiliate
-  await fetch(`${MA_URL}/affiliate_summary.php?id=${affiliateId}`,{
-    method:'POST',credentials:'include',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:new URLSearchParams({task:'approve',webmaster_id:affiliateId}).toString()
-  });
-}
-
-async function setMAFee(affiliateId){
-  // Get the fees page to find the CPA plan and delete it, then create RevShare
-  // First get current pay periods
-  const res=await fetch(`${MA_URL}/affiliate_fees.php?id=${affiliateId}`,{credentials:'include'});
-  const html=await res.text();
-  // Find CPA plan to delete
-  const cpaMatch=html.match(/delete_plan[^"]*?plan_id=(\d+)[^"]*?channel=1/);
-  if(cpaMatch){
-    await fetch(`${MA_URL}/affiliate_fees.php?id=${affiliateId}&task=delete_plan&plan_id=${cpaMatch[1]}&channel=1`,{credentials:'include'});
-  }
-  // Create RevShare 15% (deal 37)
-  const pageRes=await fetch(`${MA_URL}/affiliate_fees.php?id=${affiliateId}`,{credentials:'include'});
-  const pageHtml=await pageRes.text();
-  const ftokenMatch=pageHtml.match(/name="__ftoken_[^"]*__"[^>]*value="([^"]+)"/);
-  const ftoken=ftokenMatch?ftokenMatch[1]:'';
-  await fetch(`${MA_URL}/affiliate_fees.php?id=${affiliateId}`,{
-    method:'POST',credentials:'include',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:new URLSearchParams({
-      task:'new_plan',webmaster_id:affiliateId,
-      channel:'1',deal_id:'37', // 37 = 15% RevShare
-      [`__ftoken_${affiliateId}__`]:ftoken
-    }).toString()
-  });
-}
-
-async function createMACampaign(affiliateId, username){
-  const pageRes=await fetch(`${MA_URL}/affiliate_campaigns.php?id=${affiliateId}&task=create`,{credentials:'include'});
-  const pageHtml=await pageRes.text();
-  const ftokenMatch=pageHtml.match(/name="__ftoken_[^"]*__"[^>]*value="([^"]+)"/);
-  const ftoken=ftokenMatch?ftokenMatch[1]:'';
-  await fetch(`${MA_URL}/affiliate_campaigns.php?id=${affiliateId}&task=create`,{
-    method:'POST',credentials:'include',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:new URLSearchParams({
-      task:'create_campaign',webmaster_id:affiliateId,
-      campaign_id:'1',description:username,
-      [`__ftoken_${affiliateId}__`]:ftoken
-    }).toString()
-  });
-}
-
-async function saveMAToSheet(ag, username, password){
-  if(!ag.sheetRow||!cfg.sheetId)return;
-  const t=await getToken();if(!t)return;
-  // Save username and password columns
-  const colLetter=n=>{let s='';let x=n;do{s=String.fromCharCode(65+(x%26))+s;x=Math.floor(x/26)-1;}while(x>=0);return s;};
-  const sheetName='Data Maestro';
-  const userCol=colLetter(ag.sheetColSit+2); // Usuario column (2 after Situacion)
-  const passCol=colLetter(ag.sheetColSit+3); // Password column
-  // Update both cells
-  const range=`${sheetName}!${userCol}${ag.sheetRow}:${passCol}${ag.sheetRow}`;
-  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,{
-    method:'PUT',
-    headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
-    body:JSON.stringify({range,majorDimension:'ROWS',values:[[username,password]]})
-  });
-  ag.usuario=username;ag.password=password;
 }
 let lastScrollPos=0;
 
