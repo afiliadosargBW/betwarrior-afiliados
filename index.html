@@ -1872,12 +1872,14 @@ async function sendResumen(){
 }
 
 // ============ ACTUALIZAR ESTADO EN DATA MAESTRO ============
-async function saveEstadoToSheet(agName, emailId){
+async function saveEstadoToSheet(agName, emailId, provincia){
   const statusEl=document.getElementById(`estado-save-status-${emailId}`);
   const sel=document.getElementById(`estado-sel-${emailId}`);
   if(!sel)return;
   const nuevoEstado=sel.value;
-  const ag=dashData.find(a=>a.agencia===agName);
+  const ag=provincia
+    ?dashData.find(a=>a.agencia===agName&&a.provincia===provincia)||dashData.find(a=>a.agencia===agName)
+    :dashData.find(a=>a.agencia===agName);
   if(!ag){if(statusEl)statusEl.textContent='❌ Agencia no encontrada';return;}
   if(isGuest()){if(statusEl)statusEl.textContent='❌ Modo solo lectura';return;}
 
@@ -1947,8 +1949,8 @@ function genPassword(len=10){
   return Array.from({length:len},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
 }
 
-function showMACreator(agName, emailId){
-  const ag=dashData.find(a=>a.agencia===agName);
+function showMACreator(agName, emailId, provincia){
+  const ag=provincia?dashData.find(a=>a.agencia===agName&&a.provincia===provincia)||dashData.find(a=>a.agencia===agName):dashData.find(a=>a.agencia===agName);
   if(!ag){alert('Agencia no encontrada');return;}
   if(!ag.usuario){alert('Esta agencia no tiene usuario en el Data Maestro (columna P). Verificá el sheet.');return;}
   const password=genPassword(10);
@@ -1960,6 +1962,7 @@ function showMACreator(agName, emailId){
     <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Datos a cargar</div>
       <span id="ma-agname" style="display:none">${ag.agencia}</span>
+      <span id="ma-agprov" style="display:none">${ag.provincia}</span>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
         <div><span style="color:var(--text3)">Usuario:</span> <b id="ma-username">${ag.usuario}</b></div>
         <div><span style="color:var(--text3)">Contraseña:</span> <b id="ma-password">${password}</b> <button onclick="document.getElementById('ma-password').textContent=genPassword(10)" style="font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid var(--border);background:var(--bg);cursor:pointer">↻</button></div>
@@ -1989,7 +1992,8 @@ function copyMAForClaude(){
   const username=document.getElementById('ma-username')?.textContent?.trim();
   const password=document.getElementById('ma-password')?.textContent?.trim();
   const agName=document.getElementById('ma-agname')?.textContent?.trim();
-  const ag=dashData.find(a=>a.agencia===agName);
+  const agProv=document.getElementById('ma-agprov')?.textContent?.trim();
+  const ag=agProv?dashData.find(a=>a.agencia===agName&&a.provincia===agProv)||dashData.find(a=>a.agencia===agName):dashData.find(a=>a.agencia===agName);
   if(!ag){alert('Error: agencia no encontrada');return;}
   const parts=(ag.titular||'').trim().split(' ');
   const msg=`CREAR_MA ${JSON.stringify({
@@ -2058,14 +2062,14 @@ function selectEmail(id){
           <select id="estado-sel-${id}" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--white);color:var(--text);font-family:var(--font);cursor:pointer">
             ${['Candidato','Inscripto','En Proceso','Activa','Pendiente','Suspendida'].map(s=>`<option value="${s}" ${ag.estado===s||ag.estado==='En Proceso'&&s==='En Proceso'?'selected':''}>${s}</option>`).join('')}
           </select>
-          <button onclick="saveEstadoToSheet('${ag.agencia.replace(/'/g,"\\'")}','${id}')" style="font-size:12px;padding:4px 14px;border-radius:8px;background:var(--green);color:white;border:none;cursor:pointer;font-family:var(--font);font-weight:600">💾 Guardar en Data Maestro</button>
+          <button onclick="saveEstadoToSheet('${ag.agencia.replace(/'/g,"\\'")}','${id}','${ag.provincia.replace(/'/g,"\\'")}') " style="font-size:12px;padding:4px 14px;border-radius:8px;background:var(--green);color:white;border:none;cursor:pointer;font-family:var(--font);font-weight:600">💾 Guardar en Data Maestro</button>
           <span id="estado-save-status-${id}" style="font-size:11px;color:var(--text3)"></span>
         </div>`:''}
         ${!isGuest()&&['Inscripto','En Proceso'].includes(ag.estado)?`
         <div style="margin-top:10px;padding:10px 12px;background:var(--accent-bg);border:1px solid rgba(26,115,232,.2);border-radius:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <span style="font-size:13px">🚀 MyAffiliates</span>
           ${ag.usuario?`<span style="font-size:12px;color:var(--text2)">Usuario: <b>${ag.usuario}</b></span>`:''}
-          <button onclick="showMACreator('${ag.agencia.replace(/'/g,"\\'")}','${id}')" style="font-size:12px;padding:6px 16px;border-radius:8px;background:var(--accent);color:white;border:none;cursor:pointer;font-family:var(--font);font-weight:600">Crear cuenta en MyAffiliates</button>
+          <button onclick="showMACreator('${ag.agencia.replace(/'/g,"\\'")}','${id}','${ag.provincia.replace(/'/g,"\\'")}')" style="font-size:12px;padding:6px 16px;border-radius:8px;background:var(--accent);color:white;border:none;cursor:pointer;font-family:var(--font);font-weight:600">Crear cuenta en MyAffiliates</button>
         </div>`:''}
         <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
           ${isGuest()?'':`
