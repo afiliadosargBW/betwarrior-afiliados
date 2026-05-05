@@ -1214,6 +1214,18 @@ function matchEmail(email){
     }
     if(ag.cuil){const cn=normNum(ag.cuil);if(cn.length>=8&&bodyNums.includes(cn)){score+=40;signals.push({l:'CUIL',h:true});}else signals.push({l:'CUIL',h:false});}
     if(!ag.isCABA&&ag.agNum){if(new RegExp('\\b'+ag.agNum+'\\b').test(body)){score+=25;signals.push({l:'nº agencia',h:true});}else signals.push({l:'nº agencia',h:false});}
+    // Boost score if province mentioned in body matches agency province
+    if(ag.provincia){
+      const provBody=body.toLowerCase();
+      const provL=ag.provincia.toLowerCase();
+      if(provL==='mendoza'&&(provBody.includes('mendoza')||provBody.includes('mza')||provBody.includes('mendo'))){score+=20;signals.push({l:'provincia',h:true});}
+      else if(provL==='salta'&&(provBody.includes('salta')||provBody.includes('sla'))){score+=20;signals.push({l:'provincia',h:true});}
+      else if((provL==='caba'||provL==='capital federal')&&(provBody.includes('caba')||provBody.includes('capital'))){score+=15;signals.push({l:'provincia',h:true});}
+      else if(provL==='buenos aires'&&(provBody.includes('buenos aires')||provBody.includes('pba'))){score+=15;signals.push({l:'provincia',h:true});}
+      else if(provL==='neuquén'&&(provBody.includes('neuqu')||provBody.includes('nqn'))){score+=20;signals.push({l:'provincia',h:true});}
+      else if(provL==='chubut'&&(provBody.includes('chubut')||provBody.includes('chu'))){score+=20;signals.push({l:'provincia',h:true});}
+      else if(provL==='la rioja'&&(provBody.includes('rioja')||provBody.includes(' lr '))){score+=20;signals.push({l:'provincia',h:true});}
+    }
     if(ag.isCABA&&ag.ctaCte){const ctn=ag.ctaCte;if(ctn.length>=4&&bodyNums.includes(ctn)){score+=45;signals.push({l:'cta. cte.',h:true});}else if(ctn.length>=4&&bodyNums.includes(ctn.slice(-4))){score+=15;signals.push({l:'cta. parcial',h:true});}else signals.push({l:'cta. cte.',h:false});}
     if(score>0)scores.push({ag,score,signals});
   }
@@ -2258,9 +2270,9 @@ async function loadMatchesFromSheets(){
 function saveDraft(id,val){if(!cfg.drafts)cfg.drafts={};if(val.trim())cfg.drafts[id]=val;else delete cfg.drafts[id];saveCfg();}
 function clearDraft(id){if(cfg.drafts)delete cfg.drafts[id];saveCfg();selectEmail(id);}
 
-function confirmMatch(emailId,agName){
+function confirmMatch(emailId,agName,provincia){
   const resolvedId=selectedId||emailId;
-  const ag=dashData.find(a=>a.agencia===agName);if(!ag)return;
+  const ag=provincia?dashData.find(a=>a.agencia===agName&&a.provincia===provincia)||dashData.find(a=>a.agencia===agName):dashData.find(a=>a.agencia===agName);if(!ag)return;
   const e=allEmails.find(x=>x.id===resolvedId);if(!e)return;
   if(!cfg.confirmedMatches)cfg.confirmedMatches={};
   if(!cfg.rejectedMatches)cfg.rejectedMatches={};
@@ -2351,7 +2363,7 @@ function renderChangeMatchResults(){
   }
   const el=document.getElementById('change-match-results');
   if(!results.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">No se encontraron agencias</div>';return;}
-  el.innerHTML=results.map(ag=>`<div onclick="selectChangeMatch('${ag.agencia.replace(/'/g,"\\'")}')" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--white);transition:all .15s" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-bg)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+  el.innerHTML=results.map(ag=>`<div onclick="selectChangeMatch('${ag.agencia.replace(/'/g,"\\'")}','${ag.provincia.replace(/'/g,"\\'")}')" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--white);transition:all .15s" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-bg)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:500;color:var(--text)">${ag.agencia} · ${ag.provincia}</div>
@@ -2362,18 +2374,18 @@ function renderChangeMatchResults(){
   </div>`).join('');
 }
 
-function selectChangeMatch(agName){
+function selectChangeMatch(agName,provincia){
   if(!changeMatchTargetId)return;
   const emailId=changeMatchTargetId;
   const singleOnly=changeMatchSingleOnly;
   closeChangeMatchModal();
-  if(singleOnly){confirmMatchSingle(emailId,agName);}
-  else{confirmMatch(emailId,agName);}
+  if(singleOnly){confirmMatchSingle(emailId,agName,provincia);}
+  else{confirmMatch(emailId,agName,provincia);}
 }
 
-function confirmMatchSingle(emailId,agName){
+function confirmMatchSingle(emailId,agName,provincia){
   const resolvedId=selectedId||emailId;
-  const ag=dashData.find(a=>a.agencia===agName);if(!ag)return;
+  const ag=provincia?dashData.find(a=>a.agencia===agName&&a.provincia===provincia)||dashData.find(a=>a.agencia===agName):dashData.find(a=>a.agencia===agName);if(!ag)return;
   const e=allEmails.find(x=>x.id===resolvedId);if(!e)return;
   if(!cfg.confirmedMatches)cfg.confirmedMatches={};
   cfg.confirmedMatches[resolvedId]=agName;
