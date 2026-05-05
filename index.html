@@ -1327,12 +1327,22 @@ function processAll(){
     const cls=classify(e,m);
     processed[e.id]={match:m,cls};
 
+    // Helper to resolve agencia|provincia format
+    const resolveAg=val=>{
+      if(!val)return null;
+      const parts=val.split('|');
+      // If it has | and second part looks like a province (not an email id number)
+      if(parts.length===2&&isNaN(parts[1])){
+        return dashData.find(a=>a.agencia===parts[0]&&a.provincia===parts[1])||dashData.find(a=>a.agencia===parts[0]);
+      }
+      return dashData.find(a=>a.agencia===val);
+    };
     // 1. Apply confirmed matches by EMAIL ID (highest priority — overrides sender match)
     // Check both plain emailId and email|emailId format
     const singleKey=`${senderEmail}|${e.id}`;
     const singleMatch=cfg.confirmedMatches?.[e.id]||cfg.confirmedMatches?.[singleKey];
     if(singleMatch){
-      const ag=dashData.find(a=>a.agencia===singleMatch);
+      const ag=resolveAg(singleMatch);
       if(ag){
         processed[e.id].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'📌 Confirmado solo este mail',h:true}]};
         processed[e.id].cls=classify(e,processed[e.id].match);
@@ -1341,7 +1351,7 @@ function processAll(){
     }
     // 2. Apply confirmed matches by SENDER EMAIL
     if(cfg.confirmedMatches?.[senderEmail]){
-      const ag=dashData.find(a=>a.agencia===cfg.confirmedMatches[senderEmail]);
+      const ag=resolveAg(cfg.confirmedMatches[senderEmail]);
       if(ag){
         processed[e.id].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'✓ Confirmado por remitente',h:true}]};
         processed[e.id].cls=classify(e,processed[e.id].match);
@@ -2262,9 +2272,8 @@ async function loadMatchesFromSheets(){
     if(!cfg.confirmedMatches)cfg.confirmedMatches={};
     d.values.forEach(row=>{
       if(row[0]&&row[2]){
-        // Entries with | are single-mail matches (email|emailId format)
-        // Entries without | are sender-level matches
-        cfg.confirmedMatches[row[0]]=row[2];
+        // Store as "agencia|provincia" so we can disambiguate on load
+        cfg.confirmedMatches[row[0]]=row[3]?`${row[2]}|${row[3]}`:row[2];
       }
     });
     console.log('Loaded',d.values.length,'confirmed matches from Sheets');
@@ -2285,11 +2294,11 @@ function confirmMatch(emailId,agName,provincia){
   const remitente=e.isForwarded?(e.fwdFrom||e.fromName):e.fromName;
   const isInternal=cfg.internalSenders.some(s=>senderEmail===s.toLowerCase()||senderEmail.endsWith('@'+s.toLowerCase().split('@')[1]));
   if(senderEmail&&!isInternal){
-    cfg.confirmedMatches[senderEmail]=agName;
+    cfg.confirmedMatches[senderEmail]=ag.provincia?`${agName}|${ag.provincia}`:agName;
     delete cfg.rejectedMatches[senderEmail];
   }
   // Also save by emailId as fallback
-  cfg.confirmedMatches[resolvedId]=agName;
+  cfg.confirmedMatches[resolvedId]=ag.provincia?`${agName}|${ag.provincia}`:agName;
   delete cfg.rejectedMatches[resolvedId];
   // Update all emails from this sender
   allEmails.filter(x=>(x.isForwarded?x.fwdEmail:x.fromEmail)===senderEmail).forEach(x=>{
@@ -2392,7 +2401,7 @@ function confirmMatchSingle(emailId,agName,provincia){
   const ag=provincia?dashData.find(a=>a.agencia===agName&&a.provincia===provincia)||dashData.find(a=>a.agencia===agName):dashData.find(a=>a.agencia===agName);if(!ag)return;
   const e=allEmails.find(x=>x.id===resolvedId);if(!e)return;
   if(!cfg.confirmedMatches)cfg.confirmedMatches={};
-  cfg.confirmedMatches[resolvedId]=agName;
+  cfg.confirmedMatches[resolvedId]=ag.provincia?`${agName}|${ag.provincia}`:agName;
   processed[resolvedId].match={matched:true,confidence:'high',agency:ag,score:99,signals:[{l:'📌 Confirmado solo este mail',h:true}]};
   processed[resolvedId].cls=classify(e,processed[resolvedId].match);
   saveCfg();
