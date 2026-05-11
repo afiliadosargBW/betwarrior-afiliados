@@ -597,7 +597,7 @@ const DEFAULT_TMPLS={
   'Candidata':'Hola {agencia},\n\nGracias por comunicarte. Tu agencia ya está en nuestro sistema como candidata al Programa de Afiliados Betwarrior.\n\nPronto nos comunicamos con vos para contarte todos los beneficios y el proceso de incorporación.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
   'Inscripta':'Hola {agencia},\n\nConfirmamos que recibimos tu solicitud de adhesión al Programa de Afiliados Betwarrior. Tus datos quedaron registrados correctamente.\n\nNuestro equipo va a procesar tu solicitud y se comunica con vos a la brevedad con los próximos pasos.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
   'En proceso':'Hola {agencia},\n\nTu solicitud de afiliación está en proceso de activación. Estamos configurando tu cuenta y en breve te enviamos tus credenciales de acceso.\n\nCualquier duda no dudes en escribirnos.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
-  'Kit de bienvenida':'Hola {agencia},\n\n¡Bienvenidos al Programa de Afiliados de BetWarrior! Nos alegra sumar a su agencia como parte de esta red.\n\nPara comenzar de forma rápida y ordenada, ya tienen disponible el Kit de Bienvenida:\nhttps://drive.google.com/drive/folders/1ljaoyi_hZyOsEwWu4ev5YbwRKSjCOiWQ\n\n¿Qué van a encontrar en él?\n\n- Carpeta "Guía + Videos Instructivos": Incluye el paso a paso y videos cortos para aprender a usar el sistema y entender cómo funciona el programa.\n- Carpeta "Manual de Marca + Contenidos": Incluye el manual de marca, videos y piezas listas para usar (material para el punto de venta y contenido digital), junto con lineamientos para comunicar correctamente.\n- Preguntas frecuentes\n\nAdemás, les adjunto al final del archivo su QR dentro de nuestro marco.\n\nAnte cualquier duda, pueden escribirnos a: afiliadosarg@betwarrior.com\n\nIMPORTANTE:\nUsuario Myaffs: {usuario}\nContraseña: {password}\nWeb: https://login.betwarrioraffiliates.bet/signin.php\nLink de afiliados: {link_afiliados}\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
+  'Kit de bienvenida':'Hola {agencia},\n\n¡Bienvenidos al Programa de Afiliados de BetWarrior! Nos alegra sumar a su agencia como parte de esta red.\n\nPara comenzar de forma rápida y ordenada, ya tienen disponible el Kit de Bienvenida:\nhttps://drive.google.com/drive/folders/1ljaoyi_hZyOsEwWu4ev5YbwRKSjCOiWQ\n\n¿Qué van a encontrar en él?\n\n- Carpeta "Guía + Videos Instructivos": Incluye el paso a paso y videos cortos para aprender a usar el sistema y entender cómo funciona el programa.\n- Carpeta "Manual de Marca + Contenidos": Incluye el manual de marca, videos y piezas listas para usar (material para el punto de venta y contenido digital), junto con lineamientos para comunicar correctamente.\n- *Preguntas frecuentes*\n\nAdemás, les adjunto al final del archivo su QR dentro de nuestro marco.\n\nAnte cualquier duda, pueden escribirnos a: afiliadosarg@betwarrior.com\n\nIMPORTANTE:\nUsuario Myaffs: {usuario}\nContraseña: {password}\nWeb: https://login.betwarrioraffiliates.bet/signin.php\nLink de afiliados: {link_afiliados}\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
 };
 
 let cfg={token:'',refresh_token:'',clientId:'',clientSecret:'',sheetId:DEFAULT_SHEET,myEmail:RESUMEN_TO,daysToLoad:30,internalSenders:['piarodriguez@betwarrior.com'],templates:{...DEFAULT_TMPLS},drafts:{},confirmedMatches:{},rejectedMatches:{},darkMode:false,guestMode:false,guestPassword:'',compactView:false,agencyNotes:{}};
@@ -1707,10 +1707,10 @@ async function sendBulkAuto(){
 }
 
 // ============ GMAIL SEND ============
-async function sendGmail(to,subject,body,threadId){
+async function sendGmail(to,subject,body,threadId,htmlBody){
   const t=await getToken();
   try{
-    const raw=makeRaw(MY_EMAIL,to,subject,body,threadId);
+    const raw=makeRaw(MY_EMAIL,to,subject,body,threadId,htmlBody);
     const payload={raw};
     if(threadId)payload.threadId=threadId;
     const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -1719,7 +1719,32 @@ async function sendGmail(to,subject,body,threadId){
   }catch(e){console.error('Send error:',e);return false;}
 }
 
-function makeRaw(from,to,subject,body,threadId){
+function makeRaw(from,to,subject,body,threadId,htmlBody){
+  if(htmlBody){
+    // Multipart with plain text fallback and HTML version
+    const boundary='bwafi_boundary_'+Date.now();
+    const msg=[
+      `From: ${from}`,`To: ${to}`,
+      `Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,
+      'MIME-Version: 1.0',
+      `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      '',
+      `--${boundary}`,
+      'Content-Type: text/plain; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      btoa(unescape(encodeURIComponent(body))),
+      '',
+      `--${boundary}`,
+      'Content-Type: text/html; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      btoa(unescape(encodeURIComponent(`<html><body style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6">${htmlBody}</body></html>`))),
+      '',
+      `--${boundary}--`
+    ].join('\r\n');
+    return btoa(unescape(encodeURIComponent(msg))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
   const msg=[`From: ${from}`,`To: ${to}`,`Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,'MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: base64','',btoa(unescape(encodeURIComponent(body)))].join('\r\n');
   return btoa(unescape(encodeURIComponent(msg))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
@@ -3146,33 +3171,39 @@ function showKitDirecto(agName, provincia){
     <textarea id="kit-directo-body" style="width:100%;min-height:200px;font-size:13px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:var(--font);resize:vertical;box-sizing:border-box">${finalBody}</textarea>
     <div id="kit-directo-status" style="margin-top:8px;font-size:12px;min-height:20px"></div>`;
 
-  // Override send button — use closure variables directly
+  // Override send button — clone to remove all previous event listeners
   const sendBtn=document.getElementById('kit-send-btn');
   if(sendBtn){
-    sendBtn.textContent='📧 Enviar Kit';
+    const newBtn=sendBtn.cloneNode(true);
+    sendBtn.parentNode.replaceChild(newBtn,sendBtn);
+    newBtn.textContent='📧 Enviar Kit';
+    newBtn.disabled=false;
+    newBtn.style.background='';
     const _agName=ag.agencia, _mail=ag.mail, _agNum=ag.agNum, _prov=ag.provincia;
-    sendBtn.onclick=()=>sendKitDirecto(_agName,_mail,_agNum,_prov,sendBtn);
+    newBtn.onclick=()=>sendKitDirecto(_agName,_mail,_agNum,_prov,newBtn);
   }
 
   modal.style.display='flex';
 }
 
 async function sendKitDirecto(agName, toEmail, agNum, provincia, btn){
-  const body=document.getElementById('kit-directo-body')?.value;
+  const rawBody=document.getElementById('kit-directo-body')?.value;
   const statusEl=document.getElementById('kit-directo-status');
-  if(!body?.trim()){if(statusEl)statusEl.textContent='❌ El mensaje no puede estar vacío';return;}
+  if(!rawBody?.trim()){if(statusEl)statusEl.textContent='❌ El mensaje no puede estar vacío';return;}
   if(btn){btn.disabled=true;btn.textContent='Enviando...';}
   if(statusEl){statusEl.textContent='Enviando...';statusEl.style.color='var(--text3)';}
-
+  // Convert *text* to <b>text</b> for HTML email
+  const htmlBody=rawBody
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*(.*?)\*/g,'<b>$1</b>')
+    .replace(/\n/g,'<br>');
   const subject=`Bienvenido al Programa de Afiliados Betwarrior — ${agName}`;
-  const ok=await sendGmail(toEmail,subject,body,null);
-
+  const ok=await sendGmail(toEmail,subject,rawBody,null,htmlBody);
   if(ok){
     sentKitIds.add(agNum);
     saveCfg();
     if(statusEl){statusEl.textContent=`✅ Kit enviado a ${toEmail}`;statusEl.style.color='var(--green)';}
     if(btn){btn.textContent='✅ Enviado';btn.style.background='var(--green)';}
-    // Update buscador to reflect sent status
     setTimeout(()=>{
       document.getElementById('kit-modal').style.display='none';
       renderBuscadorResults();
