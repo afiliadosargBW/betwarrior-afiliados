@@ -3120,24 +3120,29 @@ function showKitDirecto(agName, provincia){
     .replace(/{numero}/gi,ag.agNum||'')
     .replace(/{provincia}/gi,ag.provincia||'');
 
-  // Show modal with preview
+  // Show modal with preview — reuse kit-modal but replace kit-list content
   const modal=document.getElementById('kit-modal');
-  const content=document.getElementById('kit-content');
-  if(!modal||!content)return;
+  const kitList=document.getElementById('kit-list');
+  if(!modal||!kitList)return;
 
-  content.innerHTML=`
-    <div style="margin-bottom:12px;padding:10px 14px;background:var(--accent-bg);border:1px solid rgba(26,115,232,.2);border-radius:10px;font-size:13px">
-      <div style="font-weight:600;margin-bottom:4px">${ag.agencia} · ${ag.provincia}</div>
-      <div style="color:var(--text2)">Para: <b>${ag.mail}</b></div>
-      <div style="color:var(--text3);font-size:11px;margin-top:2px">Titular: ${ag.titular||'—'} · Estado: ${ag.estado}</div>
-    </div>
+  // Override modal title for direct send
+  const titleEl=modal.querySelector('.modal-title');
+  if(titleEl)titleEl.textContent='📧 Enviar Kit de Bienvenida';
+  const subEl=modal.querySelector('.modal-sub');
+  if(subEl)subEl.textContent=`Para: ${ag.agencia} · ${ag.provincia} · ${ag.mail}`;
+
+  kitList.innerHTML=`
     <div style="margin-bottom:8px;font-size:12px;color:var(--text2);font-weight:500">Mensaje a enviar:</div>
     <textarea id="kit-directo-body" style="width:100%;min-height:200px;font-size:13px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:var(--font);resize:vertical;box-sizing:border-box">${body}</textarea>
-    <div id="kit-directo-status" style="margin-top:8px;font-size:12px;min-height:20px"></div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
-      <button onclick="document.getElementById('kit-modal').style.display='none'" class="modal-btn">Cancelar</button>
-      <button onclick="sendKitDirecto('${ag.agencia.replace(/'/g,"\\'")}','${ag.mail.replace(/'/g,"\\'")}','${ag.agNum}','${ag.provincia.replace(/'/g,"\\'")}',this)" class="modal-btn modal-btn-save">📧 Enviar Kit</button>
-    </div>`;
+    <div id="kit-directo-status" style="margin-top:8px;font-size:12px;min-height:20px"></div>`;
+
+  // Override send button — use closure variables directly
+  const sendBtn=document.getElementById('kit-send-btn');
+  if(sendBtn){
+    sendBtn.textContent='📧 Enviar Kit';
+    const _agName=ag.agencia, _mail=ag.mail, _agNum=ag.agNum, _prov=ag.provincia;
+    sendBtn.onclick=()=>sendKitDirecto(_agName,_mail,_agNum,_prov,sendBtn);
+  }
 
   modal.style.display='flex';
 }
