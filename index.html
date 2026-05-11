@@ -3112,14 +3112,23 @@ function showKitDirecto(agName, provincia){
     alert(`Esta agencia está en estado "${ag.estado}". El kit solo se envía a Candidatos e Inscriptos.`);return;
   }
 
-  // Build kit body using existing template system
-  const tmpl=cfg.templates?.['Nueva agencia']||DEFAULT_TMPLS['Nueva agencia']||'Hola {agencia},\n\nBienvenido al programa de afiliados Betwarrior.';
+  // Build kit body using Kit de bienvenida template
+  const tmpl=cfg.templates?.['Kit de bienvenida']||DEFAULT_TMPLS['Kit de bienvenida']||DEFAULT_TMPLS['Nueva agencia']||'';
   const body=tmpl
-    .replace(/{agencia}/gi,ag.agencia)
-    .replace(/{titular}/gi,ag.titular||ag.agencia)
-    .replace(/{numero}/gi,ag.agNum||'')
-    .replace(/{provincia}/gi,ag.provincia||'');
+    .replace(/\{agencia\}/gi, ag.agencia)
+    .replace(/\{titular\}/gi, ag.titular||ag.agencia)
+    .replace(/\{numero\}/gi, ag.agNum||'')
+    .replace(/\{provincia\}/gi, ag.provincia||'')
+    .replace(/\{usuario\}/gi, ag.usuario||'(completar)')
+    .replace(/\{password\}/gi, ag.password||'(completar)')
+    .replace(/\{link_afiliados\}/gi, ag.linkAfiliados||'(completar)')
+    .replace(/\{qr\}/gi, ag.qrLink||'(completar)');
 
+  // Append QR link at end if it exists and not already in template
+  const qrSection=ag.qrLink&&!tmpl.toLowerCase().includes('{qr}')
+    ?`\n\nSu QR personalizado:\n${ag.qrLink}`
+    :'';
+  const finalBody=body+qrSection;
   // Show modal with preview — reuse kit-modal but replace kit-list content
   const modal=document.getElementById('kit-modal');
   const kitList=document.getElementById('kit-list');
@@ -3132,8 +3141,9 @@ function showKitDirecto(agName, provincia){
   if(subEl)subEl.textContent=`Para: ${ag.agencia} · ${ag.provincia} · ${ag.mail}`;
 
   kitList.innerHTML=`
+    ${!ag.qrLink?'<div style="margin-bottom:8px;padding:8px 12px;background:var(--amber-bg);border-radius:8px;font-size:12px;color:var(--amber)">⚠️ Esta agencia no tiene link de QR en el Data Maestro (columna S). Podés agregarlo manualmente.</div>':''}
     <div style="margin-bottom:8px;font-size:12px;color:var(--text2);font-weight:500">Mensaje a enviar:</div>
-    <textarea id="kit-directo-body" style="width:100%;min-height:200px;font-size:13px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:var(--font);resize:vertical;box-sizing:border-box">${body}</textarea>
+    <textarea id="kit-directo-body" style="width:100%;min-height:200px;font-size:13px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:var(--font);resize:vertical;box-sizing:border-box">${finalBody}</textarea>
     <div id="kit-directo-status" style="margin-top:8px;font-size:12px;min-height:20px"></div>`;
 
   // Override send button — use closure variables directly
