@@ -3169,18 +3169,21 @@ function showKitDirecto(agName, provincia){
     ${!ag.qrLink?'<div style="margin-bottom:8px;padding:8px 12px;background:var(--amber-bg);border-radius:8px;font-size:12px;color:var(--amber)">⚠️ Esta agencia no tiene link de QR en el Data Maestro (columna S). Podés agregarlo manualmente.</div>':''}
     <div style="margin-bottom:8px;font-size:12px;color:var(--text2);font-weight:500">Mensaje a enviar:</div>
     <textarea id="kit-directo-body" style="width:100%;min-height:200px;font-size:13px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:var(--font);resize:vertical;box-sizing:border-box">${finalBody}</textarea>
-    <div id="kit-directo-status" style="margin-top:8px;font-size:12px;min-height:20px"></div>`;
+    <div id="kit-directo-status" style="margin-top:8px;font-size:12px;min-height:20px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+      <button onclick="closeKitModal()" class="modal-btn">Cancelar</button>
+      <button id="kit-directo-send-btn" class="modal-btn modal-btn-save">📧 Enviar Kit</button>
+    </div>`;
 
-  // Override send button — clone to remove all previous event listeners
-  const sendBtn=document.getElementById('kit-send-btn');
+  // Hide the original footer buttons and use the ones inside kitList
+  const originalActions=modal.querySelector('.modal-actions');
+  if(originalActions)originalActions.style.display='none';
+
+  // Bind send button after innerHTML is set
+  const sendBtn=document.getElementById('kit-directo-send-btn');
   if(sendBtn){
-    const newBtn=sendBtn.cloneNode(true);
-    sendBtn.parentNode.replaceChild(newBtn,sendBtn);
-    newBtn.textContent='📧 Enviar Kit';
-    newBtn.disabled=false;
-    newBtn.style.background='';
     const _agName=ag.agencia, _mail=ag.mail, _agNum=ag.agNum, _prov=ag.provincia;
-    newBtn.onclick=()=>sendKitDirecto(_agName,_mail,_agNum,_prov,newBtn);
+    sendBtn.onclick=()=>sendKitDirecto(_agName,_mail,_agNum,_prov,sendBtn);
   }
 
   modal.style.display='flex';
@@ -3250,7 +3253,15 @@ function showKitModal(){
   }
   document.getElementById('kit-modal').style.display='flex';
 }
-function closeKitModal(){document.getElementById('kit-modal').style.display='none';}
+function closeKitModal(){
+  document.getElementById('kit-modal').style.display='none';
+  // Restore original modal footer if it was hidden by showKitDirecto
+  const modal=document.getElementById('kit-modal');
+  if(modal){
+    const originalActions=modal.querySelector('.modal-actions');
+    if(originalActions)originalActions.style.display='';
+  }
+}
 async function sendKitSelected(){
   const candidates=dashData.filter(ag=>ag.estado==='En Proceso'&&ag.usuario&&ag.password&&ag.mail);
   const toSend=candidates.filter(ag=>{const cb=document.getElementById('kit-cb-'+ag.agNum);return cb&&cb.checked&&!sentKitIds.has(ag.agNum);});
