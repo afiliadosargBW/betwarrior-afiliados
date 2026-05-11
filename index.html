@@ -2576,6 +2576,7 @@ function buildStatsBuscador(){
           <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">NGR Afil.</th>
           <th style="text-align:right;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Comisión</th>
           <th style="text-align:center;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Mails</th>
+          <th style="text-align:center;padding:8px 10px;color:var(--text3);font-weight:600;white-space:nowrap">Kit</th>
         </tr>
       </thead>
       <tbody id="buscador-body"></tbody>
@@ -2630,6 +2631,7 @@ function renderBuscadorResults(){
       '<td style="padding:6px 10px;text-align:right;color:var(--text2)">'+(a.ngrAfil?fmt(a.ngrAfil):'—')+'</td>'+
       '<td style="padding:6px 10px;text-align:right;font-weight:600;color:'+(a.comision>0?'var(--green)':'var(--text3)')+'">$'+(a.comision||0).toLocaleString('es-AR')+'</td>'+
       '<td style="padding:6px 10px;text-align:center">'+(mails>0?'<span style="background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:8px;font-weight:600">'+mails+'</span>':'<span style="color:var(--text4)">—</span>')+'</td>'+
+      '<td style="padding:6px 10px;text-align:center">'+((!isGuest()&&['Candidato','Inscripto'].includes(a.estado))?(sentKitIds.has(a.agNum)?'<span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px">✓ Enviado</span>':(a.mail?'<button onclick="event.stopPropagation();showKitDirecto(\''+(a.agencia.replace(/'/g,"\\'"))+'\',\''+(a.provincia.replace(/'/g,"\\'"))+'\')" style="font-size:11px;padding:3px 10px;border-radius:8px;background:var(--accent);color:white;border:none;cursor:pointer;font-family:var(--font)">📧 Enviar Kit</button>':'<span style="font-size:11px;color:var(--amber)">⚠ Sin email</span>')):'<span style="color:var(--text4)">—</span>')+'</td>'+
     '</tr>';
   }).join('');
 }
@@ -3096,6 +3098,74 @@ function calcRun(trigger){
       </tbody>
     </table>
     </div>`;
+}
+
+// ============ KIT DIRECTO DESDE BUSCADOR ============
+function showKitDirecto(agName, provincia){
+  const ag=provincia
+    ?dashData.find(a=>a.agencia===agName&&a.provincia===provincia)||dashData.find(a=>a.agencia===agName)
+    :dashData.find(a=>a.agencia===agName);
+  if(!ag){alert('Agencia no encontrada');return;}
+  if(!ag.mail){alert('Esta agencia no tiene email en el Data Maestro.');return;}
+  if(sentKitIds.has(ag.agNum)){alert('El kit ya fue enviado a esta agencia.');return;}
+  if(!['Candidato','Inscripto'].includes(ag.estado)){
+    alert(`Esta agencia está en estado "${ag.estado}". El kit solo se envía a Candidatos e Inscriptos.`);return;
+  }
+
+  // Build kit body using existing template system
+  const tmpl=cfg.templates?.['Nueva agencia']||DEFAULT_TMPLS['Nueva agencia']||'Hola {agencia},\n\nBienvenido al programa de afiliados Betwarrior.';
+  const body=tmpl
+    .replace(/{agencia}/gi,ag.agencia)
+    .replace(/{titular}/gi,ag.titular||ag.agencia)
+    .replace(/{numero}/gi,ag.agNum||'')
+    .replace(/{provincia}/gi,ag.provincia||'');
+
+  // Show modal with preview
+  const modal=document.getElementById('kit-modal');
+  const content=document.getElementById('kit-content');
+  if(!modal||!content)return;
+
+  content.innerHTML=`
+    <div style="margin-bottom:12px;padding:10px 14px;background:var(--accent-bg);border:1px solid rgba(26,115,232,.2);border-radius:10px;font-size:13px">
+      <div style="font-weight:600;margin-bottom:4px">${ag.agencia} · ${ag.provincia}</div>
+      <div style="color:var(--text2)">Para: <b>${ag.mail}</b></div>
+      <div style="color:var(--text3);font-size:11px;margin-top:2px">Titular: ${ag.titular||'—'} · Estado: ${ag.estado}</div>
+    </div>
+    <div style="margin-bottom:8px;font-size:12px;color:var(--text2);font-weight:500">Mensaje a enviar:</div>
+    <textarea id="kit-directo-body" style="width:100%;min-height:200px;font-size:13px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:var(--font);resize:vertical;box-sizing:border-box">${body}</textarea>
+    <div id="kit-directo-status" style="margin-top:8px;font-size:12px;min-height:20px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+      <button onclick="document.getElementById('kit-modal').style.display='none'" class="modal-btn">Cancelar</button>
+      <button onclick="sendKitDirecto('${ag.agencia.replace(/'/g,"\\'")}','${ag.mail.replace(/'/g,"\\'")}','${ag.agNum}','${ag.provincia.replace(/'/g,"\\'")}',this)" class="modal-btn modal-btn-save">📧 Enviar Kit</button>
+    </div>`;
+
+  modal.style.display='flex';
+}
+
+async function sendKitDirecto(agName, toEmail, agNum, provincia, btn){
+  const body=document.getElementById('kit-directo-body')?.value;
+  const statusEl=document.getElementById('kit-directo-status');
+  if(!body?.trim()){if(statusEl)statusEl.textContent='❌ El mensaje no puede estar vacío';return;}
+  if(btn){btn.disabled=true;btn.textContent='Enviando...';}
+  if(statusEl){statusEl.textContent='Enviando...';statusEl.style.color='var(--text3)';}
+
+  const subject=`Bienvenido al Programa de Afiliados Betwarrior — ${agName}`;
+  const ok=await sendGmail(toEmail,subject,body,null);
+
+  if(ok){
+    sentKitIds.add(agNum);
+    saveCfg();
+    if(statusEl){statusEl.textContent=`✅ Kit enviado a ${toEmail}`;statusEl.style.color='var(--green)';}
+    if(btn){btn.textContent='✅ Enviado';btn.style.background='var(--green)';}
+    // Update buscador to reflect sent status
+    setTimeout(()=>{
+      document.getElementById('kit-modal').style.display='none';
+      renderBuscadorResults();
+    },1500);
+  }else{
+    if(statusEl){statusEl.textContent='❌ Error al enviar. Verificá el token de Gmail.';statusEl.style.color='var(--red)';}
+    if(btn){btn.disabled=false;btn.textContent='📧 Enviar Kit';}
+  }
 }
 
 // ============ KIT BIENVENIDA ============
