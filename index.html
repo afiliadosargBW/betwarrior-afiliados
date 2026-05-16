@@ -257,6 +257,38 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#dadce0;border-radius:3px}
+
+/* ── Transiciones sidebar ── */
+.nav-item{transition:background .15s,color .15s;}
+.nav-count{transition:all .2s;}
+
+/* ── Skeleton loader ── */
+@keyframes skeleton-shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.skeleton{display:inline-block;min-width:20px;height:14px;border-radius:4px;background:linear-gradient(90deg,var(--border) 25%,var(--bg) 50%,var(--border) 75%);background-size:400px 100%;animation:skeleton-shimmer 1.4s infinite;}
+
+/* ── Spinner ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;}
+.spinner-lg{width:32px;height:32px;border-width:3px;}
+
+/* ── Empty state ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--text3);text-align:center;gap:12px;}
+.empty-state-icon{font-size:48px;opacity:0.35;line-height:1;}
+.empty-state-title{font-size:15px;font-weight:600;color:var(--text2);}
+.empty-state-sub{font-size:13px;max-width:280px;line-height:1.5;}
+
+/* ── Modal fade ── */
+.modal-overlay{animation:none;}
+.modal-overlay.open{animation:fadeIn .18s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-overlay .modal{transition:transform .18s ease,opacity .18s ease;}
+
+/* ── Show/hide password ── */
+.pw-wrap{position:relative;display:flex;align-items:center;}
+.pw-wrap input{padding-right:38px !important;width:100%;box-sizing:border-box;}
+.pw-toggle{position:absolute;right:10px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:0;line-height:1;}
+.pw-toggle:hover{color:var(--text);}
+
 </style>
 </head>
 <body>
@@ -271,7 +303,7 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
     </button>
     <div class="login-or">o ingresá como invitado</div>
     <div class="login-fields">
-      <div class="form-group"><label class="form-label">Contraseña de invitado</label><input class="form-input" id="inp-guest" type="password" placeholder="Contraseña compartida"></div>
+      <div class="form-group"><label class="form-label">Contraseña de invitado</label><div class="pw-wrap"><input class="form-input" id="inp-guest" type="password" placeholder="Contraseña compartida"><button class="pw-toggle" type="button" onclick="const i=document.getElementById('inp-guest');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁':'🙈'" aria-label="Mostrar/ocultar contraseña">👁</button></div></div>
       <button id="btn-guest-login" class="connect-btn" style="background:var(--green)" onclick="loginGuest()">Entrar como invitado (solo lectura)</button>
     </div>
   </div>
@@ -287,7 +319,7 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
       </div>
     </div>
     <div class="topbar-right">
-      <span id="last-sync" style="font-size:11px;color:var(--text3)"></span>
+      <span id="last-sync" style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px"></span>
       <div class="account-chip"><div class="status-dot"></div><span id="account-pill">afiliadosarg@betwarrior.com</span></div>
       <button class="icon-btn" onclick="showCalc()" title="Calculadora de fees">🧮</button>
       <button class="icon-btn" onclick="showStats()" title="Estadísticas Afiliados">📊</button>
@@ -611,7 +643,7 @@ window.onload=()=>{
   renderDaysFilter();
   const params=new URLSearchParams(window.location.search);
   if(params.get('code'))handleCallback(params.get('code'));
-  else if(cfg.guestMode){showApp();syncAll();}
+  else if(cfg.guestMode){showApp();document.querySelectorAll('.nav-count').forEach(el=>el.innerHTML='<span class="skeleton"></span>');syncAll();}
   else if(cfg.token){showApp();syncAll();}
   // Keyboard shortcuts
   document.addEventListener('keydown',handleKeyboard);
@@ -978,7 +1010,7 @@ async function syncAll(){
     }
   }
   const sync=document.getElementById('last-sync');
-  if(sync)sync.textContent='Sincronizando...';
+  if(sync)sync.innerHTML='<span class="spinner"></span> Sincronizando...';
   // Save previous data in case sync fails
   const prevEmails=[...allEmails];
   const prevProcessed={...processed};
@@ -1566,7 +1598,18 @@ function renderList(q=''){
   if(!list)return;
   const emails=getFiltered(q);
   list.innerHTML='';
-  if(!emails.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='No hay correos en esta categoría';list.appendChild(empty);const mc=document.getElementById('mail-count');if(mc)mc.textContent='0 correos';return;}
+  if(!emails.length){const empty=document.createElement('div');empty.className='empty';const emptyMap={
+    all:['📭','Sin correos','No hay emails en el período seleccionado.'],
+    attention:['✅','Todo al día','No hay mails que requieran tu atención ahora.'],
+    problema:['🟢','Sin problemas','No se detectaron mails con problemas o reclamos.'],
+    sumarse:['📋','Sin interesados','No hay mails de agencias que quieran sumarse.'],
+    candidato:['📬','Sin candidatos','No hay mails de agencias candidatas.'],
+    followup:['🕐','Sin seguimientos','No hay mails esperando respuesta.'],
+    unidentified:['❓','Todo identificado','No hay mails sin identificar.'],
+    vip:['⭐','Sin mails VIP','No hay mails de agencias VIP en este período.'],
+  };
+  const [ico,title,sub]=emptyMap[currentFilter]||emptyMap['all'];
+  empty.innerHTML=`<div class="empty-state"><div class="empty-state-icon">${ico}</div><div class="empty-state-title">${title}</div><div class="empty-state-sub">${sub}</div></div>`;list.appendChild(empty);const mc=document.getElementById('mail-count');if(mc)mc.textContent='0 correos';return;}
 
   const frag=document.createDocumentFragment();
   for(const e of emails){
@@ -3303,6 +3346,21 @@ async function sendKitSelected(){
     await sendGmail(cfg.myEmail||RESUMEN_TO,`Kit Bienvenida ${new Date().toLocaleDateString('es-AR')}`,resumen,null);
   }
 }
+
+
+// ── Close modal on Escape or outside click ──────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    document.querySelectorAll('.modal-overlay').forEach(m=>{
+      if(m.style.display!=='none')m.style.display='none';
+    });
+  }
+});
+document.querySelectorAll('.modal-overlay').forEach(overlay=>{
+  overlay.addEventListener('click',e=>{
+    if(e.target===overlay)overlay.style.display='none';
+  });
+});
 
 </script>
 </body>
