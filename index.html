@@ -3174,9 +3174,90 @@ let campSentIds=new Set(JSON.parse(localStorage.getItem(CAMP_SENT_KEY)||'[]'));
 function saveCampSent(){localStorage.setItem(CAMP_SENT_KEY,JSON.stringify([...campSentIds]));}
 
 const CAMP_TEMPLATES={
-  activacion:`Hola {titular},\n\nNotamos que aún no registrás actividad en el programa de afiliados Betwarrior. ¡No hay problema, estamos para ayudarte a arrancar!\n\nSi tenés alguna duda sobre cómo funciona, cómo compartir tu link o qué materiales usar, escribinos a afiliadosarg@betwarrior.com y te acompañamos.\n\nTambién podés consultar tu kit de materiales con todo lo que necesitás para empezar.\n\n¡Saludos!\nEquipo Betwarrior Afiliados`,
+  activacion:`Hola {titular},\n\nNotamos que aún no registrás actividad en el programa de afiliados Betwarrior. ¡No hay problema, estamos para ayudarte a arrancar!\n\nSi tenés alguna duda sobre cómo funciona, cómo compartir tu link o qué materiales usar, escribinos a afiliadosarg@betwarrior.com y te acompañamos.\n\nTambién podés consultar tu kit de bienvenida con todo lo que necesitás para empezar.\n\n¡Saludos!\nEquipo Betwarrior Afiliados`,
   reactivacion:`Hola {titular},\n\nHace un tiempo que no registrás actividad en el programa de afiliados Betwarrior, y queríamos escribirte para saber cómo estás.\n\n¿Tuviste algún inconveniente? ¿Hay algo en lo que podamos ayudarte?\n\nCualquier consulta podés escribirnos a afiliadosarg@betwarrior.com, estamos para lo que necesites.\n\n¡Saludos!\nEquipo Betwarrior Afiliados`
 };
+
+// Monthly sheet data cache
+let monthlySheets=[];      // [{name:'Marzo 2026', data:{usuario:clicks_su}}]
+let monthlySheetsLoaded=false;
+
+// Detect month sheets dynamically — pattern: "Mes YYYY" or "Month YYYY"
+const MONTH_NAMES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre',
+  'january','february','march','april','may','june','july','august','september','october','november','december'];
+
+function isMonthSheet(name){
+  const lower=name.toLowerCase();
+  return MONTH_NAMES.some(m=>lower.startsWith(m))&&/\d{4}/.test(name);
+}
+
+function monthSheetOrder(name){
+  const lower=name.toLowerCase();
+  const yearMatch=name.match(/\d{4}/);
+  const year=yearMatch?parseInt(yearMatch[0]):0;
+  const monthIdx=MONTH_NAMES.findIndex(m=>lower.startsWith(m));
+  const month=monthIdx>=12?monthIdx-12:monthIdx; // normalize EN to same as ES
+  return year*100+month;
+}
+
+async function loadMonthlySheets(){
+  if(monthlySheetsLoaded)return;
+  const t=await getToken();if(!t)return;
+  try{
+    // 1. Get all sheet names
+    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}?fields=sheets.properties.title`,{headers:{'Authorization':'Bearer '+t}});
+    const d=await r.json();
+    const names=(d.sheets||[]).map(s=>s.properties.title).filter(isMonthSheet);
+    // Sort chronologically
+    names.sort((a,b)=>monthSheetOrder(a)-monthSheetOrder(b));
+    // 2. Load each month sheet — columns: Usuario MYAFFS, Clicks, Sign up
+    monthlySheets=[];
+    for(const name of names){
+      const rv=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/${encodeURIComponent(name)}?majorDimension=ROWS`,{headers:{'Authorization':'Bearer '+t}});
+      const rd=await rv.json();
+      const rows=rd.values||[];
+      if(!rows.length)continue;
+      // Header row — find column indices
+      const header=rows[0].map(h=>(h||'').toLowerCase());
+      const iUser=header.findIndex(h=>h.includes('usuario')||h.includes('myaff'));
+      const iClicks=header.findIndex(h=>h.includes('click'));
+      const iSU=header.findIndex(h=>h.includes('sign')||h.includes('signup'));
+      if(iUser<0)continue;
+      // Build map: username -> {clicks, signups}
+      const data={};
+      rows.slice(1).forEach(row=>{
+        const user=(row[iUser]||'').trim();
+        if(!user)return;
+        data[user]={
+          clicks:parseInt(row[iClicks])||0,
+          signups:parseInt(row[iSU])||0
+        };
+      });
+      monthlySheets.push({name,data});
+    }
+    monthlySheetsLoaded=true;
+  }catch(e){console.error('loadMonthlySheets error',e);}
+}
+
+// Get agencias with no activity in last N months
+// Returns array of agencias from dashData
+function getReactivacionGroup(minSignupsTotal,nMonths){
+  if(!monthlySheets.length)return[];
+  // Last N month sheets
+  const lastN=monthlySheets.slice(-nMonths);
+  return dashData.filter(a=>{
+    if(a.estado!=='Activa'||!a.mail)return false;
+    if(a.signups<minSignupsTotal)return false; // must have had activity historically
+    if(!a.usuario)return false; // need MYAFFS username to cross-reference
+    // Check if they had 0 clicks AND 0 signups in ALL of the last N months
+    const inactive=lastN.every(sheet=>{
+      const row=sheet.data[a.usuario];
+      if(!row)return true; // not in sheet = 0 activity
+      return row.clicks===0&&row.signups===0;
+    });
+    return inactive;
+  });
+}
 
 function buildStatsCampanas(){
   return `
@@ -3198,11 +3279,12 @@ function buildStatsCampanas(){
     </div>
     <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden">
       <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-        <div><div style="font-size:15px;font-weight:600;color:var(--text)">Reactivación</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Agencias activas que tuvieron actividad y pararon</div></div>
+        <div><div style="font-size:15px;font-weight:600;color:var(--text)">Reactivación</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Agencias que tuvieron actividad pero llevan meses sin moverse</div></div>
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Clicks mín:<input id="camp-react-clicks" type="number" value="10" min="0" max="999" onchange="renderCampanas()" style="width:56px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Sign ups mín:<input id="camp-react-signups" type="number" value="1" min="0" max="999" onchange="renderCampanas()" style="width:56px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Sign ups históricos mín:<input id="camp-react-signups" type="number" value="1" min="1" max="999" onchange="renderCampanas()" style="width:56px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Meses sin actividad:<input id="camp-react-months" type="number" value="2" min="1" max="12" onchange="renderCampanas()" style="width:48px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
           <span id="camp-react-count" style="font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-bg);padding:2px 10px;border-radius:10px">0 agencias</span>
+          <span id="camp-react-sheets" style="font-size:11px;color:var(--text3)"></span>
         </div>
       </div>
       <div style="padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px">
@@ -3215,18 +3297,32 @@ function buildStatsCampanas(){
   </div>`;
 }
 
-function renderCampanas(){
+async function renderCampanas(){
   const actClicks=parseInt(document.getElementById('camp-act-clicks')?.value??10);
   const actSU=parseInt(document.getElementById('camp-act-signups')?.value??0);
-  const reactClicks=parseInt(document.getElementById('camp-react-clicks')?.value??10);
   const reactSU=parseInt(document.getElementById('camp-react-signups')?.value??1);
+  const reactMonths=parseInt(document.getElementById('camp-react-months')?.value??2);
+
   const activas=dashData.filter(a=>a.estado==='Activa'&&a.mail);
+
+  // Activación: acumulado total
   const actGroup=activas.filter(a=>a.clicks<=actClicks&&a.signups<=actSU);
-  const reactGroup=activas.filter(a=>a.clicks>=reactClicks&&a.signups>=reactSU);
-  const actCount=document.getElementById('camp-act-count');
+
+  // Reactivación: cruzar con hojas mensuales
   const reactCount=document.getElementById('camp-react-count');
-  if(actCount)actCount.textContent=actGroup.length+' agencia'+(actGroup.length!==1?'s':'');
+  const sheetsLabel=document.getElementById('camp-react-sheets');
+  if(!monthlySheetsLoaded){
+    if(sheetsLabel)sheetsLabel.textContent='Cargando hojas...';
+    await loadMonthlySheets();
+  }
+  const lastN=monthlySheets.slice(-reactMonths);
+  if(sheetsLabel)sheetsLabel.textContent=lastN.length?`Revisando: ${lastN.map(s=>s.name).join(', ')}`:'⚠️ No se encontraron hojas mensuales';
+  const reactGroup=getReactivacionGroup(reactSU,reactMonths);
+
+  const actCountEl=document.getElementById('camp-act-count');
+  if(actCountEl)actCountEl.textContent=actGroup.length+' agencia'+(actGroup.length!==1?'s':'');
   if(reactCount)reactCount.textContent=reactGroup.length+' agencia'+(reactGroup.length!==1?'s':'');
+
   renderCampTable('camp-act-body',actGroup,'activacion');
   renderCampTable('camp-react-body',reactGroup,'reactivacion');
 }
