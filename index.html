@@ -3256,21 +3256,23 @@ async function loadMonthlySheets(){
 
 // Get agencias with no activity in last N months
 // Returns array of agencias from dashData
-function getReactivacionGroup(minSignupsTotal,nMonths){
+function getReactivacionGroup(minSignupsTotal,nMonths,metric){
   if(!monthlySheets.length)return[];
   const lastN=monthlySheets.slice(-nMonths);
   return dashData.filter(a=>{
     if(a.estado!=='Activa'||!a.mail)return false;
-    if(a.signups<minSignupsTotal)return false; // must have had signups historically
+    if(a.signups<minSignupsTotal)return false;
     if(!a.usuario)return false;
-    // Check if they had 0 signups in ALL of the last N months
-    // (clicks don't matter — could be browsing. What matters is no new affiliates)
-    const noSignups=lastN.every(sheet=>{
+    // Check inactivity based on chosen metric
+    const inactive=lastN.every(sheet=>{
       const row=sheet.data[a.usuario];
       if(!row)return true; // not in sheet = 0 activity
-      return row.signups===0;
+      if(metric==='clicks')return row.clicks===0;
+      if(metric==='ftds')return(row.ftds||0)===0;
+      if(metric==='any')return row.clicks===0&&row.signups===0&&(row.ftds||0)===0;
+      return row.signups===0; // default: signups
     });
-    return noSignups;
+    return inactive;
   });
 }
 
@@ -3298,7 +3300,8 @@ function buildStatsCampanas(){
         <div><div style="font-size:15px;font-weight:600;color:var(--text)">Reactivación</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Agencias que alguna vez afiliaron pero llevan meses sin nuevos sign ups</div></div>
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Sign ups históricos mín:<input id="camp-react-signups" type="number" value="1" min="1" max="999" onchange="renderCampanas()" style="width:56px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Meses sin actividad:<input id="camp-react-months" type="number" value="2" min="1" max="12" onchange="renderCampanas()" style="width:48px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Meses sin:<select id="camp-react-metric" onchange="renderCampanas()" style="padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"><option value="signups">Sign ups</option><option value="clicks">Clicks</option><option value="ftds">FTDs</option><option value="any">Cualquier actividad</option></select></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Cantidad de meses:<input id="camp-react-months" type="number" value="2" min="1" max="12" onchange="renderCampanas()" style="width:48px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Provincia:<select id="camp-react-prov" onchange="renderCampanas()" style="padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"><option value="">Todas</option></select></div>
           <span id="camp-react-count" style="font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-bg);padding:2px 10px;border-radius:10px">0 agencias</span>
           <span id="camp-react-sheets" style="font-size:11px;color:var(--text3)"></span>
@@ -3320,6 +3323,7 @@ async function renderCampanas(){
   const actProv=document.getElementById('camp-act-prov')?.value||'';
   const reactSU=parseInt(document.getElementById('camp-react-signups')?.value??1);
   const reactMonths=parseInt(document.getElementById('camp-react-months')?.value??2);
+  const reactMetric=document.getElementById('camp-react-metric')?.value||'signups';
   const reactProv=document.getElementById('camp-react-prov')?.value||'';
 
   const activas=dashData.filter(a=>a.estado==='Activa'&&a.mail);
@@ -3348,9 +3352,10 @@ async function renderCampanas(){
     await loadMonthlySheets();
   }
   const lastN=monthlySheets.slice(-reactMonths);
-  if(sheetsLabel)sheetsLabel.textContent=lastN.length?`Revisando: ${lastN.map(s=>s.name).join(', ')}`:'⚠️ No se encontraron hojas mensuales';
+  const metricLabels={signups:'sign ups',clicks:'clicks',ftds:'FTDs',any:'actividad'};
+  if(sheetsLabel)sheetsLabel.textContent=lastN.length?`Sin ${metricLabels[reactMetric]||'sign ups'} en: ${lastN.map(s=>s.name).join(', ')}`:'⚠️ No se encontraron hojas mensuales';
 
-  const reactGroupAll=getReactivacionGroup(reactSU,reactMonths);
+  const reactGroupAll=getReactivacionGroup(reactSU,reactMonths,reactMetric);
   const reactGroup=reactGroupAll.filter(a=>!reactProv||a.provincia===reactProv);
 
   const actCountEl=document.getElementById('camp-act-count');
