@@ -2498,9 +2498,9 @@ function renderStats(){
       <div style="display:flex;align-items:center;gap:16px">
         <div style="font-size:17px;font-weight:600;color:var(--text)">📊 Estadísticas</div>
         <div style="display:flex;gap:4px">
-          ${['resumen','buscador','engagement','pipeline'].map(t=>`
+          ${['resumen','buscador','engagement','pipeline','campanas'].map(t=>`
             <button onclick="switchStatsTab('${t}')" style="padding:8px 16px;border:none;border-bottom:2px solid ${statsTab===t?'var(--accent)':'transparent'};background:transparent;font-size:13px;font-weight:${statsTab===t?'600':'400'};color:${statsTab===t?'var(--accent)':'var(--text2)'};cursor:pointer;font-family:var(--font);transition:all .15s">
-              ${{resumen:'Resumen',buscador:'Buscador',engagement:'Engagement',pipeline:'Pipeline'}[t]}
+              ${{resumen:'Resumen',buscador:'Buscador',engagement:'Engagement',pipeline:'Pipeline',campanas:'Campañas'}[t]}
             </button>`).join('')}
         </div>
       </div>
@@ -2513,8 +2513,7 @@ function renderStats(){
 
 function switchStatsTab(t){
   statsTab=t;
-  // Update tab styles
-  ['resumen','buscador','engagement','pipeline'].forEach(tab=>{
+  ['resumen','buscador','engagement','pipeline','campanas'].forEach(tab=>{
     const btn=document.querySelector(`button[onclick="switchStatsTab('${tab}')"]`);
     if(!btn)return;
     btn.style.borderBottom=tab===t?'2px solid var(--accent)':'2px solid transparent';
@@ -2531,6 +2530,7 @@ function renderStatsTab(){
   else if(statsTab==='buscador'){c.innerHTML=buildStatsBuscador();renderBuscadorResults();}
   else if(statsTab==='engagement'){c.innerHTML=buildStatsEngagement();renderEngagement();}
   else if(statsTab==='pipeline')c.innerHTML=buildStatsPipeline();
+  else if(statsTab==='campanas'){c.innerHTML=buildStatsCampanas();renderCampanas();}
 }
 
 function buildStatsResumen(){
@@ -3166,6 +3166,168 @@ function calcRun(trigger){
       </tbody>
     </table>
     </div>`;
+}
+
+// ============ CAMPAÑAS ============
+const CAMP_SENT_KEY='bwafi_camp_sent';
+let campSentIds=new Set(JSON.parse(localStorage.getItem(CAMP_SENT_KEY)||'[]'));
+function saveCampSent(){localStorage.setItem(CAMP_SENT_KEY,JSON.stringify([...campSentIds]));}
+
+const CAMP_TEMPLATES={
+  activacion:`Hola {titular},\n\nNotamos que aún no registrás actividad en el programa de afiliados Betwarrior. ¡No hay problema, estamos para ayudarte a arrancar!\n\nSi tenés alguna duda sobre cómo funciona, cómo compartir tu link o qué materiales usar, escribinos a afiliadosarg@betwarrior.com y te acompañamos.\n\nTambién podés consultar tu kit de materiales con todo lo que necesitás para empezar.\n\n¡Saludos!\nEquipo Betwarrior Afiliados`,
+  reactivacion:`Hola {titular},\n\nHace un tiempo que no registrás actividad en el programa de afiliados Betwarrior, y queríamos escribirte para saber cómo estás.\n\n¿Tuviste algún inconveniente? ¿Hay algo en lo que podamos ayudarte?\n\nCualquier consulta podés escribirnos a afiliadosarg@betwarrior.com, estamos para lo que necesites.\n\n¡Saludos!\nEquipo Betwarrior Afiliados`
+};
+
+function buildStatsCampanas(){
+  return `
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div><div style="font-size:15px;font-weight:600;color:var(--text)">Activación</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Agencias activas que nunca se movieron</div></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Clicks máx:<input id="camp-act-clicks" type="number" value="10" min="0" max="999" onchange="renderCampanas()" style="width:56px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Sign ups máx:<input id="camp-act-signups" type="number" value="0" min="0" max="999" onchange="renderCampanas()" style="width:56px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
+          <span id="camp-act-count" style="font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-bg);padding:2px 10px;border-radius:10px">0 agencias</span>
+        </div>
+      </div>
+      <div style="padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="camp-act-all" onchange="toggleAllCamp('activacion',this.checked)"> Seleccionar todas</label>
+        <button onclick="enviarCampanaSeleccionadas('activacion')" style="font-size:12px;padding:5px 16px;border-radius:8px;background:var(--accent);color:white;border:none;cursor:pointer;font-family:var(--font);font-weight:600">📧 Enviar a seleccionadas</button>
+      </div>
+      <div id="camp-act-body" style="max-height:320px;overflow-y:auto"></div>
+    </div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div><div style="font-size:15px;font-weight:600;color:var(--text)">Reactivación</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Agencias activas que tuvieron actividad y pararon</div></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Clicks mín:<input id="camp-react-clicks" type="number" value="10" min="0" max="999" onchange="renderCampanas()" style="width:56px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Sign ups mín:<input id="camp-react-signups" type="number" value="1" min="0" max="999" onchange="renderCampanas()" style="width:56px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
+          <span id="camp-react-count" style="font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-bg);padding:2px 10px;border-radius:10px">0 agencias</span>
+        </div>
+      </div>
+      <div style="padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="camp-react-all" onchange="toggleAllCamp('reactivacion',this.checked)"> Seleccionar todas</label>
+        <button onclick="enviarCampanaSeleccionadas('reactivacion')" style="font-size:12px;padding:5px 16px;border-radius:8px;background:var(--accent);color:white;border:none;cursor:pointer;font-family:var(--font);font-weight:600">📧 Enviar a seleccionadas</button>
+      </div>
+      <div id="camp-react-body" style="max-height:320px;overflow-y:auto"></div>
+    </div>
+    <div id="camp-log" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--text2);max-height:180px;overflow-y:auto"></div>
+  </div>`;
+}
+
+function renderCampanas(){
+  const actClicks=parseInt(document.getElementById('camp-act-clicks')?.value??10);
+  const actSU=parseInt(document.getElementById('camp-act-signups')?.value??0);
+  const reactClicks=parseInt(document.getElementById('camp-react-clicks')?.value??10);
+  const reactSU=parseInt(document.getElementById('camp-react-signups')?.value??1);
+  const activas=dashData.filter(a=>a.estado==='Activa'&&a.mail);
+  const actGroup=activas.filter(a=>a.clicks<=actClicks&&a.signups<=actSU);
+  const reactGroup=activas.filter(a=>a.clicks>=reactClicks&&a.signups>=reactSU);
+  const actCount=document.getElementById('camp-act-count');
+  const reactCount=document.getElementById('camp-react-count');
+  if(actCount)actCount.textContent=actGroup.length+' agencia'+(actGroup.length!==1?'s':'');
+  if(reactCount)reactCount.textContent=reactGroup.length+' agencia'+(reactGroup.length!==1?'s':'');
+  renderCampTable('camp-act-body',actGroup,'activacion');
+  renderCampTable('camp-react-body',reactGroup,'reactivacion');
+}
+
+function renderCampTable(bodyId,list,tipo){
+  const el=document.getElementById(bodyId);if(!el)return;
+  if(!list.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">No hay agencias que coincidan con los filtros</div>';return;}
+  el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="background:var(--bg);border-bottom:1px solid var(--border)">
+      <th style="padding:8px 16px;width:32px"></th>
+      <th style="padding:8px 10px;text-align:left;color:var(--text3);font-weight:600">Agencia</th>
+      <th style="padding:8px 10px;text-align:left;color:var(--text3);font-weight:600">Provincia</th>
+      <th style="padding:8px 10px;text-align:left;color:var(--text3);font-weight:600">Titular</th>
+      <th style="padding:8px 10px;text-align:right;color:var(--text3);font-weight:600">Clicks</th>
+      <th style="padding:8px 10px;text-align:right;color:var(--text3);font-weight:600">Sign ups</th>
+      <th style="padding:8px 10px;text-align:center;color:var(--text3);font-weight:600">Envío</th>
+      <th style="padding:8px 10px;text-align:center;color:var(--text3);font-weight:600">Acción</th>
+    </tr></thead>
+    <tbody>${list.map(a=>{
+      const sent=campSentIds.has(`${tipo}_${a.agNum}`);
+      const esc=s=>(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 16px">${sent?'':'<input type="checkbox" class="camp-check-'+tipo+'" data-agnum="'+a.agNum+'" data-agencia="'+esc(a.agencia)+'" data-prov="'+esc(a.provincia)+'" data-mail="'+a.mail+'" data-titular="'+esc(a.titular)+'">'}</td>
+        <td style="padding:8px 10px;font-weight:500">${a.agencia}</td>
+        <td style="padding:8px 10px;color:var(--text2)">${a.provincia||'—'}</td>
+        <td style="padding:8px 10px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.titular||'—'}</td>
+        <td style="padding:8px 10px;text-align:right;color:var(--text2)">${a.clicks}</td>
+        <td style="padding:8px 10px;text-align:right;color:var(--text2)">${a.signups}</td>
+        <td style="padding:8px 10px;text-align:center">${sent?'<span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px">✓ Enviado</span>':'<span style="font-size:11px;color:var(--text4)">—</span>'}</td>
+        <td style="padding:8px 10px;text-align:center">${sent?'—':'<button onclick="previewCampana(\''+tipo+'\',\''+a.agNum+'\',\''+esc(a.agencia)+'\',\''+a.mail+'\',\''+esc(a.titular)+'\')" style="font-size:11px;padding:3px 10px;border-radius:6px;background:var(--bg);color:var(--accent);border:1px solid var(--accent);cursor:pointer;font-family:var(--font)">Vista previa</button>'}</td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+function toggleAllCamp(tipo,checked){
+  document.querySelectorAll('.camp-check-'+tipo).forEach(cb=>cb.checked=checked);
+}
+
+function previewCampana(tipo,agNum,agencia,mail,titular){
+  const tmpl=CAMP_TEMPLATES[tipo];
+  const body=tmpl.replace(/\{titular\}/gi,titular||agencia).replace(/\{agencia\}/gi,agencia);
+  const subject=`Programa de Afiliados Betwarrior — ${agencia}`;
+  const modal=document.getElementById('kit-modal');
+  const kitList=document.getElementById('kit-list');
+  if(!modal||!kitList)return;
+  const titleEl=modal.querySelector('.modal-title');
+  if(titleEl)titleEl.textContent=tipo==='activacion'?'Campaña Activación':'Campaña Reactivación';
+  const subEl=modal.querySelector('.modal-sub');
+  if(subEl)subEl.textContent=`Para: ${agencia} · ${mail}`;
+  const originalActions=modal.querySelector('.modal-actions');
+  if(originalActions)originalActions.style.display='none';
+  kitList.innerHTML=`
+    <textarea id="camp-preview-body" style="width:100%;min-height:200px;font-size:13px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:var(--font);resize:vertical;box-sizing:border-box">${body}</textarea>
+    <div id="camp-preview-status" style="margin-top:8px;font-size:12px;min-height:20px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+      <button onclick="closeKitModal()" class="modal-btn">Cancelar</button>
+      <button id="camp-preview-send" class="modal-btn modal-btn-save">📧 Enviar</button>
+    </div>`;
+  const sendBtn=document.getElementById('camp-preview-send');
+  if(sendBtn){
+    sendBtn.onclick=async()=>{
+      const b=document.getElementById('camp-preview-body')?.value;
+      if(!b)return;
+      sendBtn.disabled=true;sendBtn.textContent='Enviando...';
+      const htmlBody=b.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*(.*?)\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+      const ok=await sendGmail(mail,subject,b,null,htmlBody);
+      const st=document.getElementById('camp-preview-status');
+      if(ok){
+        campSentIds.add(`${tipo}_${agNum}`);saveCampSent();
+        if(st){st.textContent=`✅ Enviado a ${mail}`;st.style.color='var(--green)';}
+        sendBtn.textContent='✅ Enviado';sendBtn.style.background='var(--green)';
+        setTimeout(()=>{closeKitModal();renderCampanas();},1500);
+      }else{
+        if(st){st.textContent='❌ Error al enviar';st.style.color='var(--red)';}
+        sendBtn.disabled=false;sendBtn.textContent='📧 Enviar';
+      }
+    };
+  }
+  modal.style.display='flex';
+}
+
+async function enviarCampanaSeleccionadas(tipo){
+  const checks=[...document.querySelectorAll('.camp-check-'+tipo+':checked')];
+  if(!checks.length){alert('Seleccioná al menos una agencia');return;}
+  const log=document.getElementById('camp-log');
+  if(log){log.style.display='block';log.innerHTML=`<b>Enviando campaña a ${checks.length} agencias...</b><br>`;}
+  const subject='Programa de Afiliados Betwarrior';
+  let sent=0,errors=0;
+  for(const cb of checks){
+    const agNum=cb.dataset.agnum,agencia=cb.dataset.agencia,mail=cb.dataset.mail,titular=cb.dataset.titular;
+    const body=CAMP_TEMPLATES[tipo].replace(/\{titular\}/gi,titular||agencia).replace(/\{agencia\}/gi,agencia);
+    const htmlBody=body.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*(.*?)\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+    if(log)log.innerHTML+=`→ ${agencia} (${mail})... `;
+    const ok=await sendGmail(mail,subject,body,null,htmlBody);
+    if(ok){campSentIds.add(`${tipo}_${agNum}`);saveCampSent();sent++;if(log)log.innerHTML+='<span style="color:var(--green)">✓</span><br>';}
+    else{errors++;if(log)log.innerHTML+='<span style="color:var(--red)">✗ Error</span><br>';}
+    await new Promise(r=>setTimeout(r,800));
+    if(log)log.scrollTop=log.scrollHeight;
+  }
+  if(log)log.innerHTML+=`<br><b style="color:var(--green)">Completado: ${sent} enviados${errors?`, ${errors} errores`:''}</b>`;
+  renderCampanas();
 }
 
 // ============ KIT DIRECTO DESDE BUSCADOR ============
