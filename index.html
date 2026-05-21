@@ -3169,9 +3169,24 @@ function calcRun(trigger){
 }
 
 // ============ CAMPAÑAS ============
-const CAMP_SENT_KEY='bwafi_camp_sent';
-let campSentIds=new Set(JSON.parse(localStorage.getItem(CAMP_SENT_KEY)||'[]'));
-function saveCampSent(){localStorage.setItem(CAMP_SENT_KEY,JSON.stringify([...campSentIds]));}
+const CAMP_SENT_KEY='bwafi_camp_sent_v2';
+// Format: { "agNum": { tipo: "activacion"|"reactivacion", date: "2026-05-21" } }
+let campSentMap=JSON.parse(localStorage.getItem(CAMP_SENT_KEY)||'{}');
+// Backward compat with old key
+const _oldSent=JSON.parse(localStorage.getItem('bwafi_camp_sent')||'[]');
+_oldSent.forEach(k=>{const [tipo,agNum]=k.split('_');if(agNum&&!campSentMap[agNum])campSentMap[agNum]={tipo,date:'desconocida'};});
+
+function saveCampSent(){localStorage.setItem(CAMP_SENT_KEY,JSON.stringify(campSentMap));}
+function campWasSent(agNum){return campSentMap[agNum]||null;}
+function campMarkSent(agNum,tipo){
+  campSentMap[agNum]={tipo,date:new Date().toISOString().split('T')[0]};
+  saveCampSent();
+}
+function campDaysAgo(date){
+  if(!date||date==='desconocida')return null;
+  const diff=Math.floor((Date.now()-new Date(date).getTime())/(1000*60*60*24));
+  return diff===0?'hoy':diff===1?'ayer':diff+' días';
+}
 
 const CAMP_TEMPLATES={
   activacion:`Hola {titular},\n\nNotamos que aún no registrás actividad en el programa de afiliados Betwarrior. ¡No hay problema, estamos para ayudarte a arrancar!\n\nSi tenés alguna duda sobre cómo funciona, cómo compartir tu link o qué materiales usar, escribinos a afiliadosarg@betwarrior.com y te acompañamos.\n\nTambién podés consultar tu kit de bienvenida con todo lo que necesitás para empezar.\n\n¡Saludos!\nEquipo Betwarrior Afiliados`,
@@ -3243,19 +3258,19 @@ async function loadMonthlySheets(){
 // Returns array of agencias from dashData
 function getReactivacionGroup(minSignupsTotal,nMonths){
   if(!monthlySheets.length)return[];
-  // Last N month sheets
   const lastN=monthlySheets.slice(-nMonths);
   return dashData.filter(a=>{
     if(a.estado!=='Activa'||!a.mail)return false;
-    if(a.signups<minSignupsTotal)return false; // must have had activity historically
-    if(!a.usuario)return false; // need MYAFFS username to cross-reference
-    // Check if they had 0 clicks AND 0 signups in ALL of the last N months
-    const inactive=lastN.every(sheet=>{
+    if(a.signups<minSignupsTotal)return false; // must have had signups historically
+    if(!a.usuario)return false;
+    // Check if they had 0 signups in ALL of the last N months
+    // (clicks don't matter — could be browsing. What matters is no new affiliates)
+    const noSignups=lastN.every(sheet=>{
       const row=sheet.data[a.usuario];
       if(!row)return true; // not in sheet = 0 activity
-      return row.clicks===0&&row.signups===0;
+      return row.signups===0;
     });
-    return inactive;
+    return noSignups;
   });
 }
 
@@ -3268,6 +3283,7 @@ function buildStatsCampanas(){
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Clicks máx:<input id="camp-act-clicks" type="number" value="10" min="0" max="999" onchange="renderCampanas()" style="width:56px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Sign ups máx:<input id="camp-act-signups" type="number" value="0" min="0" max="999" onchange="renderCampanas()" style="width:56px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Provincia:<select id="camp-act-prov" onchange="renderCampanas()" style="padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"><option value="">Todas</option></select></div>
           <span id="camp-act-count" style="font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-bg);padding:2px 10px;border-radius:10px">0 agencias</span>
         </div>
       </div>
@@ -3279,10 +3295,11 @@ function buildStatsCampanas(){
     </div>
     <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden">
       <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-        <div><div style="font-size:15px;font-weight:600;color:var(--text)">Reactivación</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Agencias que tuvieron actividad pero llevan meses sin moverse</div></div>
+        <div><div style="font-size:15px;font-weight:600;color:var(--text)">Reactivación</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Agencias que alguna vez afiliaron pero llevan meses sin nuevos sign ups</div></div>
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Sign ups históricos mín:<input id="camp-react-signups" type="number" value="1" min="1" max="999" onchange="renderCampanas()" style="width:56px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Meses sin actividad:<input id="camp-react-months" type="number" value="2" min="1" max="12" onchange="renderCampanas()" style="width:48px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">Provincia:<select id="camp-react-prov" onchange="renderCampanas()" style="padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font)"><option value="">Todas</option></select></div>
           <span id="camp-react-count" style="font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-bg);padding:2px 10px;border-radius:10px">0 agencias</span>
           <span id="camp-react-sheets" style="font-size:11px;color:var(--text3)"></span>
         </div>
@@ -3300,15 +3317,30 @@ function buildStatsCampanas(){
 async function renderCampanas(){
   const actClicks=parseInt(document.getElementById('camp-act-clicks')?.value??10);
   const actSU=parseInt(document.getElementById('camp-act-signups')?.value??0);
+  const actProv=document.getElementById('camp-act-prov')?.value||'';
   const reactSU=parseInt(document.getElementById('camp-react-signups')?.value??1);
   const reactMonths=parseInt(document.getElementById('camp-react-months')?.value??2);
+  const reactProv=document.getElementById('camp-react-prov')?.value||'';
 
   const activas=dashData.filter(a=>a.estado==='Activa'&&a.mail);
 
-  // Activación: acumulado total
-  const actGroup=activas.filter(a=>a.clicks<=actClicks&&a.signups<=actSU);
+  // Populate province selects dynamically (only once per render cycle)
+  const provs=[...new Set(activas.map(a=>a.provincia).filter(Boolean))].sort();
+  ['camp-act-prov','camp-react-prov'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel)return;
+    const cur=sel.value;
+    sel.innerHTML='<option value="">Todas las provincias</option>'+provs.map(p=>`<option value="${p}"${p===cur?' selected':''}>${p}</option>`).join('');
+  });
 
-  // Reactivación: cruzar con hojas mensuales
+  // Activación: acumulado total + provincia
+  const actGroup=activas.filter(a=>
+    a.clicks<=actClicks&&
+    a.signups<=actSU&&
+    (!actProv||a.provincia===actProv)
+  );
+
+  // Reactivación: cruzar con hojas mensuales + provincia
   const reactCount=document.getElementById('camp-react-count');
   const sheetsLabel=document.getElementById('camp-react-sheets');
   if(!monthlySheetsLoaded){
@@ -3317,7 +3349,9 @@ async function renderCampanas(){
   }
   const lastN=monthlySheets.slice(-reactMonths);
   if(sheetsLabel)sheetsLabel.textContent=lastN.length?`Revisando: ${lastN.map(s=>s.name).join(', ')}`:'⚠️ No se encontraron hojas mensuales';
-  const reactGroup=getReactivacionGroup(reactSU,reactMonths);
+
+  const reactGroupAll=getReactivacionGroup(reactSU,reactMonths);
+  const reactGroup=reactGroupAll.filter(a=>!reactProv||a.provincia===reactProv);
 
   const actCountEl=document.getElementById('camp-act-count');
   if(actCountEl)actCountEl.textContent=actGroup.length+' agencia'+(actGroup.length!==1?'s':'');
@@ -3342,17 +3376,46 @@ function renderCampTable(bodyId,list,tipo){
       <th style="padding:8px 10px;text-align:center;color:var(--text3);font-weight:600">Acción</th>
     </tr></thead>
     <tbody>${list.map(a=>{
-      const sent=campSentIds.has(`${tipo}_${a.agNum}`);
+      const sent=campWasSent(a.agNum);
+      const sentSameType=sent&&sent.tipo===tipo;
+      const sentOtherType=sent&&sent.tipo!==tipo;
       const esc=s=>(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-      return `<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:8px 16px">${sent?'':'<input type="checkbox" class="camp-check-'+tipo+'" data-agnum="'+a.agNum+'" data-agencia="'+esc(a.agencia)+'" data-prov="'+esc(a.provincia)+'" data-mail="'+a.mail+'" data-titular="'+esc(a.titular)+'">'}</td>
+      const daysAgo=sent?campDaysAgo(sent.date):'';
+
+      // Badge for sent status
+      let sentBadge='<span style="font-size:11px;color:var(--text4)">—</span>';
+      if(sentSameType){
+        sentBadge=`<span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px;white-space:nowrap">✓ ${daysAgo}</span>`;
+      } else if(sentOtherType){
+        sentBadge=`<span style="font-size:11px;background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:8px;white-space:nowrap" title="Se le envió ${sent.tipo} ${daysAgo}">⚠ ${sent.tipo} (${daysAgo})</span>`;
+      }
+
+      // Checkbox — show for all but warn if sent recently (< 7 days)
+      const recentlySent=sent&&sent.date!=='desconocida'&&campDaysAgo(sent.date)!==null&&parseInt(campDaysAgo(sent.date))<=7;
+      const checkHtml=`<input type="checkbox" class="camp-check-${tipo}" 
+        data-agnum="${a.agNum}" data-agencia="${esc(a.agencia)}" 
+        data-prov="${esc(a.provincia)}" data-mail="${a.mail}" 
+        data-titular="${esc(a.titular)}"
+        ${recentlySent?'title="⚠ Enviado hace menos de 7 días"':''}>`;
+
+      // Action button
+      let actionBtn='—';
+      if(!sentSameType||true){ // always show preview
+        const btnStyle=sentSameType
+          ?'font-size:11px;padding:3px 10px;border-radius:6px;background:var(--bg);color:var(--text3);border:1px solid var(--border);cursor:pointer;font-family:var(--font)'
+          :'font-size:11px;padding:3px 10px;border-radius:6px;background:var(--bg);color:var(--accent);border:1px solid var(--accent);cursor:pointer;font-family:var(--font)';
+        actionBtn=`<button onclick="previewCampana('${tipo}','${a.agNum}','${esc(a.agencia)}','${a.mail}','${esc(a.titular)}')" style="${btnStyle}">${sentSameType?'Reenviar':'Vista previa'}</button>`;
+      }
+
+      return `<tr style="border-bottom:1px solid var(--border);${recentlySent?'background:rgba(253,230,138,0.05)':''}">
+        <td style="padding:8px 16px">${checkHtml}</td>
         <td style="padding:8px 10px;font-weight:500">${a.agencia}</td>
         <td style="padding:8px 10px;color:var(--text2)">${a.provincia||'—'}</td>
         <td style="padding:8px 10px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.titular||'—'}</td>
         <td style="padding:8px 10px;text-align:right;color:var(--text2)">${a.clicks}</td>
         <td style="padding:8px 10px;text-align:right;color:var(--text2)">${a.signups}</td>
-        <td style="padding:8px 10px;text-align:center">${sent?'<span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px">✓ Enviado</span>':'<span style="font-size:11px;color:var(--text4)">—</span>'}</td>
-        <td style="padding:8px 10px;text-align:center">${sent?'—':'<button onclick="previewCampana(\''+tipo+'\',\''+a.agNum+'\',\''+esc(a.agencia)+'\',\''+a.mail+'\',\''+esc(a.titular)+'\')" style="font-size:11px;padding:3px 10px;border-radius:6px;background:var(--bg);color:var(--accent);border:1px solid var(--accent);cursor:pointer;font-family:var(--font)">Vista previa</button>'}</td>
+        <td style="padding:8px 10px;text-align:center">${sentBadge}</td>
+        <td style="padding:8px 10px;text-align:center">${actionBtn}</td>
       </tr>`;
     }).join('')}</tbody></table>`;
 }
@@ -3391,7 +3454,7 @@ function previewCampana(tipo,agNum,agencia,mail,titular){
       const ok=await sendGmail(mail,subject,b,null,htmlBody);
       const st=document.getElementById('camp-preview-status');
       if(ok){
-        campSentIds.add(`${tipo}_${agNum}`);saveCampSent();
+        campMarkSent(agNum,tipo);
         if(st){st.textContent=`✅ Enviado a ${mail}`;st.style.color='var(--green)';}
         sendBtn.textContent='✅ Enviado';sendBtn.style.background='var(--green)';
         setTimeout(()=>{closeKitModal();renderCampanas();},1500);
@@ -3417,7 +3480,7 @@ async function enviarCampanaSeleccionadas(tipo){
     const htmlBody=body.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*(.*?)\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
     if(log)log.innerHTML+=`→ ${agencia} (${mail})... `;
     const ok=await sendGmail(mail,subject,body,null,htmlBody);
-    if(ok){campSentIds.add(`${tipo}_${agNum}`);saveCampSent();sent++;if(log)log.innerHTML+='<span style="color:var(--green)">✓</span><br>';}
+    if(ok){campMarkSent(agNum,tipo);sent++;if(log)log.innerHTML+='<span style="color:var(--green)">✓</span><br>';}
     else{errors++;if(log)log.innerHTML+='<span style="color:var(--red)">✗ Error</span><br>';}
     await new Promise(r=>setTimeout(r,800));
     if(log)log.scrollTop=log.scrollHeight;
