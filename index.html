@@ -3177,14 +3177,16 @@ const _oldSent=JSON.parse(localStorage.getItem('bwafi_camp_sent')||'[]');
 _oldSent.forEach(k=>{const [tipo,agNum]=k.split('_');if(agNum&&!campSentMap[agNum])campSentMap[agNum]={tipo,date:'desconocida'};});
 
 function saveCampSent(){localStorage.setItem(CAMP_SENT_KEY,JSON.stringify(campSentMap));}
-function campWasSent(agNum){return campSentMap[agNum]||null;}
+function campWasSent(agNum){if(!agNum)return null;return campSentMap[agNum]||null;}
 function campMarkSent(agNum,tipo){
+  if(!agNum)return;
   campSentMap[agNum]={tipo,date:new Date().toISOString().split('T')[0]};
   saveCampSent();
 }
 function campDaysAgo(date){
-  if(!date||date==='desconocida')return null;
+  if(!date||date==='desconocida')return'—';
   const diff=Math.floor((Date.now()-new Date(date).getTime())/(1000*60*60*24));
+  if(isNaN(diff))return'—';
   return diff===0?'hoy':diff===1?'ayer':diff+' días';
 }
 
@@ -3386,6 +3388,7 @@ function renderCampTable(bodyId,list,tipo){
       const sentOtherType=sent&&sent.tipo!==tipo;
       const esc=s=>(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
       const daysAgo=sent?campDaysAgo(sent.date):'';
+      const daysNum=sent&&sent.date&&sent.date!=='desconocida'?Math.floor((Date.now()-new Date(sent.date).getTime())/(1000*60*60*24)):999;
 
       // Badge for sent status
       let sentBadge='<span style="font-size:11px;color:var(--text4)">—</span>';
@@ -3396,7 +3399,7 @@ function renderCampTable(bodyId,list,tipo){
       }
 
       // Checkbox — show for all but warn if sent recently (< 7 days)
-      const recentlySent=sent&&sent.date!=='desconocida'&&campDaysAgo(sent.date)!==null&&parseInt(campDaysAgo(sent.date))<=7;
+      const recentlySent=!isNaN(daysNum)&&daysNum<=7;
       const checkHtml=`<input type="checkbox" class="camp-check-${tipo}" 
         data-agnum="${a.agNum}" data-agencia="${esc(a.agencia)}" 
         data-prov="${esc(a.provincia)}" data-mail="${a.mail}" 
