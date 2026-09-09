@@ -402,11 +402,15 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
     <div class="form-group"><label class="form-label">ID del Dash Maestro</label><input class="form-input" id="set-sheet" value="1YmeOp8Jg5ffXBeTNoZkhjUZsc7_VBZK9R1JKYVJ9H0Y"></div>
     <div class="form-group"><label class="form-label">Tu mail (resumen diario)</label><input class="form-input" id="set-email" placeholder="facundobarile@betwarrior.com"></div>
     <div class="form-group"><label class="form-label">Contraseña modo invitado</label><input class="form-input" id="set-guestpwd" type="password" placeholder="Contraseña de acceso invitado"><div class="form-hint">Cualquier persona con esta contraseña puede ver el panel en modo solo lectura, sin poder enviar mails ni modificar nada.</div></div>
-    <div class="form-group"><button class="modal-btn modal-btn-save" onclick="enableGuestAccess()" style="width:100%">🔑 Habilitar acceso invitado desde otra PC</button><div class="form-hint" style="margin-top:6px">Publica las credenciales de acceso para que el modo invitado funcione desde cualquier dispositivo. Hacé click cada vez que cambies la contraseña.</div></div>
+    <div class="form-group"><button class="modal-btn modal-btn-save" onclick="enableGuestAccess()" style="width:100%">🔑 Configurar acceso invitado (seguro)</button><div class="form-hint" style="margin-top:6px">El acceso invitado ahora funciona a través de un proxy en Apps Script: las credenciales nunca se publican. Este botón limpia las credenciales viejas del Sheet y muestra las instrucciones de configuración.</div></div>
     <div class="form-group">
       <label class="form-label">Días a cargar</label>
       <input class="form-input" id="set-days" type="number" value="30" min="7" max="90">
       <div class="form-hint">Mails de los últimos N días. Recomendado: 30.</div>
+    </div>
+    <div class="form-group"><label class="form-label">Días para seguimiento</label>
+      <input class="form-input" id="set-fudays" type="number" value="7" min="1" max="60">
+      <div class="form-hint">Días sin respuesta antes de que un mail pase a "🕐 Sin respuesta".</div>
     </div>
     <div class="divider"></div>
     <div class="form-group">
@@ -607,7 +611,7 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
 
 <script>
 const DEFAULT_SHEET='1YmeOp8Jg5ffXBeTNoZkhjUZsc7_VBZK9R1JKYVJ9H0Y';
-const FOLLOWUP_DAYS=7; // days without reply from them before showing in seguimiento
+const fuDays=()=>cfg.followupDays||7; // dias sin respuesta antes de pasar a seguimiento (configurable)
 const VIP_PCT=0.9;
 
 // ============ KEYWORD DETECTION ============
@@ -620,6 +624,10 @@ const SCOPES='https://mail.google.com/ https://www.googleapis.com/auth/spreadshe
 const MATCHES_SHEET_ID='1BJVs__gLAMR-mFjM7-u5ofn5WRu6BKkvFLP9JPecWpU';
 const CABA_PROVS=['caba','ciudad de buenos aires','ciudad autónoma de buenos aires'];
 const MY_EMAIL='afiliadosarg@betwarrior.com';
+// URL /exec del Apps Script "guest proxy". Vacio = modo invitado deshabilitado.
+const GUEST_PROXY_URL='';
+const LOG_SHEET_NAME='Log Envios';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const RESUMEN_TO='facundobarile@betwarrior.com';
 const AVATAR_COLORS=['av-color-0','av-color-1','av-color-2','av-color-3','av-color-4','av-color-5','av-color-6','av-color-7','av-color-8','av-color-9'];
 const DAY_OPTIONS=[7,15,30,60];
@@ -630,9 +638,10 @@ const DEFAULT_TMPLS={
   'Inscripta':'Hola {agencia},\n\nConfirmamos que recibimos tu solicitud de adhesión al Programa de Afiliados Betwarrior. Tus datos quedaron registrados correctamente.\n\nNuestro equipo va a procesar tu solicitud y se comunica con vos a la brevedad con los próximos pasos.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
   'En proceso':'Hola {agencia},\n\nTu solicitud de afiliación está en proceso de activación. Estamos configurando tu cuenta y en breve te enviamos tus credenciales de acceso.\n\nCualquier duda no dudes en escribirnos.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
   'Kit de bienvenida':'Hola {agencia},\n\n¡Bienvenidos al Programa de Afiliados de BetWarrior! Nos alegra sumar a su agencia como parte de esta red.\n\nPara comenzar de forma rápida y ordenada, ya tienen disponible el Kit de Bienvenida:\nhttps://drive.google.com/drive/folders/1ljaoyi_hZyOsEwWu4ev5YbwRKSjCOiWQ\n\n¿Qué van a encontrar en él?\n\n- Carpeta "Guía + Videos Instructivos": Incluye el paso a paso y videos cortos para aprender a usar el sistema y entender cómo funciona el programa.\n- Carpeta "Manual de Marca + Contenidos": Incluye el manual de marca, videos y piezas listas para usar (material para el punto de venta y contenido digital), junto con lineamientos para comunicar correctamente.\n- *Preguntas frecuentes*\n\nAdemás, les adjunto al final del archivo su QR dentro de nuestro marco.\n\nAnte cualquier duda, pueden escribirnos a: afiliadosarg@betwarrior.com\n\nIMPORTANTE:\nUsuario Myaffs: {usuario}\nContraseña: {password}\nWeb: https://login.betwarrioraffiliates.bet/signin.php\nLink de afiliados: {link_afiliados}\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
+  'Seguimiento':'Hola {agencia},\n\nTe escribimos para hacer seguimiento de tu consulta al Programa de Afiliados Betwarrior. Hace unos dias registramos tu contacto y todavia no recibimos respuesta.\n\nSi segu\u00eds interesado en sumarte, respond\u00e9 este mail y avanzamos con los pr\u00f3ximos pasos. Si ya lo resolviste por otro canal, avisanos as\u00ed cerramos el caso.\n\nSaludos,\nEquipo de Afiliados Betwarrior Argentina',
 };
 
-let cfg={token:'',refresh_token:'',clientId:'',clientSecret:'',sheetId:DEFAULT_SHEET,myEmail:RESUMEN_TO,daysToLoad:30,internalSenders:['piarodriguez@betwarrior.com'],templates:{...DEFAULT_TMPLS},drafts:{},confirmedMatches:{},rejectedMatches:{},darkMode:false,guestMode:false,guestPassword:'',compactView:false,agencyNotes:{}};
+let cfg={token:'',refresh_token:'',clientId:'',clientSecret:'',sheetId:DEFAULT_SHEET,myEmail:RESUMEN_TO,daysToLoad:30,followupDays:7,internalSenders:['piarodriguez@betwarrior.com'],templates:{...DEFAULT_TMPLS},drafts:{},confirmedMatches:{},rejectedMatches:{},darkMode:false,guestMode:false,guestPassword:'',compactView:false,agencyNotes:{}};
 let dashData=[],allEmails=[],processed={},currentFilter='all',currentProv='',selectedId=null,currentTmpl='Nueva agencia',vipThreshold=0,tokenExpiry=0,starredIds=new Set(),selectedEmails=new Set(),sentAutoIds=new Set(),sentKitIds=new Set(),provOpen=false,readInBwafi=new Set(),hiddenFromBwafi=new Set(),inStatsView=false,repliedIds=new Set();
 
 // ============ INIT ============
@@ -663,7 +672,7 @@ function showApp(){
     if(syncBtn)syncBtn.style.display='none';
   }
 }
-function logout(){cfg.token='';cfg.refresh_token='';cfg.guestMode=false;saveCfg();location.reload();}
+function logout(){cfg.token='';cfg.refresh_token='';cfg.guestMode=false;sessionStorage.removeItem('bw_guest_pwd');saveCfg();location.reload();}
 
 // ============ DARK MODE ============
 function toggleDark(){
@@ -682,41 +691,39 @@ function loginGuest(){
   const pwd=document.getElementById('inp-guest').value.trim();
   if(!pwd){alert('Ingresá la contraseña de invitado');return;}
   const btn=document.getElementById('btn-guest-login');
+  const reset=()=>{if(btn){btn.textContent='Entrar como invitado (solo lectura)';btn.disabled=false;}};
   if(btn){btn.textContent='Verificando...';btn.disabled=true;}
-  loadTokenFromSheetsForGuest().then(async creds=>{
-    const reset=()=>{if(btn){btn.textContent='Entrar como invitado (solo lectura)';btn.disabled=false;}};
-    if(!creds||!creds.guest_password){reset();alert('No se encontraron credenciales. El dueño debe hacer click en "🔑 Habilitar acceso invitado" primero.');return;}
-    if(pwd!==creds.guest_password){reset();alert('Contraseña incorrecta.');return;}
-    cfg.refresh_token=creds.refresh_token;
-    cfg.clientId=creds.client_id;
-    cfg.clientSecret=creds.client_secret;
-    cfg.guestMode=true;
-    saveCfg();
-    const ok=await refreshToken();
-    reset();
-    if(ok||cfg.token){showApp();syncAll();}
-    else{alert('No se pudo obtener acceso. Pedile al dueño que habilite el acceso invitado nuevamente.');}
-  }).catch(e=>{
-    const reset=()=>{if(btn){btn.textContent='Entrar como invitado (solo lectura)';btn.disabled=false;}};
-    reset();alert('Error: '+e.message);
-  });
+  guestProxyAuth(pwd).then(d=>{
+    // Solo se guarda un access_token de lectura que expira en ~1h. Nunca refresh_token ni client_secret.
+    cfg.token=d.access_token;tokenExpiry=Date.now()+((d.expires_in||3600)-60)*1000;
+    cfg.guestMode=true;cfg.refresh_token='';cfg.clientId='';cfg.clientSecret='';
+    sessionStorage.setItem('bw_guest_pwd',pwd);
+    saveCfg();reset();showApp();syncAll();
+  }).catch(e=>{reset();alert('Error: '+e.message);});
 }
 
 function isGuest(){return cfg.guestMode===true;}
 
 // ============ GUEST TOKEN LOADER ============
-async function loadTokenFromSheetsForGuest(){
-  const SHEETS_API_KEY='AIzaSyAg66wvqCl3_bb7JdX9wyKrKytnlK0OAEc';
-  const url=`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/${encodeURIComponent(GUEST_SHEET_NAME)}!A1:D2?key=${SHEETS_API_KEY}`;
-  const r=await fetch(url);
+// ============ GUEST VIA APPS SCRIPT PROXY ============
+// El proxy guarda refresh_token/client_secret en Script Properties (nunca llegan al navegador)
+// y devuelve un access_token de SOLO LECTURA (scopes readonly) tras validar la contrasena.
+async function guestProxyAuth(pwd){
+  if(!GUEST_PROXY_URL)throw new Error('El modo invitado no está configurado. El administrador debe desplegar el proxy de Apps Script y cargar la URL en GUEST_PROXY_URL.');
+  const r=await fetch(GUEST_PROXY_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({password:pwd})});
   const d=await r.json();
-  if(d.error)throw new Error(d.error.message);
-  if(!d.values||d.values.length<2)throw new Error('No hay credenciales guardadas. El administrador debe habilitar el acceso invitado primero.');
-  const headers=d.values[0];
-  const row=d.values[1];
-  const obj={};
-  headers.forEach((h,i)=>{obj[h.trim()]=row[i]||'';});
-  return obj;
+  if(d.error)throw new Error(d.error);
+  if(!d.access_token)throw new Error('El proxy no devolvió un token.');
+  return d;
+}
+async function guestRenew(){
+  const pwd=sessionStorage.getItem('bw_guest_pwd');
+  if(!pwd)return false;
+  try{
+    const d=await guestProxyAuth(pwd);
+    cfg.token=d.access_token;tokenExpiry=Date.now()+((d.expires_in||3600)-60)*1000;saveCfg();
+    return true;
+  }catch(e){console.log('guestRenew:',e.message);return false;}
 }
 
 // ============ KEYBOARD SHORTCUTS ============
@@ -893,6 +900,7 @@ async function handleCallback(code){
   }catch(e){alert('Error: '+e.message);}
 }
 async function refreshToken(){
+  if(isGuest())return guestRenew();
   if(!cfg.refresh_token||!cfg.clientId||!cfg.clientSecret)return false;
   try{
     const r=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({refresh_token:cfg.refresh_token,client_id:cfg.clientId,client_secret:cfg.clientSecret,grant_type:'refresh_token'})});
@@ -904,12 +912,25 @@ async function refreshToken(){
 async function getToken(){
   // If token expired or expiry unknown, try refresh first
   if(!cfg.token||(tokenExpiry&&Date.now()>tokenExpiry)){
-    if(cfg.refresh_token&&cfg.clientId&&cfg.clientSecret){
+    if(isGuest()||(cfg.refresh_token&&cfg.clientId&&cfg.clientSecret)){
       await refreshToken();
     }
   }
   return cfg.token;
 }
+
+// ============ BOTON ATRAS (no salir de la app) ============
+history.replaceState({bw:0},'');
+history.pushState({bw:1},'');
+window.addEventListener('popstate',()=>{
+  let closed=false;
+  document.querySelectorAll('.modal-overlay').forEach(m=>{
+    if(m.style.display&&m.style.display!=='none'){m.style.display='none';closed=true;}
+  });
+  if(!closed&&(selectedId||inStatsView)){try{closeDetail();closed=true;}catch(e){}}
+  if(closed)history.pushState({bw:1},'');
+  else history.back(); // nada abierto: segundo "atras" si sale de la pagina
+});
 
 // Listen for page visibility change (PC unlock/tab switch) — refresh token silently
 document.addEventListener('visibilitychange',async()=>{
@@ -922,64 +943,33 @@ document.addEventListener('visibilitychange',async()=>{
 // ============ TOKEN SHEET (for guest mode) ============
 const GUEST_SHEET_NAME='mail guest';
 
-async function saveTokenToSheets(){
-  const t=await getToken();
-  if(!t||!cfg.refresh_token)return;
-  try{
-    // Clear and rewrite row 2 with credentials
-    const values=[[cfg.refresh_token,cfg.clientId,cfg.clientSecret,cfg.guestPassword||'']];
-    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/${encodeURIComponent(GUEST_SHEET_NAME)}!A2:D2?valueInputOption=RAW`,{
-      method:'PUT',
-      headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
-      body:JSON.stringify({values})
-    });
-    const d=await r.json();
-    if(d.error)console.log('saveTokenToSheets error:',d.error.message);
-    else console.log('Credentials saved to mail guest sheet');
-  }catch(e){console.log('saveTokenToSheets error:',e);}
-}
-
+// enableGuestAccess: ya NO publica credenciales. Limpia las viejas del Sheet y muestra instrucciones.
 async function enableGuestAccess(){
-  if(!cfg.guestPassword){alert('Primero configurá una contraseña de invitado y guardá.');return;}
-  const btn=event.target;
-  btn.textContent='Guardando...';btn.disabled=true;
+  const btn=event.target;btn.textContent='Limpiando credenciales viejas...';btn.disabled=true;
   const t=await getToken();
-  if(!t){btn.textContent='❌ Sin token';btn.disabled=false;return;}
-  try{
-    // Write header row
-    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/${encodeURIComponent(GUEST_SHEET_NAME)}!A1:D1?valueInputOption=RAW`,{
-      method:'PUT',
-      headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
-      body:JSON.stringify({values:[['refresh_token','client_id','client_secret','guest_password']]})
-    });
-    // Write credentials
-    await saveTokenToSheets();
-    // Try to share — if it fails (403) show manual instructions
-    const shareR=await fetch(`https://www.googleapis.com/drive/v3/files/${MATCHES_SHEET_ID}/permissions`,{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},
-      body:JSON.stringify({role:'reader',type:'anyone'})
-    });
-    const shareD=await shareR.json();
-    if(shareD.error){
-      // Drive API not available — show manual instructions
-      btn.textContent='✅ Credenciales guardadas';
-      setTimeout(()=>{btn.textContent='🔑 Habilitar acceso invitado desde otra PC';btn.disabled=false;},3000);
-      alert('✅ Credenciales guardadas en el Sheets.\n\n⚠️ Para completar el proceso, necesitás compartir manualmente el Sheets de Matches como "Cualquier persona con el enlace puede ver":\n\n1. Abrí el Sheets de Betwarrior Matches\n2. Compartir → Cambiar a "Cualquier persona con el enlace"\n3. Rol: Lector\n4. Guardar\n\nUna vez hecho eso, el modo invitado va a funcionar.');
-    }else{
-      btn.textContent='✅ Listo — tu jefe ya puede entrar';
-      setTimeout(()=>{btn.textContent='🔑 Habilitar acceso invitado desde otra PC';btn.disabled=false;},4000);
-    }
-  }catch(e){
-    console.log('enableGuestAccess error:',e);
-    btn.textContent='❌ Error';
-    setTimeout(()=>{btn.textContent='🔑 Habilitar acceso invitado desde otra PC';btn.disabled=false;},3000);
+  let cleaned=false;
+  if(t){
+    try{
+      const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/${encodeURIComponent(GUEST_SHEET_NAME)}!A1:D2:clear`,{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'}});
+      const d=await r.json();cleaned=!d.error;
+    }catch(e){}
   }
+  btn.textContent='🔑 Configurar acceso invitado (seguro)';btn.disabled=false;
+  alert((cleaned?'✅ Credenciales viejas borradas de la hoja "mail guest".\n\n':'ℹ️ No se encontraron credenciales viejas (o no se pudo acceder a la hoja).\n\n')+
+    'CONFIGURACIÓN DEL MODO INVITADO SEGURO:\n\n'+
+    '1. Abrí script.google.com con la cuenta afiliadosarg@betwarrior.com\n'+
+    '2. Nuevo proyecto → pegá el código de guest-proxy.gs (te lo pasó Claude)\n'+
+    '3. Configuración del proyecto → Propiedades del script → cargá:\n'+
+    '   GUEST_PASSWORD, REFRESH_TOKEN, CLIENT_ID, CLIENT_SECRET\n'+
+    '4. Implementar → Nueva implementación → App web → Acceso: "Cualquier usuario"\n'+
+    '5. Copiá la URL /exec y pegala en la constante GUEST_PROXY_URL del index.html\n'+
+    '6. Commit en GitHub y listo.\n\n'+
+    'IMPORTANTE: también quitá el permiso "Cualquier persona con el enlace" del Sheet de Matches (Compartir → Restringido).');
 }
 
-function showSettings(){if(isGuest()){alert('La configuración solo está disponible para el administrador del panel.');return;}document.getElementById('set-sheet').value=cfg.sheetId;document.getElementById('set-email').value=cfg.myEmail||RESUMEN_TO;document.getElementById('set-days').value=cfg.daysToLoad||30;document.getElementById('set-guestpwd').value=cfg.guestPassword||'';renderSenders();document.getElementById('settings-modal').style.display='flex';}
+function showSettings(){if(isGuest()){alert('La configuración solo está disponible para el administrador del panel.');return;}document.getElementById('set-sheet').value=cfg.sheetId;document.getElementById('set-email').value=cfg.myEmail||RESUMEN_TO;document.getElementById('set-days').value=cfg.daysToLoad||30;document.getElementById('set-fudays').value=cfg.followupDays||7;document.getElementById('set-guestpwd').value=cfg.guestPassword||'';renderSenders();document.getElementById('settings-modal').style.display='flex';}
 function closeSettings(){document.getElementById('settings-modal').style.display='none';}
-function saveSettings(){cfg.sheetId=document.getElementById('set-sheet').value.trim()||DEFAULT_SHEET;cfg.myEmail=document.getElementById('set-email').value.trim()||RESUMEN_TO;cfg.daysToLoad=parseInt(document.getElementById('set-days').value)||30;const gp=document.getElementById('set-guestpwd').value.trim();if(gp)cfg.guestPassword=gp;saveCfg();renderDaysFilter();closeSettings();if(gp)alert('✅ Contraseña de invitado guardada.');}
+function saveSettings(){cfg.sheetId=document.getElementById('set-sheet').value.trim()||DEFAULT_SHEET;cfg.myEmail=document.getElementById('set-email').value.trim()||RESUMEN_TO;cfg.daysToLoad=parseInt(document.getElementById('set-days').value)||30;cfg.followupDays=parseInt(document.getElementById('set-fudays').value)||7;const gp=document.getElementById('set-guestpwd').value.trim();if(gp)cfg.guestPassword=gp;saveCfg();renderDaysFilter();closeSettings();if(gp)alert('✅ Contraseña de invitado guardada.');}
 function addSender(){const v=document.getElementById('set-newsender').value.trim();if(!v||cfg.internalSenders.includes(v))return;cfg.internalSenders.push(v);renderSenders();saveCfg();document.getElementById('set-newsender').value='';}
 function removeSender(s){cfg.internalSenders=cfg.internalSenders.filter(x=>x!==s);renderSenders();saveCfg();}
 function renderSenders(){document.getElementById('set-senders').innerHTML=cfg.internalSenders.map(s=>`<div class="sender-row"><span>${s}</span><span class="sender-del" onclick="removeSender('${s}')">×</span></div>`).join('');}
@@ -997,7 +987,7 @@ async function syncAll(){
   const t=await getToken();
   if(!t){
     // Token failed — if guest, try to re-fetch credentials from Sheets
-    if(isGuest()&&cfg.refresh_token){
+    if(isGuest()){
       const ok=await refreshToken();
       if(!ok){
         const sync=document.getElementById('last-sync');
@@ -1017,7 +1007,6 @@ async function syncAll(){
   allEmails=[];processed={};
   try{
     await Promise.all([loadDash(),loadGmail(),loadMatchesFromSheets(),loadSentEmails()]);
-    if(!isGuest()&&cfg.refresh_token)saveTokenToSheets();
     if(sync)sync.textContent='Actualizado: '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
   }catch(e){
     console.error('Sync error:',e);
@@ -1308,7 +1297,7 @@ function classify(email,m){
   const needsFollowup=ag&&
     ['Activa','Inscripto','En Proceso','Candidato'].includes(estado)&&
     !repliedInThread&&
-    daysOld>=FOLLOWUP_DAYS;
+    daysOld>=fuDays();
 
   // autoReply kept for backward compat — true when not needing attention
   const autoReply=!needsAttention&&!isProblema&&!isSumarse;
@@ -1456,7 +1445,7 @@ function renderAlerts(){
   const fus=visible.filter(e=>processed[e.id]?.cls.needsFollowup);
   if(bajas.length)chips.push(`<div class="alert-chip baja" onclick="filterEmails('baja',null)">⚠️ ${bajas.length} posible${bajas.length>1?'s':''} baja</div>`);
   if(vips.length)chips.push(`<div class="alert-chip vip" onclick="filterEmails('vip',null)">⭐ ${vips.length} VIP</div>`);
-  if(fus.length)chips.push(`<div class="alert-chip followup" onclick="filterEmails('followup',null)">🕐 ${fus.length} sin respuesta +${FOLLOWUP_DAYS}d</div>`);
+  if(fus.length)chips.push(`<div class="alert-chip followup" onclick="filterEmails('followup',null)">🕐 ${fus.length} sin respuesta +${fuDays()}d</div>`);
   bar.innerHTML=chips.join('');
   bar.style.display='flex';
 }
@@ -1526,6 +1515,7 @@ function rebuildMain(){
       <button class="bulk-btn bulk-btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
       <button class="bulk-btn bulk-btn-cancel" onclick="clearSelection()">✕ Deseleccionar</button>
     </div>
+    ${currentFilter==='followup'&&!isGuest()?`<button class="bulk-btn bulk-btn-send" onclick="sendBulkFollowup()">🕐 Enviar seguimiento a todos</button>`:''}
     <span class="mail-count-info" id="mail-count" style="margin-left:auto">${allEmails.length} correos</span>
   </div>
   <div id="email-list"></div>`;
@@ -1732,7 +1722,7 @@ async function sendBulkAuto(){
   const toSend=selectedEmails.size>0?[...selectedEmails]:getFiltered().filter(e=>{const r=processed[e.id];return r&&r.cls.autoReply&&!sentAutoIds.has(e.id);}).map(e=>e.id);
   if(!toSend.length){alert('No hay correos para enviar.');return;}
   if(!confirm(`¿Enviás respuesta automática a ${toSend.length} agencia${toSend.length>1?'s':''}?`))return;
-  let ok=0,fail=0;
+  let ok=0,fail=0;const failNames=[];
   for(const id of toSend){
     const e=allEmails.find(x=>x.id===id);if(!e)continue;
     const r=processed[id]||{};const ag=r.match?.agency;
@@ -1740,73 +1730,77 @@ async function sendBulkAuto(){
     const dn=e.isForwarded&&e.fwdFrom?e.fwdFrom:e.fromName;
     const tk=ag?ag.estado==='Candidato'?'Candidata':ag.estado==='Inscripto'?'Inscripta':ag.estado==='En Proceso'?'En proceso':'Nueva agencia':'Nueva agencia';
     const txt=(cfg.templates[tk]||cfg.templates['Nueva agencia']||'').replace(/\{agencia\}/g,ag?ag.agencia:'').replace(/\{nombre\}/g,dn);
-    const sent=await sendGmail(de,e.subject.startsWith('Re:')?e.subject:'Re: '+e.subject,txt,e.threadId);
-    if(sent){sentAutoIds.add(id);ok++;}else{fail++;}
+    const subj=e.subject.startsWith('Re:')?e.subject:'Re: '+e.subject;
+    const sent=await sendGmail(de,subj,txt,e.threadId);
+    logEnvio('auto',ag?ag.agencia:'',de,subj,sent);
+    if(sent){sentAutoIds.add(id);ok++;}else{fail++;failNames.push(ag?ag.agencia:de);}
+    await sleep(1200);
   }
   saveCfg();
   clearSelection();
-  alert(`✅ Enviados: ${ok}${fail?` · ❌ Fallidos: ${fail}`:''}`);
+  alert(`✅ Enviados: ${ok}${fail?`\n❌ Fallaron (${fail}): ${failNames.join(', ')}`:''}`);
   renderList();
 }
 
 // ============ GMAIL SEND ============
-async function sendGmail(to,subject,body,threadId,htmlBody){
-  const t=await getToken();
-  try{
-    const raw=makeRaw(MY_EMAIL,to,subject,body,threadId,htmlBody);
-    const payload={raw};
-    if(threadId)payload.threadId=threadId;
-    const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const d=await r.json();
-    return !!d.id;
-  }catch(e){console.error('Send error:',e);return false;}
-}
-
-function makeRaw(from,to,subject,body,threadId,htmlBody){
-  if(htmlBody){
-    // Multipart with plain text fallback and HTML version
-    const boundary='bwafi_boundary_'+Date.now();
-    const msg=[
-      `From: ${from}`,`To: ${to}`,
-      `Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,
-      'MIME-Version: 1.0',
-      `Content-Type: multipart/alternative; boundary="${boundary}"`,
-      '',
-      `--${boundary}`,
-      'Content-Type: text/plain; charset=UTF-8',
-      'Content-Transfer-Encoding: base64',
-      '',
-      btoa(unescape(encodeURIComponent(body))),
-      '',
-      `--${boundary}`,
-      'Content-Type: text/html; charset=UTF-8',
-      'Content-Transfer-Encoding: base64',
-      '',
-      btoa(unescape(encodeURIComponent(`<html><body style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6">${htmlBody}</body></html>`))),
-      '',
-      `--${boundary}--`
-    ].join('\r\n');
-    return btoa(unescape(encodeURIComponent(msg))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+// ============ SEGUIMIENTO MASIVO ============
+async function sendBulkFollowup(){
+  if(isGuest())return;
+  const toSend=getFiltered().filter(e=>{const r=processed[e.id];return r&&r.cls&&r.cls.needsFollowup;});
+  if(!toSend.length){alert('No hay mails esperando seguimiento.');return;}
+  if(!confirm(`¿Enviás mail de seguimiento a ${toSend.length} agencia${toSend.length>1?'s':''}?\n\nSe responde en el mismo hilo con la plantilla "Seguimiento".`))return;
+  let ok=0;const failed=[];
+  for(const e of toSend){
+    const r=processed[e.id]||{};const ag=r.match?.agency;
+    const de=e.isForwarded&&e.fwdEmail?e.fwdEmail:e.fromEmail;
+    const dn=e.isForwarded&&e.fwdFrom?e.fwdFrom:e.fromName;
+    const txt=(cfg.templates['Seguimiento']||DEFAULT_TMPLS['Seguimiento']).replace(/\{agencia\}/g,ag?ag.agencia:'').replace(/\{nombre\}/g,dn||'');
+    const subj=e.subject.startsWith('Re:')?e.subject:'Re: '+e.subject;
+    const sent=await sendGmail(de,subj,txt,e.threadId);
+    logEnvio('seguimiento',ag?ag.agencia:'',de,subj,sent);
+    if(sent){sentAutoIds.add(e.id);if(r.cls){r.cls.needsFollowup=false;r.cls.repliedInThread=true;}ok++;}
+    else failed.push(ag?ag.agencia:de);
+    await sleep(1200);
   }
-  const msg=[`From: ${from}`,`To: ${to}`,`Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,'MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: base64','',btoa(unescape(encodeURIComponent(body)))].join('\r\n');
-  return btoa(unescape(encodeURIComponent(msg))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  saveCfg();
+  try{updateMetrics();}catch(e){}
+  renderList();
+  alert(`✅ Seguimientos enviados: ${ok}`+(failed.length?`\n❌ Fallaron: ${failed.join(', ')}`:''));
 }
 
-// ============ DRIVE HELPERS ============
-function extractDriveId(url){
-  if(!url)return null;
-  const m=url.match(/\/d\/([a-zA-Z0-9_-]+)/)||url.match(/id=([a-zA-Z0-9_-]+)/);
-  return m?m[1]:null;
+async function sendGmail(to,subject,body,threadId,htmlBody){
+  // Reintenta hasta 3 veces con backoff ante 429 (rate limit) o errores 5xx/red.
+  for(let attempt=0;attempt<3;attempt++){
+    const t=await getToken();
+    try{
+      const raw=makeRaw(MY_EMAIL,to,subject,body,threadId,htmlBody);
+      const payload={raw};
+      if(threadId)payload.threadId=threadId;
+      const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const d=await r.json();
+      if(d.id)return true;
+      if(r.status===429||r.status>=500){console.log(`sendGmail ${r.status}, reintento ${attempt+1}/3`);await sleep(2000*Math.pow(2,attempt));continue;}
+      console.log('sendGmail error:',d.error?.message||r.status);return false;
+    }catch(e){console.log('sendGmail red:',e.message);await sleep(2000*(attempt+1));}
+  }
+  return false;
 }
 
-async function downloadDriveFile(fileId,fileName){
-  const t=await getToken();
+// Registro de envios en la hoja "Log Envios" del Sheet de Matches (auditable y compartido entre PCs)
+async function logEnvio(tipo,agencia,to,subject,ok){
+  if(isGuest())return;
   try{
-    const r=await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,{headers:{Authorization:'Bearer '+t}});
-    if(!r.ok)return null;
-    const blob=await r.blob();
-    return new File([blob],fileName,{type:blob.type||'application/pdf'});
-  }catch(e){console.error('Drive download error:',e);return null;}
+    const t=await getToken();if(!t)return;
+    const row=[[new Date().toISOString(),tipo,agencia||'',to||'',subject||'',ok?'OK':'ERROR']];
+    const url=`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/${encodeURIComponent(LOG_SHEET_NAME)}!A:F:append?valueInputOption=RAW`;
+    const r=await fetch(url,{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify({values:row})});
+    if(r.status===400){
+      // La hoja no existe: crearla con encabezado y reintentar
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}:batchUpdate`,{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify({requests:[{addSheet:{properties:{title:LOG_SHEET_NAME}}}]})});
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${MATCHES_SHEET_ID}/values/${encodeURIComponent(LOG_SHEET_NAME)}!A1:F1?valueInputOption=RAW`,{method:'PUT',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify({values:[['fecha','tipo','agencia','destinatario','asunto','resultado']]})});
+      await fetch(url,{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify({values:row})});
+    }
+  }catch(e){console.log('logEnvio:',e.message);}
 }
 
 async function sendGmailWithAttachment(to,subject,body,threadId,file){
@@ -2273,6 +2267,7 @@ async function sendAutoSingle(id,to){
   const subject=e.subject.startsWith('Re:')?e.subject:'Re: '+e.subject;
   const btn=event.target;btn.textContent='Enviando...';btn.disabled=true;
   const ok=await sendGmail(to,subject,txt,e.threadId);
+  logEnvio('auto',r.match?.agency?.agencia||'',to,subject,ok);
   if(ok){sentAutoIds.add(id);saveCfg();selectEmail(id);}
   else{btn.textContent='Enviar desde afiliadosarg@betwarrior.com';btn.disabled=false;alert('Error al enviar. Intentá de nuevo.');}
 }
@@ -2284,6 +2279,7 @@ async function sendReplySingle(id,to){
   const subject=e.subject.startsWith('Re:')?e.subject:'Re: '+e.subject;
   const btn=event.target;btn.textContent='Enviando...';btn.disabled=true;
   const ok=await sendGmail(to,subject,ta.value,e.threadId);
+  logEnvio('respuesta',processed[id]?.match?.agency?.agencia||'',to,subject,ok);
   if(ok){alert('✅ Respuesta enviada');ta.value='';}
   else{btn.textContent='Enviar desde afiliadosarg@betwarrior.com';btn.disabled=false;alert('Error al enviar.');}
 }
@@ -2830,7 +2826,7 @@ function buildStatsPipeline(){
 
   return `
   <div style="margin-bottom:24px">
-    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Agencias por etapa — click para ver sus correos</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Agencias por etapa — click para ver sus correos · los % entre etapas comparan el tamaño de cada etapa con la anterior (estado actual)</div>
     <div style="display:flex;gap:0;align-items:stretch">
       ${etapasConDatos.map((et,i)=>{
         const ags=dashData.filter(a=>a.estado===et.key);
@@ -2840,6 +2836,10 @@ function buildStatsPipeline(){
         const pctContacto=ags.length?Math.round(conMail/ags.length*100):0;
         const isLast=i===etapasConDatos.length-1;
         const isFirst=i===0;
+        const nextEt=etapasConDatos[i+1];
+        const nextCount=nextEt?dashData.filter(a=>a.estado===nextEt.key).length:0;
+        const conv=(!isLast&&ags.length)?Math.round(nextCount/ags.length*100):0;
+        const convColor=conv>=50?'var(--green)':conv>=20?'var(--amber)':'var(--red)';
         return`<div onclick="statsFilterByEstado('${et.key}')" style="flex:1;padding:16px;background:var(--white);border:1px solid var(--border);${isFirst?'border-radius:12px 0 0 12px':''}${isLast?'border-radius:0 12px 12px 0':''}${!isLast?'border-right:none':''};cursor:pointer;transition:background .15s" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background='var(--white)'">
           <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">${et.icon} ${et.label}</div>
           <div style="font-size:28px;font-weight:700;color:${et.color}">${ags.length}</div>
@@ -2849,7 +2849,7 @@ function buildStatsPipeline(){
           </div>
           <div style="font-size:11px;color:var(--text2)">${pctContacto}% te escribieron</div>
           <div style="font-size:11px;color:var(--text3);margin-top:2px">${sinMail} sin contacto</div>
-        </div>${!isLast?`<div style="display:flex;align-items:center;justify-content:center;padding:0 4px;color:var(--text4);font-size:18px">›</div>`:''}`;
+        </div>${!isLast?`<div title="Conversión aproximada: compara el tamaño de la etapa siguiente con esta (foto actual, no cohortes)" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 6px;gap:2px"><span style="color:var(--text4);font-size:16px;line-height:1">›</span><span style="font-size:10px;font-weight:700;color:${convColor}">${conv}%</span></div>`:''}`;
       }).join('')}
     </div>
   </div>
@@ -3488,6 +3488,7 @@ async function enviarCampanaSeleccionadas(tipo){
     const htmlBody=body.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*(.*?)\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
     if(log)log.innerHTML+=`→ ${agencia} (${mail})... `;
     const ok=await sendGmail(mail,subject,body,null,htmlBody);
+    logEnvio('campaña '+tipo,agencia,mail,subject,ok);
     if(ok){campMarkSent(agNum,tipo);sent++;if(log)log.innerHTML+='<span style="color:var(--green)">✓</span><br>';}
     else{errors++;if(log)log.innerHTML+='<span style="color:var(--red)">✗ Error</span><br>';}
     await new Promise(r=>setTimeout(r,800));
@@ -3655,7 +3656,9 @@ async function sendKitSelected(){
       if(fileId)qrFile=await downloadDriveFile(fileId,`Marco_QR_A${ag.agNum}_${ag.provincia}.pdf`);
     }
     const sent=await sendGmailWithAttachment(ag.mail,'Bienvenidos al Programa de Afiliados',body,null,qrFile);
+    logEnvio('kit',ag.agencia,ag.mail,'Bienvenidos al Programa de Afiliados',sent);
     if(sent){sentKitIds.add(ag.agNum);ok++;}else{fail++;failList.push(ag.agencia);}
+    await sleep(1200);
   }
   saveCfg();
   btn.textContent='Enviar seleccionados';btn.disabled=false;
