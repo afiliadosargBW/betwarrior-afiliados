@@ -351,6 +351,7 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
       <button class="icon-btn" onclick="showCalc()" title="Calculadora de fees">🧮</button>
       <button class="icon-btn" onclick="showStats()" title="Estadísticas Afiliados">📊</button>
       <button class="icon-btn" onclick="showResumenModal()" title="Resumen del día">📧</button>
+      <button class="icon-btn" onclick="showKitModal()" title="Kit de Bienvenida">🎁</button>
       <button class="icon-btn" id="dark-toggle" onclick="toggleDark()" title="Modo oscuro">🌙</button>
       <button class="icon-btn" onclick="showSettings()" title="Configurar">⚙️</button>
       <button class="sync-btn" onclick="syncAll()">↻ Sincronizar</button>
@@ -2727,7 +2728,7 @@ function renderBuscadorResults(){
       '<td style="padding:6px 10px;text-align:right;color:var(--text2)">'+(a.ngrAfil?fmt(a.ngrAfil):'—')+'</td>'+
       '<td style="padding:6px 10px;text-align:right;font-weight:600;color:'+(a.comision>0?'var(--green)':'var(--text3)')+'">$'+(a.comision||0).toLocaleString('es-AR')+'</td>'+
       '<td style="padding:6px 10px;text-align:center">'+(mails>0?'<span style="background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:8px;font-weight:600">'+mails+'</span>':'<span style="color:var(--text4)">—</span>')+'</td>'+
-      '<td style="padding:6px 10px;text-align:center">'+((!isGuest()&&['Candidato','Inscripto'].includes(a.estado))?(sentKitIds.has(a.agNum)?'<span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px">✓ Enviado</span>':(a.mail?'<button onclick="event.stopPropagation();showKitDirecto(\''+(a.agencia.replace(/'/g,"\\'"))+'\',\''+(a.provincia.replace(/'/g,"\\'"))+'\')" style="font-size:11px;padding:3px 10px;border-radius:8px;background:var(--accent);color:white;border:none;cursor:pointer;font-family:var(--font)">📧 Enviar Kit</button>':'<span style="font-size:11px;color:var(--amber)">⚠ Sin email</span>')):'<span style="color:var(--text4)">—</span>')+'</td>'+
+      '<td style="padding:6px 10px;text-align:center">'+((!isGuest()&&['Candidato','Inscripto','En Proceso'].includes(a.estado))?(sentKitIds.has(a.agNum)?'<span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px">✓ Enviado</span> <button onclick="event.stopPropagation();showKitDirecto(\''+(a.agencia.replace(/'/g,"\\'"))+'\',\''+(a.provincia.replace(/'/g,"\\'"))+'\')" title="Reenviar kit" style="font-size:11px;padding:2px 8px;border-radius:8px;background:var(--bg);color:var(--text2);border:1px solid var(--border);cursor:pointer;font-family:var(--font)">↻</button>':(a.mail?'<button onclick="event.stopPropagation();showKitDirecto(\''+(a.agencia.replace(/'/g,"\\'"))+'\',\''+(a.provincia.replace(/'/g,"\\'"))+'\')" style="font-size:11px;padding:3px 10px;border-radius:8px;background:var(--accent);color:white;border:none;cursor:pointer;font-family:var(--font)">📧 Enviar Kit</button>':'<span style="font-size:11px;color:var(--amber)">⚠ Sin email</span>')):'<span style="color:var(--text4)">—</span>')+'</td>'+
     '</tr>';
   }).join('');
 }
@@ -3537,9 +3538,9 @@ function showKitDirecto(agName, provincia){
     :dashData.find(a=>a.agencia===agName);
   if(!ag){alert('Agencia no encontrada');return;}
   if(!ag.mail){alert('Esta agencia no tiene email en el Data Maestro.');return;}
-  if(sentKitIds.has(ag.agNum)){alert('El kit ya fue enviado a esta agencia.');return;}
-  if(!['Candidato','Inscripto'].includes(ag.estado)){
-    alert(`Esta agencia está en estado "${ag.estado}". El kit solo se envía a Candidatos e Inscriptos.`);return;
+  if(sentKitIds.has(ag.agNum)&&!confirm('El kit ya fue enviado a esta agencia.\n\n¿Querés REENVIARLO?'))return;
+  if(!['Candidato','Inscripto','En Proceso'].includes(ag.estado)){
+    alert(`Esta agencia está en estado "${ag.estado}". El kit solo se envía a Candidatos, Inscriptos o En Proceso.`);return;
   }
 
   // Build kit body using Kit de bienvenida template
@@ -3639,7 +3640,7 @@ function showKitModal(){
             <div style="font-size:11px;color:var(--text3)">${ag.titular||''} · ${ag.mail}</div>
             <div style="font-size:11px;color:var(--text3)">Usuario: ${ag.usuario} · ${ag.linkAfiliados?'✓ Link':'⚠ Sin link'} · ${ag.qrLink?'<span style=\'color:#137333\'>✓ QR en Drive</span>':'<span style=\'color:#b45309\'>⚠ Sin QR</span>'}</div>
           </div>
-          ${sentKitIds.has(ag.agNum)?'<span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px;white-space:nowrap;flex-shrink:0">✓ Ya enviado</span>':''}
+          ${sentKitIds.has(ag.agNum)?'<span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px;white-space:nowrap;flex-shrink:0" title="Marcá la casilla para reenviarlo">✓ Ya enviado · marcá para reenviar</span>':''}
         </div>
         <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--white);border:1px dashed var(--border2);border-radius:8px">
           <span style="font-size:12px;color:var(--text3)">📎 Marco QR:</span>
@@ -3669,7 +3670,7 @@ function closeKitModal(){
 }
 async function sendKitSelected(){
   const candidates=dashData.filter(ag=>ag.estado==='En Proceso'&&ag.usuario&&ag.password&&ag.mail);
-  const toSend=candidates.filter(ag=>{const cb=document.getElementById('kit-cb-'+ag.agNum);return cb&&cb.checked&&!sentKitIds.has(ag.agNum);});
+  const toSend=candidates.filter(ag=>{const cb=document.getElementById('kit-cb-'+ag.agNum);return cb&&cb.checked;});
   if(!toSend.length){alert('No hay agencias nuevas seleccionadas para enviar.');return;}
   if(!confirm(`¿Enviás el Kit de Bienvenida a ${toSend.length} agencia${toSend.length>1?'s':''}?`))return;
   const btn=document.getElementById('kit-send-btn');btn.textContent='Enviando...';btn.disabled=true;
