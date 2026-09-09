@@ -929,7 +929,7 @@ window.addEventListener('popstate',()=>{
   });
   if(!closed&&(selectedId||inStatsView)){try{closeDetail();closed=true;}catch(e){}}
   if(closed)history.pushState({bw:1},'');
-  else history.back(); // nada abierto: segundo "atras" si sale de la pagina
+  else history.pushState({bw:1},''); // nunca salir del panel con "atras" (el historial incluye el login de Google); para salir, cerrar la pestana
 });
 
 // Listen for page visibility change (PC unlock/tab switch) — refresh token silently
