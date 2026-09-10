@@ -331,6 +331,7 @@ textarea{width:100%;border:none;font-size:14px;font-family:var(--font);color:var
     <div class="login-fields">
       <div class="form-group"><label class="form-label">Contraseña de invitado</label><div class="pw-wrap"><input class="form-input" id="inp-guest" type="password" placeholder="Contraseña compartida"><button class="pw-toggle" type="button" onclick="const i=document.getElementById('inp-guest');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁':'🙈'" aria-label="Mostrar/ocultar contraseña">👁</button></div></div>
       <button id="btn-guest-login" class="connect-btn" style="background:var(--green)" onclick="loginGuest()">Entrar como invitado (solo lectura)</button>
+      <div style="text-align:center;margin-top:16px"><a href="#" onclick="updateCreds();return false" style="font-size:11px;color:var(--text3);text-decoration:underline">🔑 Cambié el client secret / actualizar credenciales</a></div>
     </div>
   </div>
 </div>
@@ -689,6 +690,18 @@ window.onload=()=>{
   document.addEventListener('keydown',handleKeyboard);
 };
 
+// Actualizar client ID/secret sin consola (para cuando se rota el secreto en Google Cloud)
+function updateCreds(){
+  const sec=prompt('Pegá el CLIENT SECRET nuevo (empieza con GOCSPX-...):','');
+  if(!sec||!sec.trim()){alert('No se cambió nada.');return;}
+  const cid=prompt('Client ID (dejalo VACÍO para mantener el actual):','');
+  cfg.clientSecret=sec.trim();
+  if(cid&&cid.trim())cfg.clientId=cid.trim();
+  cfg.token='';cfg.refresh_token='';cfg.guestMode=false;
+  sessionStorage.removeItem('bw_guest_pwd');
+  saveCfg();
+  alert('✅ Credenciales actualizadas.\n\nAhora tocá "Iniciar sesión con Google" y autorizá de nuevo.');
+}
 function loadCfg(){try{const s=localStorage.getItem('bw_v8');if(s){const p=JSON.parse(s);cfg={...cfg,...p};cfg.templates={...DEFAULT_TMPLS,...(p.templates||{})};if(p.starred)starredIds=new Set(p.starred);if(p.sentAutoIds)sentAutoIds=new Set(p.sentAutoIds);if(p.sentKitIds)sentKitIds=new Set(p.sentKitIds);if(p.readInBwafi)readInBwafi=new Set(p.readInBwafi);if(p.hiddenFromBwafi)hiddenFromBwafi=new Set(p.hiddenFromBwafi);if(p.repliedIds)repliedIds=new Set(p.repliedIds);}}catch(e){}}
 function saveCfg(){try{localStorage.setItem('bw_v8',JSON.stringify({...cfg,starred:[...starredIds],sentAutoIds:[...sentAutoIds],sentKitIds:[...sentKitIds],readInBwafi:[...readInBwafi],hiddenFromBwafi:[...hiddenFromBwafi],repliedIds:[...repliedIds]}));}catch(e){}}
 function showApp(){
