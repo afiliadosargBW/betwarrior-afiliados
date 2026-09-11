@@ -1814,6 +1814,53 @@ async function sendBulkFollowup(){
   alert(`✅ Seguimientos enviados: ${ok}`+(failed.length?`\n❌ Fallaron: ${failed.join(', ')}`:''));
 }
 
+function makeRaw(from,to,subject,body,threadId,htmlBody){
+  if(htmlBody){
+    // Multipart with plain text fallback and HTML version
+    const boundary='bwafi_boundary_'+Date.now();
+    const msg=[
+      `From: ${from}`,`To: ${to}`,
+      `Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,
+      'MIME-Version: 1.0',
+      `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      '',
+      `--${boundary}`,
+      'Content-Type: text/plain; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      btoa(unescape(encodeURIComponent(body))),
+      '',
+      `--${boundary}`,
+      'Content-Type: text/html; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      btoa(unescape(encodeURIComponent(`<html><body style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6">${htmlBody}</body></html>`))),
+      '',
+      `--${boundary}--`
+    ].join('\r\n');
+    return btoa(unescape(encodeURIComponent(msg))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+  const msg=[`From: ${from}`,`To: ${to}`,`Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,'MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: base64','',btoa(unescape(encodeURIComponent(body)))].join('\r\n');
+  return btoa(unescape(encodeURIComponent(msg))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+// ============ DRIVE HELPERS ============
+function extractDriveId(url){
+  if(!url)return null;
+  const m=url.match(/\/d\/([a-zA-Z0-9_-]+)/)||url.match(/id=([a-zA-Z0-9_-]+)/);
+  return m?m[1]:null;
+}
+
+async function downloadDriveFile(fileId,fileName){
+  const t=await getToken();
+  try{
+    const r=await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,{headers:{Authorization:'Bearer '+t}});
+    if(!r.ok)return null;
+    const blob=await r.blob();
+    return new File([blob],fileName,{type:blob.type||'application/pdf'});
+  }catch(e){console.error('Drive download error:',e);return null;}
+}
+
 async function sendGmail(to,subject,body,threadId,htmlBody){
   // Reintenta hasta 3 veces con backoff ante 429 (rate limit) o errores 5xx/red.
   for(let attempt=0;attempt<3;attempt++){
@@ -3621,6 +3668,7 @@ async function sendKitDirecto(agName, toEmail, agNum, provincia, btn){
     .replace(/\n/g,'<br>');
   const subject=`Bienvenido al Programa de Afiliados Betwarrior — ${agName}`;
   const ok=await sendGmail(toEmail,subject,rawBody,null,htmlBody);
+  logEnvio('kit',agName,toEmail,subject,ok);
   if(ok){
     sentKitIds.add(agNum);
     saveCfg();
